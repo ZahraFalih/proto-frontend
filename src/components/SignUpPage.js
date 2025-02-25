@@ -23,99 +23,52 @@ const SignUpPage = () => {
 
     // Proceed with sign-up logic (API call, etc.)
     console.log({ name, username, email, password });
-    navigate('/welcome');
+    navigate('/');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-md bg-white p-8 rounded shadow">
-        <h1 className="text-2xl font-bold mb-6 text-center">Sign Up</h1>
-        <form onSubmit={handleSignUp}>
-          {/* Name Entry */}
-          <div className="mb-4">
-            <label htmlFor="name" className="block text-gray-700 text-sm font-semibold mb-2">
-              Name
-            </label>
-            <input
-              id="name"
-              type="text"
-              placeholder="Enter your name"
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#fff',
+      fontFamily: 'Courier New, monospace',
+      color: '#000',
+      textAlign: 'center'
+    }}>
+      <h1 style={{ fontSize: '24px', fontWeight: 'bold', textDecoration: 'underline' }}>
+        Sign Up
+      </h1>
+      <form onSubmit={handleSignUp} style={{ width: '300px', textAlign: 'left' }}>
+        <label>Name</label>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
 
-          {/* Username Entry */}
-          <div className="mb-4">
-            <label htmlFor="username" className="block text-gray-700 text-sm font-semibold mb-2">
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              placeholder="Choose a username"
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </div>
+        <label>Username</label>
+        <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
 
-          {/* Email Entry */}
-          <div className="mb-4">
-            <label htmlFor="email" className="block text-gray-700 text-sm font-semibold mb-2">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
+        <label>Email</label>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
 
-          {/* Password Entry */}
-          <div className="mb-4">
-            <label htmlFor="password" className="block text-gray-700 text-sm font-semibold mb-2">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+        <label>Password</label>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
 
-          {/* Confirm Password Entry */}
-          <div className="mb-6">
-            <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-semibold mb-2">
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              placeholder="Re-enter your password"
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-          </div>
+        <label>Confirm Password</label>
+        <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
 
-          <div>
-            <button
-              type="submit"
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            >
-              Sign Up
-            </button>
-          </div>
-        </form>
-      </div>
+        <button type="submit" style={{
+          background: 'none',
+          color: '#000',
+          padding: '5px 15px',
+          border: '1px solid #000',
+          cursor: 'pointer',
+          marginTop: '10px',
+          fontFamily: 'Courier New, monospace'
+        }}>
+          Sign Up
+        </button>
+      </form>
     </div>
   );
 };
