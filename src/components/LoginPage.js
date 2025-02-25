@@ -30,7 +30,7 @@ const LoginPage = () => {
       if (response.ok) {
         localStorage.setItem("token", data.token); // Store the authentication token
         alert("Login successful!");
-        navigate("/"); // Redirect to home or another protected route
+        navigate("/onboarding"); // Redirect to home or another protected route
       } else {
         setError(data.error || "Invalid username or password");
       }

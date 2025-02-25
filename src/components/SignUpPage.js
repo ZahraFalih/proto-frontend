@@ -44,7 +44,7 @@ const SignUpPage = () => {
 
       if (response.ok) {
         alert("User created successfully!");
-        navigate("/"); // Redirect user after successful sign-up
+        navigate("/onboarding"); // Redirect user after successful sign-up
       } else {
         setError(data.error || "Something went wrong. Please try again.");
       }

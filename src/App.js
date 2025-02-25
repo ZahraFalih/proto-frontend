@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import WelcomePage from './components/welcomePage';
 import LoginPage from './components/LoginPage'; 
 import SignUpPage from './components/SignUpPage'; 
+import OnboardingPage from './components/OnboardingPage'; 
 
 
 // Placeholder components for future routes
@@ -16,6 +17,7 @@ function App() {
         <Route path="/" element={<WelcomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
         {/* Future routes:
         <Route path="/signup" element={<SignUpPage />} />
         */}
