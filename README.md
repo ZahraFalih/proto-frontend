@@ -27,6 +27,7 @@ Describes the purpose of the branch.
 - **`uiux`** → UI/UX improvements (e.g., styling, responsiveness, layout updates)  
 - **`dbsetup`** → Database setup and configuration  
 - **`llm`** → Enhancing the LLM for better AI-driven analytics  
+- **`authentication`** → Setup Authentication   
 
 #### **3. Version**
 Each branch should have a version number for tracking purposes, starting from `0.1` and incrementing with each iteration.

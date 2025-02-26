@@ -4,11 +4,9 @@ import WelcomePage from './components/welcomePage';
 import LoginPage from './components/LoginPage'; 
 import SignUpPage from './components/SignUpPage'; 
 import OnboardingPage from './components/OnboardingPage'; 
+import DataCollectionPage from './components/DataCollectionPage';
 
 
-// Placeholder components for future routes
-// import LoginPage from './components/LoginPage';
-// import SignUpPage from './components/SignUpPage';
 
 function App() {
   return (
@@ -18,9 +16,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
-        {/* Future routes:
-        <Route path="/signup" element={<SignUpPage />} />
-        */}
+        <Route path="/datacollection" element={<DataCollectionPage />} />
       </Routes>
     </Router>
   );
