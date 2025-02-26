@@ -1,13 +1,11 @@
-// src/components/LoginPage.js
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(null); // For error messages
-  const [loading, setLoading] = useState(false); // Loading state
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -17,20 +15,21 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/login/", { // Adjust API URL if needed
+      const response = await fetch("http://127.0.0.1:8000/api/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Ensures refresh token is handled securely in HttpOnly cookie
         body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem("token", data.token); // Store the authentication token
+        sessionStorage.setItem("access_token", data.access);
         alert("Login successful!");
-        navigate("/onboarding"); // Redirect to home or another protected route
+        navigate("/onboarding");
       } else {
         setError(data.error || "Invalid username or password");
       }
@@ -58,7 +57,7 @@ const LoginPage = () => {
         Login
       </h1>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>} {/* Display error message */}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
 
       <form onSubmit={handleLogin} style={{ width: '300px', textAlign: 'left' }}>
         <label>Username</label>

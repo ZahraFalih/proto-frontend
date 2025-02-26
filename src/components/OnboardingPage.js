@@ -1,5 +1,3 @@
-// src/components/OnboardingPage.js
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -8,32 +6,67 @@ const OnboardingPage = () => {
   const [industrySharks, setIndustrySharks] = useState("");
   const [businessURL, setBusinessURL] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const getAccessToken = () => sessionStorage.getItem("access_token");
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
 
-    if (industrySharks.length > 35) {
-      alert("Industry sharks field cannot exceed 35 characters.");
+    if (industrySharks.length > 35 || businessName.length > 35 || businessURL.length > 70) {
+      setError("One of the input fields exceeds the character limit.");
+      setLoading(false);
       return;
     }
 
-    if (businessURL.length > 70) {
-      alert("Business URL field cannot exceed 70 characters.");
+    const token = getAccessToken();
+    if (!token) {
+      setError("Authentication required. Please log in first.");
+      setLoading(false);
       return;
     }
 
-    if (businessName.length > 35) {
-      alert("Business name field cannot exceed 35 characters.");
-      return;
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/onboarding/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          category: businessType,
+          url: businessURL,
+          name: businessName,
+          role_model: industrySharks,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Business onboarded successfully!");
+        navigate("/");
+      } else {
+        if (response.status === 401) {
+          setError("Session expired. Please log in again.");
+          sessionStorage.removeItem("access_token");
+          navigate("/login");
+        } else {
+          setError(data.error || "Something went wrong. Please try again.");
+        }
+      }
+    } catch (error) {
+      console.error("Onboarding error:", error);
+      setError("Failed to connect to the server.");
+    } finally {
+      setLoading(false);
     }
-
-    // Handle form submission logic (e.g., API call)
-    console.log({ businessType, industrySharks, businessURL, businessName });
-
-    // Redirect after submission
-    navigate("/");
   };
 
   return (
@@ -53,8 +86,10 @@ const OnboardingPage = () => {
       <h1 style={{ fontSize: "24px", fontWeight: "bold", textDecoration: "underline" }}>
         Business Onboarding
       </h1>
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
       <form onSubmit={handleSubmit} style={{ width: "350px", textAlign: "left" }}>
-        {/* Business Type Dropdown */}
         <label>Type of Business</label>
         <select
           value={businessType}
@@ -91,7 +126,6 @@ const OnboardingPage = () => {
           ))}
         </select>
 
-        {/* Industry Sharks Input */}
         <label>Sharks of Your Industry</label>
         <input
           type="text"
@@ -102,7 +136,6 @@ const OnboardingPage = () => {
           style={{ width: "100%", padding: "5px", border: "1px solid #000", fontFamily: "Courier New, monospace" }}
         />
 
-        {/* Business URL Input */}
         <label>Your Business URL</label>
         <input
           type="url"
@@ -113,7 +146,6 @@ const OnboardingPage = () => {
           style={{ width: "100%", padding: "5px", border: "1px solid #000", fontFamily: "Courier New, monospace" }}
         />
 
-        {/* Business Name Input */}
         <label>Name of the Business</label>
         <input
           type="text"
@@ -124,9 +156,9 @@ const OnboardingPage = () => {
           style={{ width: "100%", padding: "5px", border: "1px solid #000", fontFamily: "Courier New, monospace" }}
         />
 
-        {/* Submit Button */}
         <button
           type="submit"
+          disabled={loading}
           style={{
             background: "none",
             color: "#000",
@@ -137,7 +169,7 @@ const OnboardingPage = () => {
             fontFamily: "Courier New, monospace",
           }}
         >
-          Submit
+          {loading ? "Submitting..." : "Submit"}
         </button>
       </form>
     </div>

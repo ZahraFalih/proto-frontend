@@ -1,50 +1,42 @@
-// src/components/SignUpPage.js
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const SignUpPage = () => {
-  // State variables for each input
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState(null); // Error handling
-  const [loading, setLoading] = useState(false); // Loading state
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
   const handleSignUp = async (e) => {
     e.preventDefault();
 
-    // Password match validation
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
 
-    setLoading(true); // Set loading state
+    setLoading(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/signup/", { // Adjust URL if needed
+      const response = await fetch("http://127.0.0.1:8000/api/signup/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name: name,
-          username: username,
-          email: email,
-          password: password,
-        }),
+        credentials: "include",
+        body: JSON.stringify({ name, username, email, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         alert("User created successfully!");
-        navigate("/onboarding"); // Redirect user after successful sign-up
+        navigate("/login");
       } else {
         setError(data.error || "Something went wrong. Please try again.");
       }
@@ -72,7 +64,7 @@ const SignUpPage = () => {
         Sign Up
       </h1>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>} {/* Display error message */}
+      {error && <p style={{ color: 'red' }}>{error}</p>} 
 
       <form onSubmit={handleSignUp} style={{ width: '300px', textAlign: 'left' }}>
         <label>Name</label>
