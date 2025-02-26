@@ -1,29 +1,40 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const DataCollectionPage = () => {
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [goal, setGoal] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
+  // Function to get the JWT token from session storage
   const getAccessToken = () => sessionStorage.getItem("access_token");
 
+  // Handle file selection (allows multiple files)
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
+    const selectedFiles = Array.from(e.target.files); // Convert FileList to an array
 
-    if (selectedFile && selectedFile.type !== "text/csv") {
-      setError("Only CSV files are allowed.");
+    if (selectedFiles.length === 0) {
+      setError("Please select at least one file.");
       return;
     }
 
-    setFile(selectedFile);
+    // Optional: Restrict file types (CSV, PDF, Images, etc.)
+    const allowedTypes = ["text/csv", "application/pdf", "image/png", "image/jpeg"];
+    const invalidFiles = selectedFiles.filter((file) => !allowedTypes.includes(file.type));
+
+    if (invalidFiles.length > 0) {
+      setError("Only CSV, PDF, PNG, and JPG files are allowed.");
+      return;
+    }
+
+    setFiles(selectedFiles);
     setError(null);
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -35,8 +46,8 @@ const DataCollectionPage = () => {
       return;
     }
 
-    if (!file) {
-      setError("Please upload a CSV file.");
+    if (files.length === 0) {
+      setError("Please upload at least one file.");
       setLoading(false);
       return;
     }
@@ -49,14 +60,14 @@ const DataCollectionPage = () => {
     }
 
     const formData = new FormData();
-    formData.append("file", file);
+    files.forEach((file) => formData.append("files", file)); // Append all files
     formData.append("goal", goal);
 
     try {
       const response = await fetch("http://127.0.0.1:8000/api/data-collection/", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`, // Ensure token is sent
+          "Authorization": `Bearer ${token}`, // Attach token for authentication
         },
         credentials: "include",
         body: formData, // Sending FormData (multipart/form-data)
@@ -105,11 +116,13 @@ const DataCollectionPage = () => {
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       <form onSubmit={handleSubmit} style={{ width: "350px", textAlign: "left" }}>
-        <label>Upload CSV File</label>
+        {/* File Upload */}
+        <label>Upload Files (CSV)</label>
         <input
           type="file"
           accept=".csv"
           onChange={handleFileChange}
+          multiple
           required
           style={{
             width: "100%",
@@ -118,6 +131,15 @@ const DataCollectionPage = () => {
             fontFamily: "Courier New, monospace",
           }}
         />
+
+        {/* Display selected files */}
+        {files.length > 0 && (
+          <ul style={{ fontSize: "14px", marginTop: "5px", padding: 0 }}>
+            {files.map((file, index) => (
+              <li key={index} style={{ listStyle: "none" }}>{file.name}</li>
+            ))}
+          </ul>
+        )}
 
         {/* Goal Input */}
         <label>Goal (Max 300 characters)</label>
