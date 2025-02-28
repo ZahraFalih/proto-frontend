@@ -29,7 +29,7 @@ const LoginPage = () => {
       if (response.ok) {
         sessionStorage.setItem("access_token", data.access);
         alert("Login successful!");
-        navigate("/datacollection");
+        navigate("/onboarding");
       } else {
         setError(data.error || "Invalid username or password");
       }

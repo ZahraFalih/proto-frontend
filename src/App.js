@@ -5,6 +5,7 @@ import LoginPage from './components/LoginPage';
 import SignUpPage from './components/SignUpPage'; 
 import OnboardingPage from './components/OnboardingPage'; 
 import DataCollectionPage from './components/DataCollectionPage';
+import DashboardPage from './components/DashboardPage';
 
 
 
@@ -17,6 +18,7 @@ function App() {
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/datacollection" element={<DataCollectionPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
       </Routes>
     </Router>
   );
