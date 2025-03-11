@@ -62,7 +62,7 @@ const DataCollectionPage = () => {
     const formData = new FormData();
     files.forEach((file) => formData.append("files", file)); // Append all files
     formData.append("goal", goal);
-
+    
     try {
       const response = await fetch("http://127.0.0.1:8000/api/data-collection/", {
         method: "POST",

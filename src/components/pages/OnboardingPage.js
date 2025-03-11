@@ -51,7 +51,7 @@ const OnboardingPage = () => {
 
       if (response.ok) {
         alert("Business onboarded successfully!");
-        navigate("/dashboard");
+        navigate("/datacollection");
       } else {
         if (response.status === 401) {
           setError("Session expired. Please log in again.");
