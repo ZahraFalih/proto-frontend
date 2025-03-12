@@ -34,47 +34,38 @@ const DataCollectionPage = () => {
     setError(null);
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
+  
     if (goal.length > 300) {
       setError("Goal description cannot exceed 300 characters.");
       setLoading(false);
       return;
     }
-
+  
     if (files.length === 0) {
       setError("Please upload at least one file.");
       setLoading(false);
       return;
     }
-
-    const token = getAccessToken();
-    if (!token) {
-      setError("Authentication required. Please log in first.");
-      setLoading(false);
-      return;
-    }
-
+  
     const formData = new FormData();
-    files.forEach((file) => formData.append("files", file)); // Append all files
-    formData.append("goal", goal);
-    
+    files.forEach((file) => formData.append("file", file)); // Append all files
+    formData.append("name", "requirements"); // Append the name field
+    formData.append("token", getAccessToken()); // Append the token if needed by the backend
+    formData.append("goal", goal); // Append the goal
+  
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/data-collection/", {
+      const response = await fetch("http://127.0.0.1:8000/upload/create/", {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`, // Attach token for authentication
-        },
         credentials: "include",
         body: formData, // Sending FormData (multipart/form-data)
       });
-
+  
       const data = await response.json();
-
+  
       if (response.ok) {
         alert("Data uploaded successfully!");
         navigate("/"); // Redirect after success
@@ -94,6 +85,7 @@ const DataCollectionPage = () => {
       setLoading(false);
     }
   };
+  
 
   return (
     <div
