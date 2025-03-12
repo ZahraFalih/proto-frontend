@@ -15,12 +15,12 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/login/", {
+      const response = await fetch("http://127.0.0.1:8000/auth/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // Ensures refresh token is handled securely in HttpOnly cookie
+        credentials: "include", 
         body: JSON.stringify({ username, password }),
       });
 
@@ -28,8 +28,15 @@ const LoginPage = () => {
 
       if (response.ok) {
         sessionStorage.setItem("access_token", data.access);
+        sessionStorage.setItem("refresh_token", data.refresh);
         alert("Login successful!");
-        navigate("/onboarding");
+        if (data.first_login) {
+          navigate("/onboarding");  
+        } else {
+          navigate("/");  
+        }
+        console.log("Access Token:", data.access);
+        console.log("Refresh Token:", data.refresh);
       } else {
         setError(data.error || "Invalid username or password");
       }

@@ -1,35 +1,51 @@
 import React, { useState, useEffect } from "react";
 
-const ManageMyData = () => {
-  const [uploads, setUploads] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+const SignUpPage = () => {
+  const [first_name, setFirstName] = useState('');
+  const [last_name, setLastName] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
   const [error, setError] = useState(null);
 
-  const API_URL = "http://127.0.0.1:8000/uploads/list";  // Adjust if needed
-  const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQxNzg3MTk4LCJpYXQiOjE3NDE3MDA3OTgsImp0aSI6ImNlNWVhZDk2ZjFlZTQ4NzRhYzc4ZmU4YWRmMDg2MzFmIiwidXNlcl9pZCI6OH0.JjFpj0_fsO_myfgHgyjmm2qFd8zXHZRsuG5PtXGFIJ0";  // Replace with the actual JWT token
 
-  useEffect(() => {
-    const fetchUploads = async () => {
-      try {
-        const response = await fetch(API_URL, {
-          method: "GET",
-          headers: {
-            "Authorization": TOKEN,
-            "Content-Type": "application/json",
-          },
-        });
+  const navigate = useNavigate();
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch uploads");
-        }
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
-        const data = await response.json();
-        setUploads(data);
-      } catch (error) {
-        console.error("Error fetching uploads:", error);
-        setError("Could not load uploads. Please try again.");
-      } finally {
-        setLoading(false);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/auth/signup/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({username, email, password, first_name, last_name}),
+      });
+
+      const data = await response.json();
+      const errorMessage = data.error || Object.values(data).join(" ") || "Something went wrong.";
+
+      if (response.ok) {
+        sessionStorage.setItem("access_token", data.access);
+        alert("User created successfully!");
+        navigate("/login");
+      } else {
+        setError(errorMessage);
+
       }
     };
 
@@ -52,8 +68,33 @@ const ManageMyData = () => {
         My Uploads
       </h1>
 
-      {loading && <p>Loading uploads...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+
+      {error && <p style={{ color: 'red' }}>{error}</p>} 
+
+      <form onSubmit={handleSignUp} style={{ width: '300px', textAlign: 'left' }}>
+        <label>First Name</label>
+        <input type="text" value={first_name} onChange={(e) => setFirstName(e.target.value)} required
+          style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
+
+        <label>Last Name</label>
+        <input type='text' value={last_name} onChange={(e) => setLastName (e.target.value)} required
+          style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
+
+        <label>Username</label>
+        <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required
+          style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
+
+        <label>Email</label>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
+          style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
+
+        <label>Password</label>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
+          style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
+
+        <label>Confirm Password</label>
+        <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required
+          style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
 
       {!loading && !error && (
         <table style={{
