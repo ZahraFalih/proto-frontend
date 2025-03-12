@@ -70,34 +70,22 @@ const OnboardingPage = () => {
   };
   
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#fff",
-        fontFamily: "Courier New, monospace",
-        color: "#000",
-        textAlign: "center",
-      }}
-    >
-      <h1 style={{ fontSize: "24px", fontWeight: "bold", textDecoration: "underline" }}>
-        Business Onboarding
-      </h1>
+    <div className="onboarding-container">
+      <h1 className="onboarding-title">Business Onboarding</h1>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p className="error-message">{error}</p>}
 
-      <form onSubmit={handleSubmit} style={{ width: "350px", textAlign: "left" }}>
-        <label>Type of Business</label>
+      <form onSubmit={handleSubmit} className="onboarding-form">
+        <label className="onboarding-label">Type of Business</label>
         <select
           value={businessType}
           onChange={(e) => setBusinessType(e.target.value)}
           required
-          style={{ width: "100%", padding: "5px", border: "1px solid #000", fontFamily: "Courier New, monospace" }}
+          className="onboarding-select"
         >
-          <option value="" disabled>Select a business type</option>
+          <option value="" disabled>
+            Select a business type
+          </option>
           {[
             "Online Retail (General E-commerce)",
             "Fashion & Apparel",
@@ -126,49 +114,37 @@ const OnboardingPage = () => {
           ))}
         </select>
 
-        <label>Sharks of Your Industry</label>
+        <label className="onboarding-label">Sharks of Your Industry</label>
         <input
           type="text"
           value={industrySharks}
           onChange={(e) => setIndustrySharks(e.target.value)}
           maxLength={35}
           required
-          style={{ width: "100%", padding: "5px", border: "1px solid #000", fontFamily: "Courier New, monospace" }}
+          className="onboarding-input"
         />
 
-        <label>Your Business URL</label>
+        <label className="onboarding-label">Your Business URL</label>
         <input
           type="url"
           value={businessURL}
           onChange={(e) => setBusinessURL(e.target.value)}
           maxLength={70}
           required
-          style={{ width: "100%", padding: "5px", border: "1px solid #000", fontFamily: "Courier New, monospace" }}
+          className="onboarding-input"
         />
 
-        <label>Name of the Business</label>
+        <label className="onboarding-label">Name of the Business</label>
         <input
           type="text"
           value={businessName}
           onChange={(e) => setBusinessName(e.target.value)}
           maxLength={35}
           required
-          style={{ width: "100%", padding: "5px", border: "1px solid #000", fontFamily: "Courier New, monospace" }}
+          className="onboarding-input"
         />
 
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            background: "none",
-            color: "#000",
-            padding: "5px 15px",
-            border: "1px solid #000",
-            cursor: "pointer",
-            marginTop: "10px",
-            fontFamily: "Courier New, monospace",
-          }}
-        >
+        <button type="submit" disabled={loading} className="onboarding-button">
           {loading ? "Submitting..." : "Submit"}
         </button>
       </form>
