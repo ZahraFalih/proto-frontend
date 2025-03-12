@@ -30,7 +30,11 @@ const LoginPage = () => {
         sessionStorage.setItem("access_token", data.access);
         sessionStorage.setItem("refresh_token", data.refresh);
         alert("Login successful!");
-        navigate("/onboarding");
+        if (data.first_login) {
+          navigate("/onboarding");  
+        } else {
+          navigate("/");  
+        }
         console.log("Access Token:", data.access);
         console.log("Refresh Token:", data.refresh);
       } else {
