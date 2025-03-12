@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+
 
 const SignUpPage = () => {
   const [first_name, setFirstName] = useState('');
@@ -8,8 +8,9 @@ const SignUpPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+
 
   const navigate = useNavigate();
 
@@ -44,14 +45,12 @@ const SignUpPage = () => {
         navigate("/login");
       } else {
         setError(errorMessage);
+
       }
-    } catch (error) {
-      console.error("Error:", error);
-      setError("Failed to connect to the server.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchUploads();
+  }, []);
 
   return (
     <div style={{
@@ -66,8 +65,9 @@ const SignUpPage = () => {
       textAlign: 'center'
     }}>
       <h1 style={{ fontSize: '24px', fontWeight: 'bold', textDecoration: 'underline' }}>
-        Sign Up
+        My Uploads
       </h1>
+
 
       {error && <p style={{ color: 'red' }}>{error}</p>} 
 
@@ -96,20 +96,32 @@ const SignUpPage = () => {
         <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required
           style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
 
-        <button type="submit" disabled={loading} style={{
-          background: 'none',
-          color: '#000',
-          padding: '5px 15px',
-          border: '1px solid #000',
-          cursor: 'pointer',
-          marginTop: '10px',
-          fontFamily: 'Courier New, monospace'
+      {!loading && !error && (
+        <table style={{
+          width: '50%',
+          borderCollapse: 'collapse',
+          marginTop: '20px',
+          textAlign: 'left',
+          border: '1px solid black'
         }}>
-          {loading ? "Signing Up..." : "Sign Up"}
-        </button>
-      </form>
+          <thead>
+            <tr style={{ backgroundColor: '#f2f2f2' }}>
+              <th style={{ padding: '8px', border: '1px solid black' }}>ID</th>
+              <th style={{ padding: '8px', border: '1px solid black' }}>Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            {uploads.map((upload) => (
+              <tr key={upload.id}>
+                <td style={{ padding: '8px', border: '1px solid black' }}>{upload.id}</td>
+                <td style={{ padding: '8px', border: '1px solid black' }}>{upload.name}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 };
 
-export default SignUpPage;
+export default ManageMyData;
