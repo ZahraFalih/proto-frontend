@@ -1,11 +1,11 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import WelcomePage from './components/pages/welcomePage';
-import LoginPage from './components/pages/LoginPage'; 
-import SignUpPage from './components/pages/SignUpPage'; 
-import OnboardingPage from './components/pages/OnboardingPage'; 
-import DataCollectionPage from './components/pages/DataCollectionPage';
-import DashboardPage from './components/pages/DashboardPage';
+import WelcomePage from './pages/welcomePage';
+import LoginPage from './pages/LoginPage'; 
+import SignUpPage from './pages/SignUpPage'; 
+import OnboardingPage from './pages/OnboardingPage'; 
+import DataCollectionPage from './pages/DataCollectionPage';
+import DashboardPage from './pages/DashboardPage';
 
 
 

@@ -32,7 +32,7 @@ const OnboardingPage = () => {
     }
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/onboarding/", {
+      const response = await fetch("http://127.0.0.1:8000/onboard/onboard/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -56,7 +56,7 @@ const OnboardingPage = () => {
         if (response.status === 401) {
           setError("Session expired. Please log in again.");
           sessionStorage.removeItem("access_token");
-          navigate("/login");
+          navigate("/datacollection");
         } else {
           setError(data.error || "Something went wrong. Please try again.");
         }

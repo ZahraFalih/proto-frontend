@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const SignUpPage = () => {
-  const [name, setName] = useState('');
+  const [first_name, setFirstName] = useState('');
+  const [last_name, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,6 +15,8 @@ const SignUpPage = () => {
 
   const handleSignUp = async (e) => {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -23,22 +26,24 @@ const SignUpPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/signup/", {
+      const response = await fetch("http://127.0.0.1:8000/auth/signup/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ name, username, email, password }),
+        body: JSON.stringify({username, email, password, first_name, last_name}),
       });
 
       const data = await response.json();
+      const errorMessage = data.error || Object.values(data).join(" ") || "Something went wrong.";
 
       if (response.ok) {
+        sessionStorage.setItem("access_token", data.access);
         alert("User created successfully!");
         navigate("/login");
       } else {
-        setError(data.error || "Something went wrong. Please try again.");
+        setError(errorMessage);
       }
     } catch (error) {
       console.error("Error:", error);
@@ -67,8 +72,12 @@ const SignUpPage = () => {
       {error && <p style={{ color: 'red' }}>{error}</p>} 
 
       <form onSubmit={handleSignUp} style={{ width: '300px', textAlign: 'left' }}>
-        <label>Name</label>
-        <input type="text" value={name} onChange={(e) => setName(e.target.value)} required
+        <label>First Name</label>
+        <input type="text" value={first_name} onChange={(e) => setFirstName(e.target.value)} required
+          style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
+
+        <label>Last Name</label>
+        <input type='text' value={last_name} onChange={(e) => setLastName (e.target.value)} required
           style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
 
         <label>Username</label>
