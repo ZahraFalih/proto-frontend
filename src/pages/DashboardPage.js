@@ -47,32 +47,17 @@ const DashboardPage = () => {
   }, [navigate]);
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#fff",
-        fontFamily: "Courier New, monospace",
-        color: "#000",
-        textAlign: "center",
-      }}
-    >
-      <h1 style={{ fontSize: "24px", fontWeight: "bold", textDecoration: "underline" }}>
-        Dashboard
-      </h1>
+    <div className="dashboard-page">
+      <h1 className="dashboard-title">Dashboard</h1>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p className="dashboard-error">{error}</p>}
       {loading && <p>Loading...</p>}
 
       {!loading && !error && (
-        <div style={{ width: "80%", maxWidth: "600px", textAlign: "left", marginTop: "20px" }}>
-          {/* LLM Generated Response */}
-          <div style={{ border: "1px solid #000", padding: "10px", marginBottom: "10px" }}>
+        <div className="dashboard-content">
+          <div className="dashboard-llm-box">
             <h3>LLM Generated Insights</h3>
-            <p style={{ whiteSpace: "pre-line" }}>{llmResponse || "Awaiting response..."}</p>
+            <p className="dashboard-llm-text">{llmResponse || "Awaiting response..."}</p>
           </div>
         </div>
       )}

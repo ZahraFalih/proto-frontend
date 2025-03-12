@@ -88,26 +88,12 @@ const DataCollectionPage = () => {
   
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#fff",
-        fontFamily: "Courier New, monospace",
-        color: "#000",
-        textAlign: "center",
-      }}
-    >
-      <h1 style={{ fontSize: "24px", fontWeight: "bold", textDecoration: "underline" }}>
-        Data Collection
-      </h1>
+    <div className="data-collection-page">
+      <h1 className="data-collection-title">Data Collection</h1>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p className="data-collection-error">{error}</p>}
 
-      <form onSubmit={handleSubmit} style={{ width: "350px", textAlign: "left" }}>
+      <form onSubmit={handleSubmit} className="data-collection-form">
         {/* File Upload */}
         <label>Upload Files (CSV)</label>
         <input
@@ -116,19 +102,14 @@ const DataCollectionPage = () => {
           onChange={handleFileChange}
           multiple
           required
-          style={{
-            width: "100%",
-            padding: "5px",
-            border: "1px solid #000",
-            fontFamily: "Courier New, monospace",
-          }}
+          className="data-collection-file-input"
         />
 
         {/* Display selected files */}
         {files.length > 0 && (
-          <ul style={{ fontSize: "14px", marginTop: "5px", padding: 0 }}>
+          <ul className="data-collection-file-list">
             {files.map((file, index) => (
-              <li key={index} style={{ listStyle: "none" }}>{file.name}</li>
+              <li key={index}>{file.name}</li>
             ))}
           </ul>
         )}
@@ -140,27 +121,13 @@ const DataCollectionPage = () => {
           onChange={(e) => setGoal(e.target.value)}
           maxLength={300}
           required
-          style={{
-            width: "100%",
-            padding: "5px",
-            border: "1px solid #000",
-            fontFamily: "Courier New, monospace",
-            height: "80px",
-            resize: "none",
-          }}
+          className="data-collection-textarea"
         />
+
         <button
           type="submit"
           disabled={loading}
-          style={{
-            background: "none",
-            color: "#000",
-            padding: "5px 15px",
-            border: "1px solid #000",
-            cursor: "pointer",
-            marginTop: "10px",
-            fontFamily: "Courier New, monospace",
-          }}
+          className="data-collection-button"
         >
           {loading ? "Uploading..." : "Submit"}
         </button>

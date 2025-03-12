@@ -54,57 +54,71 @@ const SignUpPage = () => {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#fff',
-      fontFamily: 'Courier New, monospace',
-      color: '#000',
-      textAlign: 'center'
-    }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 'bold', textDecoration: 'underline' }}>
-        Sign Up
-      </h1>
+    <div className="signup-page">
+      <h1 className="signup-title">Sign Up</h1>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>} 
+      {error && <p className="signup-error">{error}</p>}
 
-      <form onSubmit={handleSignUp} style={{ width: '300px', textAlign: 'left' }}>
-        <label>First Name</label>
-        <input type="text" value={first_name} onChange={(e) => setFirstName(e.target.value)} required
-          style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
+      <form onSubmit={handleSignUp} className="signup-form">
+        <label className="signup-label">First Name</label>
+        <input
+          type="text"
+          value={first_name}
+          onChange={(e) => setFirstName(e.target.value)}
+          required
+          className="signup-input"
+        />
 
-        <label>Last Name</label>
-        <input type='text' value={last_name} onChange={(e) => setLastName (e.target.value)} required
-          style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
+        <label className="signup-label">Last Name</label>
+        <input
+          type="text"
+          value={last_name}
+          onChange={(e) => setLastName(e.target.value)}
+          required
+          className="signup-input"
+        />
 
-        <label>Username</label>
-        <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required
-          style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
+        <label className="signup-label">Username</label>
+        <input
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          required
+          className="signup-input"
+        />
 
-        <label>Email</label>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
-          style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
+        <label className="signup-label">Email</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="signup-input"
+        />
 
-        <label>Password</label>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
-          style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
+        <label className="signup-label">Password</label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="signup-input"
+        />
 
-        <label>Confirm Password</label>
-        <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required
-          style={{ width: '100%', padding: '5px', border: '1px solid #000', fontFamily: 'Courier New, monospace' }} />
+        <label className="signup-label">Confirm Password</label>
+        <input
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+          className="signup-input"
+        />
 
-        <button type="submit" disabled={loading} style={{
-          background: 'none',
-          color: '#000',
-          padding: '5px 15px',
-          border: '1px solid #000',
-          cursor: 'pointer',
-          marginTop: '10px',
-          fontFamily: 'Courier New, monospace'
-        }}>
+        <button
+          type="submit"
+          disabled={loading}
+          className="signup-button"
+        >
           {loading ? "Signing Up..." : "Sign Up"}
         </button>
       </form>

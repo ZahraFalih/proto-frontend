@@ -1,0 +1,58 @@
+/* LoginPage.css */
+
+/* Container */
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    font-family: "Courier New", monospace;
+    color: #000;
+    text-align: center;
+  }
+  
+  /* Title */
+  .login-title {
+    font-size: 24px;
+    font-weight: bold;
+    text-decoration: underline;
+  }
+  
+  /* Error message */
+  .login-error {
+    color: red;
+  }
+  
+  /* Form */
+  .login-form {
+    width: 300px;
+    text-align: left;
+  }
+  
+  /* Labels and Inputs */
+  .login-label {
+    display: block;
+    margin: 10px 0 5px 0;
+  }
+  
+  .login-input {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #000;
+    font-family: "Courier New", monospace;
+    margin-bottom: 10px;
+  }
+  
+  /* Button */
+  .login-button {
+    background: none;
+    color: #000;
+    padding: 5px 15px;
+    border: 1px solid #000;
+    cursor: pointer;
+    margin-top: 10px;
+    font-family: "Courier New", monospace;
+  }
+  
