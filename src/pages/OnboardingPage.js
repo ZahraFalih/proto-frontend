@@ -17,26 +17,25 @@ const OnboardingPage = () => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
+  
     if (industrySharks.length > 35 || businessName.length > 35 || businessURL.length > 70) {
       setError("One of the input fields exceeds the character limit.");
       setLoading(false);
       return;
     }
-
+  
     const token = getAccessToken();
     if (!token) {
       setError("Authentication required. Please log in first.");
       setLoading(false);
       return;
     }
-
+  
     try {
       const response = await fetch("http://127.0.0.1:8000/onboard/onboard/", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json", // Add this header
         },
         credentials: "include",
         body: JSON.stringify({
@@ -44,11 +43,12 @@ const OnboardingPage = () => {
           url: businessURL,
           name: businessName,
           role_model: industrySharks,
+          token: token, // Include the access token here as per the body structure
         }),
       });
-
+  
       const data = await response.json();
-
+  
       if (response.ok) {
         alert("Business onboarded successfully!");
         navigate("/datacollection");
@@ -68,7 +68,7 @@ const OnboardingPage = () => {
       setLoading(false);
     }
   };
-
+  
   return (
     <div
       style={{
