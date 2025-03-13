@@ -19,7 +19,7 @@ const WelcomePage = () => {
           LOGIN
         </button>
         </Link>
-        <Link to='/signup-button'>
+        <Link to='/signup'>
         <button className='signup-button'>
           SIGN UP
         </button>
