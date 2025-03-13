@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import '../styles/ShowFile.css'; 
 
 const ShowFile = () => {
   const { fileId } = useParams();
@@ -67,87 +68,29 @@ const ShowFile = () => {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#f8f9fa",
-        fontFamily: "'Courier New', monospace",
-        color: "#000",
-        textAlign: "center",
-        padding: "20px",
-      }}
-    >
-      <h1
-        style={{
-          fontSize: "24px",
-          fontWeight: "bold",
-          textDecoration: "underline",
-        }}
-      >
-        File Preview
-      </h1>
+    <div className="file-preview-container">
+      <h1 className="file-preview-title">File Preview</h1>
 
       {loading && <p>Loading file...</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p className="error-message">{error}</p>}
 
       {!loading && !error && (
-        <div style={{ width: "90%", maxWidth: "1200px" }}>
+        <div className="file-preview-wrapper">
           {fileType && fileType.startsWith("image") && (
-            <img
-              src={fileUrl}
-              alt="Preview"
-              style={{
-                maxWidth: "100%",
-                maxHeight: "500px",
-                borderRadius: "10px",
-                boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
-              }}
-            />
+            <img src={fileUrl} alt="Preview" className="image-preview" />
           )}
 
           {fileType === "application/pdf" && (
-            <iframe
-              src={fileUrl}
-              width="100%"
-              height="600px"
-              title="PDF Preview"
-              style={{
-                border: "none",
-                boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
-              }}
-            ></iframe>
+            <iframe src={fileUrl} className="pdf-preview" title="PDF Preview"></iframe>
           )}
 
           {fileType && fileType.includes("csv") && csvData && (
-            <div
-              style={{
-                width: "100%",
-                overflowX: "auto",
-                maxHeight: "500px",
-                border: "1px solid #ddd",
-                borderRadius: "10px",
-                boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
-                backgroundColor: "#fff",
-                marginTop: "20px",
-                padding: "10px",
-              }}
-            >
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  fontSize: "14px",
-                  textAlign: "left",
-                }}
-              >
-                <thead style={{ backgroundColor: "#007bff", color: "#fff" }}>
+            <div className="csv-container">
+              <table className="csv-table">
+                <thead>
                   <tr>
                     {csvData[0].map((header, index) => (
-                      <th key={index} style={{ padding: "8px", border: "1px solid #ddd" }}>
+                      <th key={index} className="csv-header">
                         {header}
                       </th>
                     ))}
@@ -155,12 +98,9 @@ const ShowFile = () => {
                 </thead>
                 <tbody>
                   {csvData.slice(1).map((row, rowIndex) => (
-                    <tr
-                      key={rowIndex}
-                      style={{ backgroundColor: rowIndex % 2 === 0 ? "#f2f2f2" : "#fff" }}
-                    >
+                    <tr key={rowIndex} className={rowIndex % 2 === 0 ? "even-row" : "odd-row"}>
                       {row.map((cell, cellIndex) => (
-                        <td key={cellIndex} style={{ padding: "8px", border: "1px solid #ddd" }}>
+                        <td key={cellIndex} className="csv-cell">
                           {cell}
                         </td>
                       ))}
@@ -175,19 +115,7 @@ const ShowFile = () => {
             !fileType.startsWith("image") &&
             fileType !== "application/pdf" &&
             !fileType.includes("csv") && (
-              <a
-                href={fileUrl}
-                download
-                style={{
-                  display: "inline-block",
-                  padding: "10px 15px",
-                  backgroundColor: "#007bff",
-                  color: "#fff",
-                  textDecoration: "none",
-                  borderRadius: "5px",
-                  marginTop: "15px",
-                }}
-              >
+              <a href={fileUrl} download className="download-button">
                 Download File
               </a>
             )}

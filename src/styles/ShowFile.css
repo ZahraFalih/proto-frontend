@@ -1,0 +1,95 @@
+/* Updated Showfile CSS to Match Welcome Page */
+
+.file-preview-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #F5F5F5;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  color: #000;
+  text-align: center;
+  padding: 20px;
+}
+
+.file-preview-title {
+  font-size: 36px;
+  font-weight: bold;
+  color: #0756A4;
+}
+
+.error-message {
+  color: red;
+}
+
+.file-preview-wrapper {
+  width: 90%;
+  max-width: 1200px;
+}
+
+.image-preview {
+  max-width: 100%;
+  max-height: 500px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.pdf-preview {
+  width: 100%;
+  height: 600px;
+  border: none;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.csv-container {
+  width: 100%;
+  overflow-x: auto;
+  max-height: 500px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  margin-top: 20px;
+  padding: 10px;
+}
+
+.csv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: left;
+}
+
+.csv-header {
+  background-color: #2279D0;
+  color: #fff;
+  padding: 8px;
+  border: 1px solid #ddd;
+}
+
+.csv-cell {
+  padding: 8px;
+  border: 1px solid #ddd;
+}
+
+.even-row {
+  background-color: #f2f2f2;
+}
+
+.odd-row {
+  background-color: #fff;
+}
+
+.download-button {
+  display: inline-block;
+  padding: 10px 15px;
+  background-color: #3B95EF;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 70px;
+  margin-top: 15px;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  border: 1px solid #3B95EF;
+  cursor: pointer;
+}
