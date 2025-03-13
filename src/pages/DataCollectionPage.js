@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import '../styles/DataCollectionPage.css'; 
 
 const DataCollectionPage = () => {
   const [files, setFiles] = useState([]);
@@ -80,26 +81,12 @@ const DataCollectionPage = () => {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#fff",
-        fontFamily: "Courier New, monospace",
-        color: "#000",
-        textAlign: "center",
-      }}
-    >
-      <h1 style={{ fontSize: "24px", fontWeight: "bold", textDecoration: "underline" }}>
-        Data Collection
-      </h1>
+    <div className="data-collection-container">
+      <h1 className="data-collection-title">Data Collection</h1>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p className="error-message">{error}</p>}
 
-      <form onSubmit={handleSubmit} style={{ width: "350px", textAlign: "left" }}>
+      <form onSubmit={handleSubmit} className="data-collection-form">
         <label>Upload Files</label>
         <input
           type="file"
@@ -107,52 +94,28 @@ const DataCollectionPage = () => {
           onChange={handleFileChange}
           multiple
           required
-          style={{
-            width: "100%",
-            padding: "5px",
-            border: "1px solid #000",
-            fontFamily: "Courier New, monospace",
-          }}
+          className="file-input"
         />
 
-        {/* Display Uploaded Files & Editable File Names */}
         {files.length > 0 && (
-          <div style={{ fontSize: "14px", marginTop: "10px" }}>
+          <div className="file-list">
             {files.map((file, index) => (
-              <div key={index} style={{ marginBottom: "10px" }}>
-                <span style={{ fontWeight: "bold" }}>{file.name}</span>
+              <div key={index} className="file-item">
+                <span className="file-name">{file.name}</span>
                 <input
                   type="text"
                   value={fileNames[index]}
                   onChange={(e) => handleFileNameChange(index, e.target.value)}
                   placeholder="Enter file name"
                   required
-                  style={{
-                    width: "100%",
-                    padding: "5px",
-                    marginTop: "5px",
-                    border: "1px solid #000",
-                    fontFamily: "Courier New, monospace",
-                  }}
+                  className="file-name-input"
                 />
               </div>
             ))}
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            background: "none",
-            color: "#000",
-            padding: "5px 15px",
-            border: "1px solid #000",
-            cursor: "pointer",
-            marginTop: "10px",
-            fontFamily: "Courier New, monospace",
-          }}
-        >
+        <button type="submit" disabled={loading} className="submit-button">
           {loading ? "Uploading..." : "Submit"}
         </button>
       </form>
