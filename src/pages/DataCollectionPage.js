@@ -90,7 +90,7 @@ const DataCollectionPage = () => {
         <label>Upload Files</label>
         <input
           type="file"
-          accept=".csv,.pdf,.png,.jpg,.jpeg,.txt"
+          accept=".csv,.txt"
           onChange={handleFileChange}
           multiple
           required

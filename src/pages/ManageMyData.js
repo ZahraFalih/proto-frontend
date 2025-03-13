@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import '../styles/ManageMyData.css'; 
+
 
 const ManageMyData = () => {
   const [uploads, setUploads] = useState([]);
@@ -137,61 +139,20 @@ const ManageMyData = () => {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#fff',
-      fontFamily: 'Courier New, monospace',
-      color: '#000',
-      textAlign: 'center',
-      padding: "20px",
-      position: "relative"
-    }}>
-  
-      {/* Upload File Button in the Top-Right Corner */}
-      <div style={{
-        position: "absolute",
-        top: "20px",
-        right: "20px",
-      }}>
-        <button 
-          onClick={() => navigate("/datacollection")}
-          style={{
-            padding: "10px 15px",
-            backgroundColor: "#007bff",
-            color: "#fff",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-            fontSize: "16px",
-          }}
-        >
+    <div className="container">
+      <div className="upload-button-container">
+        <button onClick={() => navigate("/datacollection")} className="upload-button">
           Upload File
         </button>
       </div>
-  
-      <h1 style={{ fontSize: '24px', fontWeight: 'bold', textDecoration: 'underline' }}>
-        My Uploads
-      </h1>
-  
+      <h1 className="title">My Uploads</h1>
       {loading && <p>Loading uploads...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-  
+      {error && <p className="error-text">{error}</p>}
       {!loading && !error && uploads.length === 0 && <p>No uploads found.</p>}
-  
       {!loading && !error && uploads.length > 0 && (
-        <table style={{
-          width: '70%',
-          borderCollapse: 'collapse',
-          marginTop: '20px',
-          textAlign: 'left',
-          border: '1px solid black'
-        }}>
+        <table className="uploads-table">
           <thead>
-            <tr style={{ backgroundColor: '#f2f2f2' }}>
+            <tr>
               <th>ID</th>
               <th>Name</th>
               <th>Actions</th>
@@ -201,23 +162,14 @@ const ManageMyData = () => {
             {uploads.map((upload) => (
               <tr key={upload.id}>
                 <td>{upload.id}</td>
-                <td 
-                  style={{ color: 'blue', cursor: 'pointer', textDecoration: 'underline' }}
-                  onClick={() => navigate(`/show/${upload.id}`)}  
-                >
+                <td className="file-name" onClick={() => navigate(`/show/${upload.id}`)}>
                   {upload.path.split("\\").pop()}
                 </td>
                 <td>
-                  <button 
-                    style={{ marginRight: "10px", background: "red", color: "white", border: "none", padding: "5px 10px", cursor: "pointer" }}
-                    onClick={() => handleDelete(upload.id)}
-                  >
+                  <button className="delete-button" onClick={() => handleDelete(upload.id)}>
                     Delete
                   </button>
-                  <button 
-                    style={{ background: "blue", color: "white", border: "none", padding: "5px 10px", cursor: "pointer" }}
-                    onClick={() => handleUpdateClick(upload.id, upload.path.split("\\").pop())}
-                  >
+                  <button className="update-button" onClick={() => handleUpdateClick(upload.id, upload.path.split("\\").pop())}>
                     Update
                   </button>
                 </td>
@@ -226,20 +178,9 @@ const ManageMyData = () => {
           </tbody>
         </table>
       )}
-  
       {showUpdateModal && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          backgroundColor: "rgba(0, 0, 0, 0.7)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center"
-        }}>
-          <div style={{ backgroundColor: "#fff", padding: "20px", borderRadius: "10px" }}>
+        <div className="modal-overlay">
+          <div className="modal-content">
             <h3>Update File</h3>
             <input type="text" value={newFileName} onChange={(e) => setNewFileName(e.target.value)} />
             <input type="file" onChange={(e) => setSelectedFile(e.target.files[0])} />
@@ -250,7 +191,6 @@ const ManageMyData = () => {
       )}
     </div>
   );
-  
 };
 
 export default ManageMyData;
