@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 const DataCollectionPage = () => {
   const [files, setFiles] = useState([]);
+  const [fileNames, setFileNames] = useState([]); // State for file names
   const [goal, setGoal] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -12,67 +13,63 @@ const DataCollectionPage = () => {
   const getAccessToken = () => sessionStorage.getItem("access_token");
 
   const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files); 
+    const selectedFiles = Array.from(e.target.files);
 
     if (selectedFiles.length === 0) {
       setError("Please select at least one file.");
       return;
     }
 
-    const allowedTypes = ["text/csv", "application/pdf", "image/png", "image/jpeg"];
-    const invalidFiles = selectedFiles.filter((file) => !allowedTypes.includes(file.type));
-
-    if (invalidFiles.length > 0) {
-      setError("Only CSV, PDF, PNG, and JPG files are allowed.");
-      return;
-    }
-
     setFiles(selectedFiles);
+    setFileNames(selectedFiles.map((file) => file.name)); // Default file names
     setError(null);
+  };
+
+  const handleFileNameChange = (index, newName) => {
+    const updatedNames = [...fileNames];
+    updatedNames[index] = newName.trim(); // Prevent empty names
+    setFileNames(updatedNames);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-  
-    if (goal.length > 300) {
-      setError("Goal description cannot exceed 300 characters.");
-      setLoading(false);
-      return;
-    }
-  
+
     if (files.length === 0) {
       setError("Please upload at least one file.");
       setLoading(false);
       return;
     }
-  
+
+    if (fileNames.some((name) => !name.trim())) {
+      setError("Every file must have a name.");
+      setLoading(false);
+      return;
+    }
+
     const formData = new FormData();
-    files.forEach((file) => formData.append("file", file)); 
-    formData.append("name", "requirements"); 
-    formData.append("token", getAccessToken()); 
-    formData.append("goal", goal); 
+    files.forEach((file, index) => {
+      formData.append("file", file); // Match your API format
+      formData.append("name", fileNames[index]); // Name input
+    });
+
+    formData.append("token", getAccessToken()); // Token input
+
     try {
       const response = await fetch("http://127.0.0.1:8000/upload/create/", {
         method: "POST",
         credentials: "include",
-        body: formData, 
+        body: formData, // No headers included
       });
-  
+
       const data = await response.json();
-  
+
       if (response.ok) {
         alert("Data uploaded successfully!");
-        navigate("/manage-data"); 
+        navigate("/manage-data");
       } else {
-        if (response.status === 401) {
-          setError("Session expired. Please log in again.");
-          sessionStorage.removeItem("access_token");
-          navigate("/manage-data");
-        } else {
-          setError(data.error || "Something went wrong. Please try again.");
-        }
+        setError(data.error || "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Data upload error:", error);
@@ -81,7 +78,6 @@ const DataCollectionPage = () => {
       setLoading(false);
     }
   };
-  
 
   return (
     <div
@@ -104,10 +100,10 @@ const DataCollectionPage = () => {
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       <form onSubmit={handleSubmit} style={{ width: "350px", textAlign: "left" }}>
-        <label>Upload Files (CSV)</label>
+        <label>Upload Files</label>
         <input
           type="file"
-          accept=".csv"
+          accept=".csv,.pdf,.png,.jpg,.jpeg,.txt"
           onChange={handleFileChange}
           multiple
           required
@@ -119,30 +115,31 @@ const DataCollectionPage = () => {
           }}
         />
 
+        {/* Display Uploaded Files & Editable File Names */}
         {files.length > 0 && (
-          <ul style={{ fontSize: "14px", marginTop: "5px", padding: 0 }}>
+          <div style={{ fontSize: "14px", marginTop: "10px" }}>
             {files.map((file, index) => (
-              <li key={index} style={{ listStyle: "none" }}>{file.name}</li>
+              <div key={index} style={{ marginBottom: "10px" }}>
+                <span style={{ fontWeight: "bold" }}>{file.name}</span>
+                <input
+                  type="text"
+                  value={fileNames[index]}
+                  onChange={(e) => handleFileNameChange(index, e.target.value)}
+                  placeholder="Enter file name"
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "5px",
+                    marginTop: "5px",
+                    border: "1px solid #000",
+                    fontFamily: "Courier New, monospace",
+                  }}
+                />
+              </div>
             ))}
-          </ul>
+          </div>
         )}
 
-        {/* Goal Input */}
-        <label>Goal (Max 300 characters)</label>
-        <textarea
-          value={goal}
-          onChange={(e) => setGoal(e.target.value)}
-          maxLength={300}
-          required
-          style={{
-            width: "100%",
-            padding: "5px",
-            border: "1px solid #000",
-            fontFamily: "Courier New, monospace",
-            height: "80px",
-            resize: "none",
-          }}
-        />
         <button
           type="submit"
           disabled={loading}

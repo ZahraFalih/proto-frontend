@@ -70,7 +70,7 @@ const ManageMyData = () => {
       const response = await fetch(`http://127.0.0.1:8000/upload/delete/${fileId}/`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          "Authorization": token,
           "Content-Type": "application/json",
         },
       });
@@ -114,7 +114,7 @@ const ManageMyData = () => {
       const response = await fetch(`http://127.0.0.1:8000/upload/update/${updatingFileId}/`, {
         method: "PUT",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          "Authorization": token,
         },
         body: formData,
       });
