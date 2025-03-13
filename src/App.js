@@ -1,15 +1,14 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import WelcomePage from './components/welcomePage';
-import LoginPage from './components/LoginPage'; // Adjust the path as needed
-import MyData from './components/MyData';
-import SignUpPage from './components/SignUpPage'; // Import the SignUpPage
-import OnboardingPage from './components/OnboardingPage';
-import DataCollectionPage from './components/DataCollectionPage';
+import WelcomePage from './pages/welcomePage';
+import LoginPage from './pages/LoginPage'; 
+import SignUpPage from './pages/SignUpPage'; 
+import OnboardingPage from './pages/OnboardingPage'; 
+import DataCollectionPage from './pages/DataCollectionPage';
+import DashboardPage from './pages/DashboardPage';
+import ManageMyData from './pages/ManageMyData';  
+import ShowFile from './pages/ShowFile';
 
-// Placeholder components for future routes
-// import LoginPage from './components/LoginPage';
-// import SignUpPage from './components/SignUpPage';
 
 function App() {
   return (
@@ -20,10 +19,9 @@ function App() {
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/datacollection" element={<DataCollectionPage />} />
-        <Route path="/myData" element={<MyData />} />
-        {/* Future routes:
-        <Route path="/signup" element={<SignUpPage />} />
-        */}
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/manage-data" element={<ManageMyData />} /> 
+        <Route path="/show/:fileId" element={<ShowFile />} />
       </Routes>
     </Router>
   );
