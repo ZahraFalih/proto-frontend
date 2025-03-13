@@ -33,7 +33,7 @@ const LoginPage = () => {
         if (data.first_login) {
           navigate("/onboarding");  
         } else {
-          navigate("/");  
+          navigate("/manage-data");  
         }
         console.log("Access Token:", data.access);
         console.log("Refresh Token:", data.refresh);

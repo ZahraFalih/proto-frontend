@@ -10,15 +10,17 @@ const ManageMyData = () => {
   const [newFileName, setNewFileName] = useState("");
   const [updatingFileId, setUpdatingFileId] = useState(null);
   
-  const navigate = useNavigate(); // ✅ Hook for navigation
-
+  const navigate = useNavigate();
   const API_URL = "http://127.0.0.1:8000/upload/list/";
-  const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQxODU4NTg1LCJpYXQiOjE3NDE3NzIxODUsImp0aSI6ImJhNWM3NGUyYjU2NjRhNDdiZWNlYWE1MzY3MTQ2OWYxIiwidXNlcl9pZCI6N30.jDO5uKZuTGlJmxzSSOlJbaOEV5slTAvfroAOC0YeAew"; // ✅ Fetch token from storage
+
+  // Fetch token from session storage
+  const getAccessToken = () => sessionStorage.getItem("access_token");
 
   useEffect(() => {
     const fetchUploads = async () => {
-      if (!TOKEN) {
-        setError("No authentication token found.");
+      const token = getAccessToken();
+      if (!token) {
+        setError("Authentication required. Please log in.");
         setLoading(false);
         return;
       }
@@ -27,12 +29,17 @@ const ManageMyData = () => {
         const response = await fetch(API_URL, {
           method: "GET",
           headers: {
-            "Authorization": TOKEN, // ✅ Added "Bearer "
+            "Authorization": token,
             "Content-Type": "application/json",
           },
         });
 
         if (!response.ok) {
+          if (response.status === 401) {
+            setError("Session expired. Please log in again.");
+            sessionStorage.removeItem("access_token");
+            navigate("/login");
+          }
           throw new Error(`Failed to fetch uploads. Status: ${response.status}`);
         }
 
@@ -40,24 +47,30 @@ const ManageMyData = () => {
         setUploads(data);
       } catch (error) {
         console.error("Error fetching uploads:", error);
-        setError("Could not load uploads. Please try again.");
+        setError(error.message || "Could not load uploads.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchUploads();
-  }, []);
+  }, [navigate]);
 
   const handleDelete = async (fileId) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this file?");
     if (!confirmDelete) return;
 
+    const token = getAccessToken();
+    if (!token) {
+      setError("Authentication required.");
+      return;
+    }
+
     try {
       const response = await fetch(`http://127.0.0.1:8000/upload/delete/${fileId}/`, {
         method: "DELETE",
         headers: {
-          "Authorization": TOKEN, // ✅ Added "Bearer "
+          "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
@@ -67,7 +80,7 @@ const ManageMyData = () => {
       }
 
       alert("File deleted successfully!");
-      setUploads(uploads.filter(upload => upload.id !== fileId)); // ✅ Remove from UI
+      setUploads(uploads.filter(upload => upload.id !== fileId));
 
     } catch (error) {
       console.error("Error deleting file:", error);
@@ -87,6 +100,12 @@ const ManageMyData = () => {
       return;
     }
 
+    const token = getAccessToken();
+    if (!token) {
+      setError("Authentication required.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("name", newFileName);
     formData.append("file", selectedFile);
@@ -95,7 +114,7 @@ const ManageMyData = () => {
       const response = await fetch(`http://127.0.0.1:8000/upload/update/${updatingFileId}/`, {
         method: "PUT",
         headers: {
-          "Authorization": TOKEN,
+          "Authorization": `Bearer ${token}`,
         },
         body: formData,
       });
@@ -127,17 +146,42 @@ const ManageMyData = () => {
       backgroundColor: '#fff',
       fontFamily: 'Courier New, monospace',
       color: '#000',
-      textAlign: 'center'
+      textAlign: 'center',
+      padding: "20px",
+      position: "relative"
     }}>
+  
+      {/* Upload File Button in the Top-Right Corner */}
+      <div style={{
+        position: "absolute",
+        top: "20px",
+        right: "20px",
+      }}>
+        <button 
+          onClick={() => navigate("/datacollection")}
+          style={{
+            padding: "10px 15px",
+            backgroundColor: "#007bff",
+            color: "#fff",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            fontSize: "16px",
+          }}
+        >
+          Upload File
+        </button>
+      </div>
+  
       <h1 style={{ fontSize: '24px', fontWeight: 'bold', textDecoration: 'underline' }}>
         My Uploads
       </h1>
-
+  
       {loading && <p>Loading uploads...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
-
+  
       {!loading && !error && uploads.length === 0 && <p>No uploads found.</p>}
-
+  
       {!loading && !error && uploads.length > 0 && (
         <table style={{
           width: '70%',
@@ -159,7 +203,7 @@ const ManageMyData = () => {
                 <td>{upload.id}</td>
                 <td 
                   style={{ color: 'blue', cursor: 'pointer', textDecoration: 'underline' }}
-                  onClick={() => navigate(`/show/${upload.id}`)}  // ✅ Redirect to "Show" page
+                  onClick={() => navigate(`/show/${upload.id}`)}  
                 >
                   {upload.path.split("\\").pop()}
                 </td>
@@ -182,7 +226,7 @@ const ManageMyData = () => {
           </tbody>
         </table>
       )}
-
+  
       {showUpdateModal && (
         <div style={{
           position: "fixed",
@@ -206,6 +250,7 @@ const ManageMyData = () => {
       )}
     </div>
   );
+  
 };
 
 export default ManageMyData;

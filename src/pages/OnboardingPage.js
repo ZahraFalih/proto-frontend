@@ -35,7 +35,7 @@ const OnboardingPage = () => {
       const response = await fetch("http://127.0.0.1:8000/onboard/onboard/", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json", // Add this header
+          "Content-Type": "application/json", 
         },
         credentials: "include",
         body: JSON.stringify({
@@ -43,7 +43,7 @@ const OnboardingPage = () => {
           url: businessURL,
           name: businessName,
           role_model: industrySharks,
-          token: token, // Include the access token here as per the body structure
+          token: token, 
         }),
       });
   

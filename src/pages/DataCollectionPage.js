@@ -9,19 +9,16 @@ const DataCollectionPage = () => {
 
   const navigate = useNavigate();
 
-  // Function to get the JWT token from session storage
   const getAccessToken = () => sessionStorage.getItem("access_token");
 
-  // Handle file selection (allows multiple files)
   const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files); // Convert FileList to an array
+    const selectedFiles = Array.from(e.target.files); 
 
     if (selectedFiles.length === 0) {
       setError("Please select at least one file.");
       return;
     }
 
-    // Optional: Restrict file types (CSV, PDF, Images, etc.)
     const allowedTypes = ["text/csv", "application/pdf", "image/png", "image/jpeg"];
     const invalidFiles = selectedFiles.filter((file) => !allowedTypes.includes(file.type));
 
@@ -52,28 +49,27 @@ const DataCollectionPage = () => {
     }
   
     const formData = new FormData();
-    files.forEach((file) => formData.append("file", file)); // Append all files
-    formData.append("name", "requirements"); // Append the name field
-    formData.append("token", getAccessToken()); // Append the token if needed by the backend
-    formData.append("goal", goal); // Append the goal
-  
+    files.forEach((file) => formData.append("file", file)); 
+    formData.append("name", "requirements"); 
+    formData.append("token", getAccessToken()); 
+    formData.append("goal", goal); 
     try {
       const response = await fetch("http://127.0.0.1:8000/upload/create/", {
         method: "POST",
         credentials: "include",
-        body: formData, // Sending FormData (multipart/form-data)
+        body: formData, 
       });
   
       const data = await response.json();
   
       if (response.ok) {
         alert("Data uploaded successfully!");
-        navigate("/"); // Redirect after success
+        navigate("/manage-data"); 
       } else {
         if (response.status === 401) {
           setError("Session expired. Please log in again.");
           sessionStorage.removeItem("access_token");
-          navigate("/login");
+          navigate("/manage-data");
         } else {
           setError(data.error || "Something went wrong. Please try again.");
         }
@@ -108,7 +104,6 @@ const DataCollectionPage = () => {
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       <form onSubmit={handleSubmit} style={{ width: "350px", textAlign: "left" }}>
-        {/* File Upload */}
         <label>Upload Files (CSV)</label>
         <input
           type="file"
@@ -124,7 +119,6 @@ const DataCollectionPage = () => {
           }}
         />
 
-        {/* Display selected files */}
         {files.length > 0 && (
           <ul style={{ fontSize: "14px", marginTop: "5px", padding: 0 }}>
             {files.map((file, index) => (
