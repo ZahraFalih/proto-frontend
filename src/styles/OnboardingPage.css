@@ -1,0 +1,79 @@
+/* OnboardingPage.css */
+
+.onboarding-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #F5F5F5;  /* Matches Welcome Page */
+    color: #000;
+    text-align: center;
+}
+
+.onboarding-title {
+    font-size: 50px; /* Matches Welcome Page */
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    color: #0756A4;  /* Matches Welcome Page */
+}
+
+.onboarding-subtitle {
+    margin-top: 10px;
+    font-size: 16px;
+    color: #1e4080;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+.error-message {
+    color: red;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.onboarding-form {
+    width: 350px;
+    text-align: left;
+}
+
+.onboarding-label {
+    display: block;
+    margin-top: 10px;
+    font-size: 14px;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+.onboarding-input,
+.onboarding-select {
+    width: 100%;
+    border-radius: 70PX;
+    padding: 8px;
+    border: 1px solid #B0BEC5;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size: 14px;
+    background-color: #B0BEC5;
+    color: #000;
+}
+
+.onboarding-button {
+    background: none;
+    width: 100%;
+    background-color: #2279D0;  /* Matches Login Button */
+    color: #fff;
+    border-radius: 70px;
+    padding: 8px 15px;
+    border: 1px solid #2279D0;
+    cursor: pointer;
+    margin-top: 15px;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size: 16px;
+}
+
+.onboarding-button:hover {
+    background-color: #3B95EF;  /* Matches Signup Button */
+    border-color: #3B95EF;
+}
+
+.onboarding-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
