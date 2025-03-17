@@ -1,0 +1,86 @@
+/* SignUpPage.css */
+
+.signup-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #F5F5F5;
+  color: #000;
+  text-align: center;
+}
+
+.signup-title {
+  font-size: 50px;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  color: #0756A4;
+}
+
+.error-message {
+  color: red;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.signup-form {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.input-container {
+  width: 100%;
+  position: relative;
+}
+
+.signup-input {
+  width: 100%;
+  border-radius: 70px;
+  padding: 12px;
+  border: 1px solid #7f8693;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  margin-bottom: 10px;
+  background-color: #fff;
+  font-size: 14px;
+  color: #000;
+  text-align: center;
+}
+
+.signup-input::placeholder {
+  color: #7f8693;
+  font-size: 14px;
+  text-align: center;
+}
+
+.button-container {
+  width: 180px;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+}
+
+.signup-button {
+  width: 100%;
+  background-color: #3B95EF;
+  color: #fff;
+  border-radius: 70px;
+  padding: 10px 15px;
+  border: 1px solid #3B95EF;
+  cursor: pointer;
+  margin: 5px;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  transition: background 0.3s ease;
+}
+
+.signup-button:hover {
+  background-color: #2279D0;
+}
+
+.signup-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}

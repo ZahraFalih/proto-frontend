@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import '../styles/SignUpPage.css'; 
 
 const SignUpPage = () => {
   const [firstName, setFirstName] = useState('');
@@ -60,134 +61,74 @@ const SignUpPage = () => {
     }
   };
 
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#fff",
-        fontFamily: "Courier New, monospace",
-        color: "#000",
-        textAlign: "center",
-      }}
-    >
-      <h1
-        style={{
-          fontSize: "24px",
-          fontWeight: "bold",
-          textDecoration: "underline",
-        }}
-      >
-        Sign Up
-      </h1>
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      <form
-        onSubmit={handleSignUp}
-        style={{ width: "300px", textAlign: "left" }}
-      >
-        <label>First Name</label>
-        <input
-          type="text"
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-          required
-          style={{
-            width: "100%",
-            padding: "5px",
-            border: "1px solid #000",
-            fontFamily: "Courier New, monospace",
-          }}
-        />
-
-        <label>Last Name</label>
-        <input
-          type="text"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-          required
-          style={{
-            width: "100%",
-            padding: "5px",
-            border: "1px solid #000",
-            fontFamily: "Courier New, monospace",
-          }}
-        />
-
-        <label>Username</label>
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-          style={{
-            width: "100%",
-            padding: "5px",
-            border: "1px solid #000",
-            fontFamily: "Courier New, monospace",
-          }}
-        />
-
-        <label>Email</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{
-            width: "100%",
-            padding: "5px",
-            border: "1px solid #000",
-            fontFamily: "Courier New, monospace",
-          }}
-        />
-
-        <label>Password</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{
-            width: "100%",
-            padding: "5px",
-            border: "1px solid #000",
-            fontFamily: "Courier New, monospace",
-          }}
-        />
-
-        <label>Confirm Password</label>
-        <input
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-          style={{
-            width: "100%",
-            padding: "5px",
-            border: "1px solid #000",
-            fontFamily: "Courier New, monospace",
-          }}
-        />
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            width: "100%",
-            padding: "10px",
-            marginTop: "10px",
-          }}
-        >
-          {loading ? "Signing Up..." : "Sign Up"}
-        </button>
-      </form>
-    </div>
-  );
-};
-
-export default SignUpPage;
+    return (
+      <div className="signup-container">
+        <h1 className="signup-title">Sign Up</h1>
+  
+        {error && <p className="error-message">{error}</p>}
+  
+        <form onSubmit={handleSignUp} className="signup-form">
+          <input
+            type="text"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+            className="signup-input"
+            placeholder="First Name"
+          />
+  
+          <input
+            type="text"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+            className="signup-input"
+            placeholder="Last Name"
+          />
+  
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            className="signup-input"
+            placeholder="Username"
+          />
+  
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="signup-input"
+            placeholder="Email"
+          />
+  
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="signup-input"
+            placeholder="Password"
+          />
+  
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            className="signup-input"
+            placeholder="Confirm Password"
+          />
+  
+          <button type="submit" disabled={loading} className="signup-button">
+            {loading ? "Signing Up..." : "Sign Up"}
+          </button>
+        </form>
+      </div>
+    );
+  };
+  
+  export default SignUpPage;
+  
