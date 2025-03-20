@@ -10,6 +10,7 @@ const LLMAnswer = () => {
   
   const API_URL = `http://127.0.0.1:8000/ask-ai/summarize/${fileId}/`;
 
+  const getAccessToken = () => sessionStorage.getItem("access_token");
 
   useEffect(() => {
     const fetchAnswer = async () => {
