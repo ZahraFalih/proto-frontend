@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import '../styles/ManageMyData.css'; 
 
-
 const ManageMyData = () => {
   const [uploads, setUploads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,8 +78,8 @@ const ManageMyData = () => {
       if (!response.ok) {
         throw new Error(`Failed to summarize file. Status: ${response.status}`);
       }
-      const data = await response.json(); // Parse the response
-      alert(data.summary); // Now alert the summary      // Redirect user to the LLMAnswer page
+      const data = await response.json();
+      alert(data.summary);
     } catch (error) {
       console.error("Error summarizing file:", error);
       alert("Could not summarize the file.");
@@ -201,7 +200,6 @@ const ManageMyData = () => {
                   <button className="update-button" onClick={() => handleUpdateClick(upload.id, upload.path.split("\\").pop())}>
                     Update
                   </button>
-                  {/* 🔹 NEW: Summarize button */}
                   <button className="summarize-button" onClick={() => handleSummarize(upload.id)}>
                     Summarize
                   </button>
@@ -211,6 +209,12 @@ const ManageMyData = () => {
           </tbody>
         </table>
       )}
+      {/* Glowing, blazing, hypnotizing, baffling, bazziling button */}
+      <div className="glowing-button-container">
+        <button className="glowing-button" onClick={() => navigate("/dashboard")}>
+          Go to Dashboard
+        </button>
+      </div>
     </div>
   );
 };

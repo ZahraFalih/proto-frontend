@@ -108,3 +108,50 @@
     border-radius: 10px;
     font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
+
+/* ========================= GLORIOUS HYPNOTIZING BUTTON ========================= */
+
+/* Button container */
+.glowing-button-container {
+    margin-top: 50px;
+    text-align: center;
+}
+
+/* Glowing button */
+.glowing-button {
+    padding: 14px 28px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #fff;
+    text-transform: uppercase;
+    background: linear-gradient(45deg, #ff0066, #ffcc00, #33ccff, #ff33cc);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    outline: none;
+    position: relative;
+    overflow: hidden;
+    animation: glow-animation 1.5s infinite alternate;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Glowing animation */
+@keyframes glow-animation {
+    0% {
+        box-shadow: 0 0 10px rgba(255, 0, 102, 0.5), 0 0 20px rgba(255, 204, 0, 0.5), 0 0 30px rgba(51, 204, 255, 0.5), 0 0 40px rgba(255, 51, 204, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 20px rgba(255, 0, 102, 0.8), 0 0 30px rgba(255, 204, 0, 0.8), 0 0 40px rgba(51, 204, 255, 0.8), 0 0 50px rgba(255, 51, 204, 0.8);
+    }
+}
+
+/* Hover effect */
+.glowing-button:hover {
+    transform: scale(1.05);
+    background: linear-gradient(45deg, #ff33cc, #33ccff, #ffcc00, #ff0066);
+}
+
+/* Active effect */
+.glowing-button:active {
+    transform: scale(0.95);
+}
