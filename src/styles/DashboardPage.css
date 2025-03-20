@@ -1,0 +1,49 @@
+/* Dashboard.css */
+
+/* Container styling similar to .welcome-container */
+.dashboard-container,
+.container {
+  min-height: 100vh;
+  padding: 20px;
+  background-color: #F5F5F5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Title styling similar to .welcome-title but slightly smaller */
+.title {
+  font-size: 32px;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  color: #0756A4;
+  margin-bottom: 20px;
+}
+
+/* Error message styling */
+.error-text {
+  font-size: 16px;
+  color: #D8000C; /* A red hue for errors */
+  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+  margin: 10px 0;
+}
+
+/* Answer section styling, providing a clean, readable area */
+.answer-section {
+  background-color: #FFFFFF;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  width: 90%;
+  max-width: 800px;
+  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+  color: #333;
+  line-height: 1.6;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+
+/* Loading text styling */
+.loading-text {
+  font-size: 18px;
+  color: #555;
+}

@@ -58,6 +58,35 @@ const ManageMyData = () => {
     fetchUploads();
   }, [navigate]);
 
+  const handleSummarize = async (fileId) => {
+    console.log("File ID:", fileId);  
+    const token = getAccessToken();
+    if (!token) {
+      setError("Authentication required. Please log in first.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/ask-ai/summarize/${fileId}/`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json", 
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to summarize file. Status: ${response.status}`);
+      }
+      const data = await response.json(); // Parse the response
+      alert(data.summary); // Now alert the summary      // Redirect user to the LLMAnswer page
+    } catch (error) {
+      console.error("Error summarizing file:", error);
+      alert("Could not summarize the file.");
+    }
+  };
+
   const handleDelete = async (fileId) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this file?");
     if (!confirmDelete) return;
@@ -172,22 +201,15 @@ const ManageMyData = () => {
                   <button className="update-button" onClick={() => handleUpdateClick(upload.id, upload.path.split("\\").pop())}>
                     Update
                   </button>
+                  {/* 🔹 NEW: Summarize button */}
+                  <button className="summarize-button" onClick={() => handleSummarize(upload.id)}>
+                    Summarize
+                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      )}
-      {showUpdateModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>Update File</h3>
-            <input type="text" value={newFileName} onChange={(e) => setNewFileName(e.target.value)} />
-            <input type="file" onChange={(e) => setSelectedFile(e.target.files[0])} />
-            <button onClick={handleUpdate}>Save</button>
-            <button onClick={() => setShowUpdateModal(false)}>Cancel</button>
-          </div>
-        </div>
       )}
     </div>
   );
