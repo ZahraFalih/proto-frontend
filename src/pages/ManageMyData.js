@@ -68,7 +68,7 @@ const ManageMyData = () => {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/ask-ai/summarize/${fileId}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/ask-ai/summarize/`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
