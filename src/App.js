@@ -7,6 +7,7 @@ import OnboardingPage from './pages/OnboardingPage';
 import DataCollectionPage from './pages/DataCollectionPage';
 import ManageMyData from './pages/ManageMyData';  
 import ShowFile from './pages/ShowFile';
+import Dashboard from './pages/Dashboard';
 
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/datacollection" element={<DataCollectionPage />} />
         <Route path="/manage-data" element={<ManageMyData />} /> 
+        <Route path="/dashboard" element={<Dashboard />} /> 
         <Route path="/show/:fileId" element={<ShowFile />} />
       </Routes>
     </Router>
