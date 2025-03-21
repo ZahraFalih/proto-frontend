@@ -11,6 +11,7 @@ function DashboardPage() {
   const [loadingRole, setLoadingRole] = useState(true);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [summary, setSummary] = useState("");
+  const [fileSummary, setFileSummary] = useState("");
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
@@ -93,6 +94,14 @@ function DashboardPage() {
 
     fetchMetrics();
   }, [navigate]);
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem("file_summary");
+    if (stored) {
+      setFileSummary(stored);
+      sessionStorage.removeItem("file_summary"); 
+    }
+  }, []);
 
   // When both metrics are loaded, send them to the AI summary endpoint
   useEffect(() => {
@@ -185,11 +194,14 @@ function DashboardPage() {
         </div>
 
         <div className="widgets-container">
-          <h2>Coming Soon</h2>
-          <p>More insights and recommendations will appear here.</p>
+          <h2>File Summary</h2>
+          {fileSummary ? (
+             <ReactMarkdown>{fileSummary}</ReactMarkdown>
+            ) : (
+          <p>Loading, please wait</p>
+           )}
         </div>
       </div>
-
       <div className="glowing-button-container">
 
       </div>

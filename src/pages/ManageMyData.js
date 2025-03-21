@@ -57,8 +57,7 @@ const ManageMyData = () => {
     fetchUploads();
   }, [navigate]);
 
-  const handleSummarize = async (fileId) => {
-    console.log("File ID:", fileId);  
+  const handleSummarize = async () => {
     const token = getAccessToken();
     if (!token) {
       setError("Authentication required. Please log in first.");
@@ -79,7 +78,8 @@ const ManageMyData = () => {
         throw new Error(`Failed to summarize file. Status: ${response.status}`);
       }
       const data = await response.json();
-      alert(data.summary);
+      sessionStorage.setItem("file_summary", data.summary);
+      navigate("/dashboard");
     } catch (error) {
       console.error("Error summarizing file:", error);
       alert("Could not summarize the file.");
@@ -200,9 +200,6 @@ const ManageMyData = () => {
                   <button className="update-button" onClick={() => handleUpdateClick(upload.id, upload.path.split("\\").pop())}>
                     Update
                   </button>
-                  <button className="summarize-button" onClick={() => handleSummarize(upload.id)}>
-                    Summarize
-                  </button>
                 </td>
               </tr>
             ))}
@@ -210,11 +207,41 @@ const ManageMyData = () => {
         </table>
       )}
       {/* Glowing, blazing, hypnotizing, baffling, bazziling button */}
-      <div className="glowing-button-container">
-        <button className="glowing-button" onClick={() => navigate("/dashboard")}>
-          Go to Dashboard
-        </button>
-      </div>
+      <div className="action-buttons-container">
+      <button
+        className="glowing-button"
+        onClick={async () => {
+          const token = getAccessToken();
+      
+          if (!token) {
+            alert("Please log in first.");
+            return;
+          }
+      
+          try {
+            const res = await fetch(`http://127.0.0.1:8000/ask-ai/summarize/`, {
+              method: "GET",
+              headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+      
+            if (res.ok) {
+              const data = await res.json();
+              sessionStorage.setItem("file_summary", data.summary);
+            }
+          } catch (error) {
+            console.error("Error summarizing file:", error);
+          }
+      
+          // Navigate no matter what
+          navigate("/dashboard");
+        }}
+      >
+        Go to Dashboard
+      </button>
+          </div>
     </div>
   );
 };

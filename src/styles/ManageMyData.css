@@ -112,9 +112,12 @@
 /* ========================= GLORIOUS HYPNOTIZING BUTTON ========================= */
 
 /* Button container */
-.glowing-button-container {
+.action-buttons-container {
     margin-top: 50px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 /* Glowing button */
@@ -134,7 +137,6 @@
     animation: glow-animation 1.5s infinite alternate;
     transition: all 0.3s ease-in-out;
 }
-
 /* Glowing animation */
 @keyframes glow-animation {
     0% {
