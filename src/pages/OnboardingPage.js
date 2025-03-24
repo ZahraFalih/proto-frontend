@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import '../styles/OnboardingPage.css'; 
+import { toast } from "react-toastify";
 
 const OnboardingPage = () => {
   const [businessType, setBusinessType] = useState("");
@@ -17,7 +18,7 @@ const OnboardingPage = () => {
   useEffect(() => {
     const token = getAccessToken();
     if (!token) {
-      alert("Authentication required. Redirecting to login...");
+      toast.error("Authentication required. Redirecting to login...");
       navigate("/login")
     }
   }, [navigate]);
@@ -59,7 +60,7 @@ const OnboardingPage = () => {
       const data = await response.json();
   
       if (response.ok) {
-        alert("Business onboarded successfully!");
+        toast.success("Business onboarded successfully!");
         navigate("/datacollection");
       } else {
         if (response.status === 401) {

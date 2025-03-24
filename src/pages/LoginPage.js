@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/LoginPage.css'; 
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
@@ -30,7 +32,7 @@ const LoginPage = () => {
       if (response.ok) {
         sessionStorage.setItem("access_token", data.access);
         sessionStorage.setItem("refresh_token", data.refresh);
-        alert("Login successful!");
+        toast.success("Login successful!");
         if (data.first_login) {
           navigate("/onboarding");  
         } else {
@@ -39,7 +41,7 @@ const LoginPage = () => {
         console.log("Access Token:", data.access);
         console.log("Refresh Token:", data.refresh);
       } else {
-        setError(data.error || "Invalid username or password");
+        toast.error("Invalid credentials.");
       }
     } catch (error) {
       console.error("Login error:", error);

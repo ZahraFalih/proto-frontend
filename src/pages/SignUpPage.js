@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import '../styles/SignUpPage.css'; 
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const SignUpPage = () => {
   const [firstName, setFirstName] = useState('');
@@ -45,7 +47,7 @@ const SignUpPage = () => {
 
       if (response.ok) {
         sessionStorage.setItem("access_token", data.access);
-        alert("User created successfully!");
+        toast.success("User created successfully!");
         navigate("/login");
       } else {
         const errorMessage =

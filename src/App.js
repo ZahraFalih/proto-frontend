@@ -8,7 +8,8 @@ import DataCollectionPage from './pages/DataCollectionPage';
 import ManageMyData from './pages/ManageMyData';  
 import ShowFile from './pages/ShowFile';
 import Dashboard from './pages/Dashboard';
-
+import { ToastContainer } from 'react-toastify';             
+import 'react-toastify/dist/ReactToastify.css'; 
 
 function App() {
   return (
@@ -23,6 +24,15 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} /> 
         <Route path="/show/:fileId" element={<ShowFile />} />
       </Routes>
+      <ToastContainer 
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="colored"
+      />
     </Router>
   );
 }

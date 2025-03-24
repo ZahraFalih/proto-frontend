@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import '../styles/DataCollectionPage.css'; 
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const DataCollectionPage = () => {
   const [files, setFiles] = useState([]);
@@ -15,7 +17,7 @@ const DataCollectionPage = () => {
   useEffect(() => {
     const token = getAccessToken();
     if (!token) {
-      alert("Authentication required. Redirecting to login...");
+      toast.error("Authentication required. Redirecting to login...");
       navigate("/login")
     }
   }, [navigate]);
@@ -74,7 +76,7 @@ const DataCollectionPage = () => {
       const data = await response.json();
 
       if (response.ok) {
-        alert("Data uploaded successfully!");
+        toast.success("Data uploaded successfully!");
         navigate("/manage-data");
       } else {
         setError(data.error || "Something went wrong. Please try again.");
