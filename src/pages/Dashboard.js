@@ -42,10 +42,8 @@ function DashboardPage() {
     async function fetchMetrics() {
       const token = getAccessToken();
       if (!token) {
-        setError("Authentication required.");
-        setLoadingBusiness(false);
-        setLoadingRole(false);
-        return;
+      alert("Authentication required. Redirecting to login...");
+      navigate("/login")
       }
 
       try {

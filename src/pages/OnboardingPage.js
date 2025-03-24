@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import '../styles/OnboardingPage.css'; 
-
 
 const OnboardingPage = () => {
   const [businessType, setBusinessType] = useState("");
@@ -14,6 +13,14 @@ const OnboardingPage = () => {
   const navigate = useNavigate();
 
   const getAccessToken = () => sessionStorage.getItem("access_token");
+
+  useEffect(() => {
+    const token = getAccessToken();
+    if (!token) {
+      alert("Authentication required. Redirecting to login...");
+      navigate("/login")
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

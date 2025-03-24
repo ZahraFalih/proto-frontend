@@ -1,17 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import '../styles/DataCollectionPage.css'; 
 
 const DataCollectionPage = () => {
   const [files, setFiles] = useState([]);
-  const [fileNames, setFileNames] = useState([]); // State for file names
-  const [goal, setGoal] = useState("");
+  const [fileNames, setFileNames] = useState([]); 
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
   const getAccessToken = () => sessionStorage.getItem("access_token");
+
+  useEffect(() => {
+    const token = getAccessToken();
+    if (!token) {
+      alert("Authentication required. Redirecting to login...");
+      navigate("/login")
+    }
+  }, [navigate]);
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);

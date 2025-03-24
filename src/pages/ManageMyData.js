@@ -21,8 +21,8 @@ const ManageMyData = () => {
     const fetchUploads = async () => {
       const token = getAccessToken();
       if (!token) {
-        setError("Authentication required. Please log in.");
-        setLoading(false);
+        alert("Authentication required. Redirecting to login...");
+        navigate("/login")
         return;
       }
 
