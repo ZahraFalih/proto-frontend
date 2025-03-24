@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import '../styles/ManageMyData.css'; 
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const ManageMyData = () => {
   const [uploads, setUploads] = useState([]);
@@ -21,7 +23,7 @@ const ManageMyData = () => {
     const fetchUploads = async () => {
       const token = getAccessToken();
       if (!token) {
-        alert("Authentication required. Redirecting to login...");
+        toast.error("Authentication required. Redirecting to login...");
         navigate("/login")
         return;
       }
@@ -82,7 +84,7 @@ const ManageMyData = () => {
       navigate("/dashboard");
     } catch (error) {
       console.error("Error summarizing file:", error);
-      alert("Could not summarize the file.");
+      toast.warning("Could not summarize the file.");
     }
   };
 
@@ -109,12 +111,12 @@ const ManageMyData = () => {
         throw new Error(`Failed to delete file. Status: ${response.status}`);
       }
 
-      alert("File deleted successfully!");
+      toast.success("File deleted successfully!");
       setUploads(uploads.filter(upload => upload.id !== fileId));
 
     } catch (error) {
       console.error("Error deleting file:", error);
-      alert("Could not delete the file.");
+      toast.warning("Could not delete the file.");
     }
   };
 
@@ -126,7 +128,7 @@ const ManageMyData = () => {
 
   const handleUpdate = async () => {
     if (!newFileName || !selectedFile) {
-      alert("Please provide both a name and a file.");
+      toast.warning("Please provide both a name and a file.");
       return;
     }
 
@@ -153,7 +155,7 @@ const ManageMyData = () => {
         throw new Error(`Failed to update file. Status: ${response.status}`);
       }
 
-      alert("File updated successfully!");
+      toast.success("File updated successfully!");
       setShowUpdateModal(false);
 
       setUploads(uploads.map(upload =>
@@ -162,7 +164,7 @@ const ManageMyData = () => {
 
     } catch (error) {
       console.error("Error updating file:", error);
-      alert("Could not update the file.");
+      toast.warning("Could not update the file.");
     }
   };
 
@@ -214,7 +216,7 @@ const ManageMyData = () => {
           const token = getAccessToken();
       
           if (!token) {
-            alert("Please log in first.");
+            toast.warning("Please log in first.");
             return;
           }
       

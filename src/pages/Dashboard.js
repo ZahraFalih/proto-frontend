@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import '../styles/DashboardPage.css';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function DashboardPage() {
   // State for metrics and summary
@@ -42,7 +44,7 @@ function DashboardPage() {
     async function fetchMetrics() {
       const token = getAccessToken();
       if (!token) {
-      alert("Authentication required. Redirecting to login...");
+      toast.error("Authentication required. Redirecting to login...");
       navigate("/login")
       }
 
