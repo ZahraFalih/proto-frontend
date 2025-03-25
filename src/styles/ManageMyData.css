@@ -5,7 +5,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background-color: #F5F5F5; /* Matched with Welcome Page */
+    background-color:#f7f7f7; 
     color: #000;
     text-align: center;
     padding: 20px;
@@ -33,51 +33,62 @@
 }
 
 /* Title */
-.title {
-    font-size: 50px; /* Matched with Welcome Page */
-    font-weight: bold;
-    color: #0756A4;
-    text-decoration: none;
-    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-}
-
+.page-title {
+    text-align: center;
+    color: #2C3E50;
+    margin-top: 0px;
+    font-size: 2rem;
+  }
 /* Error Message */
 .error-text {
     color: red;
     font-size: 16px;
 }
 
-/* Uploads Table */
+/* Constrain the table’s width and center it */
 .uploads-table {
-    width: 70%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    text-align: left;
-    border: 1px solid #7f8693;
-    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+  max-width: 800px;           /* Set a max-width to prevent stretching */
+  width: 100%;
+  margin: 20px auto;          /* Center the table and add vertical spacing */
+  border-collapse: separate;  
+  border-spacing: 0 12px;      /* Adds vertical gaps between rows */
 }
 
-.uploads-table thead tr {
-    background-color: #E0E0E0;
+/* Style header cells normally */
+.uploads-table th {
+  text-align: left;
+  padding: 12px;
+  background-color: transparent;
 }
 
+/* Give each cell a uniform grey background */
+.uploads-table tbody tr td {
+  background-color: #B0BEC5;
+  padding: 12px;
+}
+
+/* Increase border radius for a more rounded appearance */
+.uploads-table tbody tr td:first-child {
+  border-top-left-radius: 70px;
+  border-bottom-left-radius: 70px;
+}
+
+.uploads-table tbody tr td:last-child {
+  border-top-right-radius: 70px;
+  border-bottom-right-radius: 70px;
+}
+
+/* (Optional) Remove any borders if they interfere with the design */
+.uploads-table td,
+.uploads-table th {
+  border: none;
+}
 .file-name {
     color: #0756A4;
     cursor: pointer;
     text-decoration: underline;
 }
 
-/* Buttons */
-.delete-button {
-    margin-right: 10px;
-    background: #FF4C4C;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    cursor: pointer;
-    border-radius: 70px;
-    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-}
 
 .update-button {
     background: #2279D0;
@@ -109,51 +120,165 @@
     font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
-/* ========================= GLORIOUS HYPNOTIZING BUTTON ========================= */
 
-/* Button container */
-.action-buttons-container {
-    margin-top: 50px;
-    text-align: center;
+.dashboard-button-container {
+position: fixed;
+bottom: 40px;
+left: 50%;
+transform: translateX(-50%);
+z-index: 10;
+}
+
+/* Tuned-down version of Uiverse-styled Button */
+.uiverse-btn {
+border: none;
+width: 11em;
+height: 3.5em;
+border-radius: 2em;
+display: flex;
+justify-content: center;
+align-items: center;
+gap: 8px;
+background: #1E88E5;
+cursor: pointer;
+transition: all 300ms ease-in-out;
+box-shadow: 0 2px 6px rgba(30, 136, 229, 0.3);
+}
+
+.uiverse-btn .sparkle {
+fill: #ffffff;
+transition: all 400ms ease;
+}
+
+.uiverse-btn .text {
+font-weight: 600;
+color: white;
+font-size: 0.95rem;
+}
+
+.uiverse-btn:hover {
+background: #1565C0;
+box-shadow: 0 4px 10px rgba(30, 136, 229, 0.4);
+transform: translateY(-1px);
+}
+
+.uiverse-btn:hover .sparkle {
+transform: scale(1.1);
+}
+
+.add-button-container {
+    margin-top: 24px;
+    padding-left: 12px;
     display: flex;
-    flex-direction: column;
-    gap: 8px;
+    align-items: flex-start;
+  }
+  
+
+/* Uiverse-style Delete Button */
+.delete-button {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background-color: rgb(20, 20, 20);
+  border: none;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.164);
+  cursor: pointer;
+  transition-duration: 0.3s;
+  overflow: hidden;
+  position: relative;
+  gap: 2px;
+  margin-right: 10px;
 }
 
-/* Glowing button */
-.glowing-button {
-    padding: 14px 28px;
-    font-size: 20px;
-    font-weight: bold;
-    color: #fff;
-    text-transform: uppercase;
-    background: linear-gradient(45deg, #ff0066, #ffcc00, #33ccff, #ff33cc);
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    outline: none;
-    position: relative;
-    overflow: hidden;
-    animation: glow-animation 1.5s infinite alternate;
-    transition: all 0.3s ease-in-out;
-}
-/* Glowing animation */
-@keyframes glow-animation {
-    0% {
-        box-shadow: 0 0 10px rgba(255, 0, 102, 0.5), 0 0 20px rgba(255, 204, 0, 0.5), 0 0 30px rgba(51, 204, 255, 0.5), 0 0 40px rgba(255, 51, 204, 0.5);
-    }
-    100% {
-        box-shadow: 0 0 20px rgba(255, 0, 102, 0.8), 0 0 30px rgba(255, 204, 0, 0.8), 0 0 40px rgba(51, 204, 255, 0.8), 0 0 50px rgba(255, 51, 204, 0.8);
-    }
+.delete-button:hover {
+  transition-duration: 0.3s;
+  background-color: rgb(255, 69, 69);
+  align-items: center;
+  gap: 0;
 }
 
-/* Hover effect */
-.glowing-button:hover {
-    transform: scale(1.05);
-    background: linear-gradient(45deg, #ff33cc, #33ccff, #ffcc00, #ff0066);
+.delete-button .svgIcon {
+  width:10px;
+  transition-duration: 0.3s;
 }
 
-/* Active effect */
-.glowing-button:active {
-    transform: scale(0.95);
+.delete-button .svgIcon path {
+  fill: white;
+}
+
+.delete-button .bin-top {
+  transform-origin: bottom right;
+}
+
+.delete-button:hover .bin-top {
+  transition-duration: 0.5s;
+  transform: rotate(160deg);
+}
+
+.action-buttons {
+display: flex;
+align-items: center;
+gap: 10px;
+justify-content: center;
+}
+
+/* Uiverse Plus Button — Circular version */
+.plusButton {
+  /* Config start */
+  --plus_sideLength: 3.2rem; /* Slightly larger for easier clicking */
+  --plus_topRightTriangleSideLength: 1rem;
+  /* Config end */
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid white;
+  width: 35px;
+  height: 35px;
+  background-color: #1565C0;
+  overflow: hidden;
+  border-radius: 50%; 
+  margin: 24px auto 0; /* Center it horizontally with space above */
+}
+
+.plusButton::before {
+  position: absolute;
+  content: "";
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-width: 0 0 0 0;
+  border-style: solid;
+  border-color: transparent white transparent transparent;
+  transition: all 0.5s ease-in-out;
+}
+
+.plusButton:hover,
+.plusButton:focus-visible {
+  cursor: pointer;
+}
+
+.plusButton:hover::before,
+.plusButton:focus-visible::before {
+  --plus_topRightTriangleSideLength: calc(var(--plus_sideLength) * 2);
+}
+
+.plusButton > .plusIcon {
+  fill: white;
+  width: calc(var(--plus_sideLength) * 0.4);
+  height: calc(var(--plus_sideLength) * 0.4);
+  z-index: 1;
+  transition: all 0.2s ease-in-out;
+}
+
+.plusButton:hover > .plusIcon,
+.plusButton:focus-visible > .plusIcon {
+  fill: black;
+  transform: rotate(90deg);
 }

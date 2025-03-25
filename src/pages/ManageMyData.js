@@ -170,80 +170,174 @@ const ManageMyData = () => {
 
   return (
     <div className="container">
-      <div className="upload-button-container">
-        <button onClick={() => navigate("/datacollection")} className="upload-button">
-          Upload File
-        </button>
-      </div>
-      <h1 className="title">My Uploads</h1>
+      {/* Top Title */}
+      <h1 className="page-title">My Data</h1>
+  
+      {/* Status Messages */}
       {loading && <p>Loading uploads...</p>}
       {error && <p className="error-text">{error}</p>}
       {!loading && !error && uploads.length === 0 && <p>No uploads found.</p>}
+  
       {!loading && !error && uploads.length > 0 && (
-        <table className="uploads-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {uploads.map((upload) => (
+  <>
+      <table className="uploads-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {uploads.map((upload) => {
+            const fileName = upload.path.split("\\").pop();
+            const fileParts = fileName.split("_");
+
+            // Extract and format date
+            const rawDate = fileParts[0];
+            const formattedDate = `${rawDate.substring(0, 4)}-${rawDate.substring(4, 6)}-${rawDate.substring(6, 8)}`;
+
+            // Extract and clean name
+            const nameWithExt = fileParts.slice(-3).join("_");
+            const nameOnly = nameWithExt.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
+
+            // File type
+            const fileType = fileName.split('.').pop();
+
+            return (
               <tr key={upload.id}>
-                <td>{upload.id}</td>
-                <td className="file-name" onClick={() => navigate(`/show/${upload.id}`)}>
-                  {upload.path.split("\\").pop()}
+                <td>{formattedDate}</td>
+                <td
+                  className="file-name"
+                  onClick={() => navigate(`/show/${upload.id}`)}
+                >
+                  {nameOnly}
                 </td>
+                <td>{fileType}</td>
                 <td>
-                  <button className="delete-button" onClick={() => handleDelete(upload.id)}>
-                    Delete
-                  </button>
-                  <button className="update-button" onClick={() => handleUpdateClick(upload.id, upload.path.split("\\").pop())}>
-                    Update
-                  </button>
+                  {/* Flex container for buttons */}
+                  <div className="action-buttons">
+                    <button
+                      className="delete-button"
+                      onClick={() => handleDelete(upload.id)}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 69 14"
+                        className="svgIcon bin-top"
+                      >
+                        <g clipPath="url(#clip0_35_24)">
+                          <path
+                            d="M20.8232 2.62734L19.9948 4.21304C19.8224 4.54309 19.4808 4.75 19.1085 4.75H4.92857C2.20246 4.75 0 6.87266 0 9.5C0 12.1273 2.20246 14.25 4.92857 14.25H64.0714C66.7975 14.25 69 12.1273 69 9.5C69 6.87266 66.7975 4.75 64.0714 4.75H49.8915C49.5192 4.75 49.1776 4.54309 49.0052 4.21305L48.1768 2.62734C47.3451 1.00938 45.6355 0 43.7719 0H25.2281C23.3645 0 21.6549 1.00938 20.8232 2.62734ZM64.0023 20.0648C64.0397 19.4882 63.5822 19 63.0044 19H5.99556C5.4178 19 4.96025 19.4882 4.99766 20.0648L8.19375 69.3203C8.44018 73.0758 11.6746 76 15.5712 76H53.4288C57.3254 76 60.5598 73.0758 60.8062 69.3203L64.0023 20.0648Z"
+                            fill="white"
+                          />
+                        </g>
+                        <defs>
+                          <clipPath id="clip0_35_24">
+                            <rect fill="white" height="14" width="69"></rect>
+                          </clipPath>
+                        </defs>
+                      </svg>
+
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 69 57"
+                        className="svgIcon bin-bottom"
+                      >
+                        <g clipPath="url(#clip0_35_22)">
+                          <path
+                            d="M20.8232 -16.3727L19.9948 -14.787C19.8224 -14.4569 19.4808 -14.25 19.1085 -14.25H4.92857C2.20246 -14.25 0 -12.1273 0 -9.5C0 -6.8727 2.20246 -4.75 4.92857 -4.75H64.0714C66.7975 -4.75 69 -6.8727 69 -9.5C69 -12.1273 66.7975 -14.25 64.0714 -14.25H49.8915C49.5192 -14.25 49.1776 -14.4569 49.0052 -14.787L48.1768 -16.3727C47.3451 -17.9906 45.6355 -19 43.7719 -19H25.2281C23.3645 -19 21.6549 -17.9906 20.8232 -16.3727ZM64.0023 1.0648C64.0397 0.4882 63.5822 0 63.0044 0H5.99556C5.4178 0 4.96025 0.4882 4.99766 1.0648L8.19375 50.3203C8.44018 54.0758 11.6746 57 15.5712 57H53.4288C57.3254 57 60.5598 54.0758 60.8062 50.3203L64.0023 1.0648Z"
+                            fill="white"
+                          />
+                        </g>
+                        <defs>
+                          <clipPath id="clip0_35_22">
+                            <rect fill="white" height="57" width="69"></rect>
+                          </clipPath>
+                        </defs>
+                      </svg>
+                    </button>
+
+                    <button
+                      className="update-button"
+                      onClick={() => handleUpdateClick(upload.id, fileName)}
+                    >
+                      Update
+                    </button>
+                  </div>
                 </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      {/* Glowing, blazing, hypnotizing, baffling, bazziling button */}
-      <div className="action-buttons-container">
-      <button
-        className="glowing-button"
-        onClick={async () => {
-          const token = getAccessToken();
-      
-          if (!token) {
-            toast.warning("Please log in first.");
-            return;
-          }
-      
-          try {
-            const res = await fetch(`http://127.0.0.1:8000/ask-ai/summarize/`, {
-              method: "GET",
-              headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            });
-      
-            if (res.ok) {
-              const data = await res.json();
-              sessionStorage.setItem("file_summary", data.summary);
-            }
-          } catch (error) {
-            console.error("Error summarizing file:", error);
-          }
-      
-          // Navigate no matter what
-          navigate("/dashboard");
-        }}
+            );
+          })}
+        </tbody>
+      </table>
+      <div
+        className="plusButton"
+        tabIndex="0"
+        onClick={() => navigate("/datacollection")}
       >
-        Go to Dashboard
-      </button>
-          </div>
+        <svg
+          className="plusIcon"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 30 30"
+        >
+          <g>
+            <path d="M13.75 23.75V16.25H6.25V13.75H13.75V6.25H16.25V13.75H23.75V16.25H16.25V23.75H13.75Z" />
+          </g>
+        </svg>
+      </div>
+
+    </>
+  )}
+
+  {/* Update Modal */}
+{showUpdateModal && (
+  <div className="modal-overlay">
+    <div className="modal-content">
+      <h3>Update File</h3>
+      <input
+        type="text"
+        value={newFileName}
+        onChange={(e) => setNewFileName(e.target.value)}
+        placeholder="New File Name"
+        style={{ marginBottom: '10px', padding: '8px', width: '100%' }}
+      />
+      <input
+        type="file"
+        onChange={(e) => setSelectedFile(e.target.files[0])}
+        style={{ marginBottom: '10px' }}
+      />
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+        <button onClick={handleUpdate} className="update-button">
+          Submit
+        </button>
+        <button onClick={() => setShowUpdateModal(false)} className="delete-button">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+      {/* Go to Dashboard Button */}
+      <div className="dashboard-button-container">
+        <button className="uiverse-btn" onClick={handleSummarize}>
+          <svg
+            height={20}
+            width={20}
+            fill="#FFFFFF"
+            viewBox="0 0 24 24"
+            className="sparkle"
+          >
+            <path d="M10,21.236,6.755,14.745.264,11.5,6.755,8.255,10,1.764l3.245,6.491L19.736,11.5l-6.491,3.245ZM18,21l1.5,3L21,21l3-1.5L21,18l-1.5-3L18,18l-3,1.5ZM19.333,4.667,20.5,7l1.167-2.333L24,3.5,21.667,2.333,20.5,0,19.333,2.333,17,3.5Z" />
+          </svg>
+          <span className="text">Generate</span>
+        </button>
+      </div>
+
     </div>
   );
 };
