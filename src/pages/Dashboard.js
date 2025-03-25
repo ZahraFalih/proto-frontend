@@ -1,30 +1,30 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
-import '../styles/DashboardPage.css';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+import "../styles/DashboardPage.css";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import logo from "../assets/icons/logo.png";
-import '../styles/global.css'; 
+
 
 function DashboardPage() {
-  // State for metrics and summary
   const [businessMetrics, setBusinessMetrics] = useState({});
   const [roleModelMetrics, setRoleModelMetrics] = useState({});
   const [loadingBusiness, setLoadingBusiness] = useState(true);
   const [loadingRole, setLoadingRole] = useState(true);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [summary, setSummary] = useState("");
+  const [chunkedSummary, setChunkedSummary] = useState([]);
   const [fileSummary, setFileSummary] = useState("");
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // API Endpoints
   const API_URL_BUSINESS = "http://127.0.0.1:8000/toolkit/web-metrics/business/";
   const API_URL_ROLE = "http://127.0.0.1:8000/toolkit/web-metrics/role-model/";
   const API_URL_SUMMARY = "http://127.0.0.1:8000/ask-ai/web-agent";
 
-  // Ideal standards for display
   const idealStandards = {
     "First Contentful Paint": "≤ 1.8 s",
     "Speed Index": "≤ 4.3 s",
@@ -36,18 +36,16 @@ function DashboardPage() {
 
   const getAccessToken = () => sessionStorage.getItem("access_token");
 
-  // Helper: if value is an object, convert it to a string.
   const renderValue = (value) => {
     return typeof value === "object" ? JSON.stringify(value) : value;
   };
 
-  // Fetch metrics from both endpoints in parallel
   useEffect(() => {
     async function fetchMetrics() {
       const token = getAccessToken();
       if (!token) {
-      toast.error("Authentication required. Redirecting to login...");
-      navigate("/login")
+        toast.error("Authentication required. Redirecting to login...");
+        navigate("/login");
       }
 
       try {
@@ -66,10 +64,8 @@ function DashboardPage() {
           })
         ]);
 
-        // Process Business Metrics
         if (businessRes.status === "fulfilled" && businessRes.value.ok) {
           const data = await businessRes.value.json();
-          // Unwrap if nested under "url_metrics"
           const bm = data.url_metrics ? data.url_metrics : data;
           setBusinessMetrics(bm);
         } else {
@@ -77,10 +73,8 @@ function DashboardPage() {
         }
         setLoadingBusiness(false);
 
-        // Process Role Model Metrics
         if (roleRes.status === "fulfilled" && roleRes.value.ok) {
           const data = await roleRes.value.json();
-          // Unwrap if nested under "role_model_metrics"
           const rm = data.role_model_metrics ? data.role_model_metrics : data;
           setRoleModelMetrics(rm);
         } else {
@@ -101,21 +95,9 @@ function DashboardPage() {
     const stored = sessionStorage.getItem("file_summary");
     if (stored) {
       setFileSummary(stored);
-      sessionStorage.removeItem("file_summary"); 
+      sessionStorage.removeItem("file_summary");
     }
   }, []);
-
-  // When both metrics are loaded, send them to the AI summary endpoint
-  useEffect(() => {
-    if (
-      !loadingBusiness &&
-      !loadingRole &&
-      Object.keys(businessMetrics).length > 0 &&
-      Object.keys(roleModelMetrics).length > 0
-    ) {
-      generateSummary(businessMetrics, roleModelMetrics);
-    }
-  }, [loadingBusiness, loadingRole, businessMetrics, roleModelMetrics]);
 
   const generateSummary = async (urlMetrics, sharkMetrics) => {
     const token = getAccessToken();
@@ -132,7 +114,16 @@ function DashboardPage() {
       });
 
       const data = await res.json();
-      setSummary(data.web_evaluation || "No summary returned.");
+      const fullSummary = data.web_evaluation || "No summary returned.";
+      setSummary(fullSummary);
+
+      const words = fullSummary.split(" ");
+      const chunkSize = 9;
+      const chunks = [];
+      for (let i = 0; i < words.length; i += chunkSize) {
+        chunks.push(words.slice(i, i + chunkSize).join(" "));
+      }
+      setChunkedSummary(chunks);
     } catch (err) {
       setSummary("Failed to get AI summary.");
     } finally {
@@ -140,7 +131,6 @@ function DashboardPage() {
     }
   };
 
-  // Compute union of keys from ideal standards and metrics
   const metricKeys = Array.from(
     new Set([
       ...Object.keys(idealStandards),
@@ -150,71 +140,131 @@ function DashboardPage() {
   );
 
   return (
-    <div className='page-container'>
-    <div className="header">
-      <img src={logo} alt="logo" className="header-logo" />    
-      <div className="header-links">  
-      <a href="#">INFO</a>
-      <a href="#">ABOUT</a>
+    <div className="page-container">
+      <div className="header">
+        <img src={logo} alt="logo" className="header-logo" />
+        <div className="header-links">
+          <a href="#">INFO</a>
+          <a href="#">ABOUT</a>
+        </div>
       </div>
-    </div>
-    <div className="dashboard-container">
-      <h1 className="title">Web Metrics Dashboard</h1>
-      {error && <p className="error-text">{error}</p>}
 
-      <div className="dashboard-content">
-        <div className="metrics-container">
-          <table className="metrics-table">
-            <thead>
-              <tr>
-                <th>Metric</th>
-                <th>Business Performance</th>
-                <th>Role Model Performance</th>
-                <th>Ideal Standard</th>
-              </tr>
-            </thead>
-            <tbody>
-              {metricKeys.map((metric) => (
-                <tr key={metric}>
-                  <td>{metric}</td>
-                  <td>
-                    {loadingBusiness
-                      ? "Loading..."
-                      : renderValue(businessMetrics[metric] || "N/A")}
-                  </td>
-                  <td>
-                    {loadingRole
-                      ? "Loading..."
-                      : renderValue(roleModelMetrics[metric] || "N/A")}
-                  </td>
-                  <td>{idealStandards[metric] || "N/A"}</td>
+      <div className="dashboard-container">
+        <h1 className="title">Web Metrics Dashboard</h1>
+        {error && <p className="error-text">{error}</p>}
+
+        <div className="dashboard-content">
+          <div className="metrics-container">
+            <table className="metrics-table">
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  <th>Business Performance</th>
+                  <th>Role Model Performance</th>
+                  <th>Ideal Standard</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {metricKeys.map((metric) => (
+                  <tr key={metric}>
+                    <td>{metric}</td>
+                    <td>
+                      {loadingBusiness
+                        ? <Skeleton width={100} height={20} />
+                        : renderValue(businessMetrics[metric] || "N/A")}
+                    </td>
+                    <td>
+                      {loadingRole
+                        ? <Skeleton width={100} height={20} />
+                        : renderValue(roleModelMetrics[metric] || "N/A")}
+                    </td>
+                    <td>{idealStandards[metric] || "N/A"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-          {/* AI Summary rendered with Markdown */}
-          <div className="answer-section">
-            {loadingSummary ? (
-              <p>Generating summary...</p>
+            <div className="answer-section">
+              {!summary &&
+                !loadingSummary &&
+                !loadingBusiness &&
+                !loadingRole &&
+                Object.keys(businessMetrics).length > 0 &&
+                Object.keys(roleModelMetrics).length > 0 && (
+                  <div className="dashboard-button-container">
+                    <button
+                      className="uiverse-btn"
+                      onClick={() => generateSummary(businessMetrics, roleModelMetrics)}
+                    >
+                      <svg
+                        height={20}
+                        width={20}
+                        fill="#FFFFFF"
+                        viewBox="0 0 24 24"
+                        className="sparkle"
+                      >
+                        <path d="M10,21.236,6.755,14.745.264,11.5,6.755,8.255,10,1.764l3.245,6.491L19.736,11.5l-6.491,3.245ZM18,21l1.5,3L21,21l3-1.5L21,18l-1.5-3L18,18l-3,1.5ZM19.333,4.667,20.5,7l1.167-2.333L24,3.5,21.667,2.333,20.5,0,19.333,2.333,17,3.5Z" />
+                      </svg>
+                      <span className="text">Generate</span>
+                    </button>
+                  </div>
+              )}
+
+              {loadingSummary && (
+                <div className="summary-loader">
+                  <Skeleton count={4} height={20} style={{ marginBottom: "8px" }} />
+                </div>
+              )}
+
+              {!loadingSummary && chunkedSummary.length > 0 && (
+                <div className="chunk-fade-wrapper summary-result">
+                  {chunkedSummary.map((chunk, idx) => (
+                    <span
+                      key={idx}
+                      className="chunk-fade"
+                      style={{ animationDelay: `${idx * 0.5}s` }}
+                    >
+                      <ReactMarkdown components={{ p: "span" }}>{chunk}</ReactMarkdown>{" "}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="widgets-container">
+            <h2>File Summary</h2>
+            {fileSummary ? (
+              <div className="chunk-fade-wrapper">
+                {fileSummary
+                  .split(" ")
+                  .reduce((chunks, word, idx) => {
+                    const chunkSize = 9;
+                    const chunkIndex = Math.floor(idx / chunkSize);
+                    if (!chunks[chunkIndex]) chunks[chunkIndex] = [];
+                    chunks[chunkIndex].push(word);
+                    return chunks;
+                  }, [])
+                  .map((chunk, idx) => (
+                    <span
+                      key={idx}
+                      className="chunk-fade"
+                      style={{ animationDelay: `${idx * 0.5}s` }}
+                    >
+                      <ReactMarkdown components={{ p: "span" }}>{chunk.join(" ")}</ReactMarkdown>{" "}
+                    </span>
+                  ))}
+              </div>
             ) : (
-              <ReactMarkdown>{summary}</ReactMarkdown>
+              <p>Loading, please wait</p>
             )}
           </div>
         </div>
 
-        <div className="widgets-container">
-          <h2>File Summary</h2>
-          {fileSummary ? (
-             <ReactMarkdown>{fileSummary}</ReactMarkdown>
-            ) : (
-          <p>Loading, please wait</p>
-           )}
-        </div>
+        <div className="glowing-button-container"></div>
       </div>
-      <div className="glowing-button-container">
-      </div>
-    </div>
+
+      <ToastContainer position="top-center" />
     </div>
   );
 }

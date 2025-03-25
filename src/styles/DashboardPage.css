@@ -106,18 +106,101 @@
   transition: all 0.3s ease-in-out;
 }
 
-/* Glowing animation */
 @keyframes glow-animation {
   0% {
-      box-shadow: 0 0 10px rgba(255, 0, 102, 0.5), 0 0 20px rgba(255, 204, 0, 0.5), 0 0 30px rgba(51, 204, 255, 0.5), 0 0 40px rgba(255, 51, 204, 0.5);
+    box-shadow: 0 0 10px rgba(255, 0, 102, 0.5), 0 0 20px rgba(255, 204, 0, 0.5), 0 0 30px rgba(51, 204, 255, 0.5), 0 0 40px rgba(255, 51, 204, 0.5);
   }
   100% {
-      box-shadow: 0 0 20px rgba(255, 0, 102, 0.8), 0 0 30px rgba(255, 204, 0, 0.8), 0 0 40px rgba(51, 204, 255, 0.8), 0 0 50px rgba(255, 51, 204, 0.8);
+    box-shadow: 0 0 20px rgba(255, 0, 102, 0.8), 0 0 30px rgba(255, 204, 0, 0.8), 0 0 40px rgba(51, 204, 255, 0.8), 0 0 50px rgba(255, 51, 204, 0.8);
   }
 }
 
-/* Hover Effect */
 .glowing-button:hover {
   transform: scale(1.05);
   background: linear-gradient(45deg, #ff33cc, #33ccff, #ffcc00, #ff0066);
+}
+
+/* ========================= ADDED STYLES FOR AI SECTION ========================= */
+.answer-section {
+  margin-top: 2rem;
+  padding-top: 1rem;
+}
+
+.dashboard-button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-result {
+  margin-top: 1rem;
+  line-height: 1.6;
+  font-size: 1rem;
+  padding: 0 1rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
+.summary-loader {
+  margin-top: 1rem;
+  padding: 0 1rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.chunk-fade-wrapper {
+  display: inline;
+}
+
+.chunk-fade {
+  opacity: 0;
+  animation: fadeInChunk 0.6s ease-out forwards;
+  display: inline;
+  white-space: pre-wrap;
+}
+
+@keyframes fadeInChunk {
+  to {
+    opacity: 1;
+  }
+}
+
+.uiverse-btn {
+  border: none;
+  width: 11em;
+  height: 3.5em;
+  border-radius: 2em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  background: #1E88E5;
+  cursor: pointer;
+  transition: all 300ms ease-in-out;
+  box-shadow: 0 2px 6px rgba(30, 136, 229, 0.3);
+}
+
+.uiverse-btn .sparkle {
+  fill: #ffffff;
+  transition: all 400ms ease;
+}
+
+.uiverse-btn .text {
+  font-weight: 600;
+  color: white;
+  font-size: 0.95rem;
+}
+
+.uiverse-btn:hover {
+  background: #1565C0;
+  box-shadow: 0 4px 10px rgba(30, 136, 229, 0.4);
+  transform: translateY(-1px);
+}
+
+.uiverse-btn:hover .sparkle {
+  transform: scale(1.1);
 }
