@@ -1,0 +1,1 @@
+export { logo as logo } from './icons/logo.png';

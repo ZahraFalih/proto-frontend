@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import '../styles/DataCollectionPage.css'; 
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import logo from "../assets/icons/logo.png";
+import '../styles/global.css'; 
 
 const DataCollectionPage = () => {
   const [files, setFiles] = useState([]);
@@ -90,8 +92,20 @@ const DataCollectionPage = () => {
   };
 
   return (
-  <div className="data-collection-wrapper">
-    <h1 className="data-collection-title">Data Collection</h1>
+
+    <div className='page-container'>
+    <div className="header">
+      <img src={logo} alt="logo" className="header-logo" />    
+      <div className="header-links">  
+      <a href="#">INFO</a>
+      <a href="#">ABOUT</a>
+      </div>
+    </div>
+    <div className="data-collection-container">
+      <h1 className="data-collection-title">Data Collection</h1>
+
+      {error && <p className="error-message">{error}</p>}
+
 
     <div className="data-collection-form-wrapper">
       <form onSubmit={handleSubmit} className="data-collection-form">
@@ -154,6 +168,7 @@ const DataCollectionPage = () => {
         )}
       </form>
     </div>
+
 
     <div className="submit-wrapper">
       <button type="submit" disabled={loading} className="submit-button">

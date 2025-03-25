@@ -4,6 +4,8 @@ import ReactMarkdown from "react-markdown";
 import '../styles/DashboardPage.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import logo from "../assets/icons/logo.png";
+import '../styles/global.css'; 
 
 function DashboardPage() {
   // State for metrics and summary
@@ -148,6 +150,14 @@ function DashboardPage() {
   );
 
   return (
+    <div className='page-container'>
+    <div className="header">
+      <img src={logo} alt="logo" className="header-logo" />    
+      <div className="header-links">  
+      <a href="#">INFO</a>
+      <a href="#">ABOUT</a>
+      </div>
+    </div>
     <div className="dashboard-container">
       <h1 className="title">Web Metrics Dashboard</h1>
       {error && <p className="error-text">{error}</p>}
@@ -203,8 +213,8 @@ function DashboardPage() {
         </div>
       </div>
       <div className="glowing-button-container">
-
       </div>
+    </div>
     </div>
   );
 }

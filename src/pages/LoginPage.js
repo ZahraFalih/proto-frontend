@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/LoginPage.css'; 
+import '../styles/global.css'; 
+import logo from "../assets/icons/logo.png";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -52,6 +54,14 @@ const LoginPage = () => {
   };
 
   return (
+    <div className='page-container'>
+    <div className="header">
+      <img src={logo} alt="logo" className="header-logo" />    
+      <div className="header-links">  
+      <a href="#">INFO</a>
+      <a href="#">ABOUT</a>
+      </div>
+    </div>
     <div className="login-container">
       <h1 className="login-title">Login</h1>
   
@@ -85,6 +95,7 @@ const LoginPage = () => {
         </button>
       </form>
     </div>
+  </div>
   );
 };
 

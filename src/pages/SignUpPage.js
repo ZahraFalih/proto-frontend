@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import '../styles/SignUpPage.css'; 
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import '../styles/global.css'; 
+import logo from "../assets/icons/logo.png";
 
 const SignUpPage = () => {
   const [firstName, setFirstName] = useState('');
@@ -64,6 +66,14 @@ const SignUpPage = () => {
   };
 
     return (
+      <div className='page-container'>
+      <div className="header">
+        <img src={logo} alt="logo" className="header-logo" />    
+        <div className="header-links">  
+        <a href="#">INFO</a>
+        <a href="#">ABOUT</a>
+        </div>
+      </div>
       <div className="signup-container">
         <h1 className="signup-title">Sign Up</h1>
   
@@ -129,6 +139,7 @@ const SignUpPage = () => {
           </button>
         </form>
       </div>
+    </div>
     );
   };
   

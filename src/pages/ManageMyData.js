@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import '../styles/ManageMyData.css'; 
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import logo from "../assets/icons/logo.png";
+import '../styles/global.css'; 
 
 const ManageMyData = () => {
   const [uploads, setUploads] = useState([]);
@@ -169,6 +171,14 @@ const ManageMyData = () => {
   };
 
   return (
+    <div className='page-container'>
+    <div className="header">
+      <img src={logo} alt="logo" className="header-logo" />    
+      <div className="header-links">  
+      <a href="#">INFO</a>
+      <a href="#">ABOUT</a>
+      </div>
+    </div>
     <div className="container">
       {/* Top Title */}
       <h1 className="page-title">My Data</h1>
@@ -337,8 +347,8 @@ const ManageMyData = () => {
           <span className="text">Generate</span>
         </button>
       </div>
-
     </div>
+   </div>
   );
 };
 
