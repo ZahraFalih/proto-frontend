@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import '../styles/DataCollectionPage.css'; 
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import logo from "../assets/icons/logo.png";
+import '../styles/global.css'; 
 
 const DataCollectionPage = () => {
   const [files, setFiles] = useState([]);
@@ -90,6 +92,14 @@ const DataCollectionPage = () => {
   };
 
   return (
+    <div className='page-container'>
+    <div className="header">
+      <img src={logo} alt="logo" className="header-logo" />    
+      <div className="header-links">  
+      <a href="#">INFO</a>
+      <a href="#">ABOUT</a>
+      </div>
+    </div>
     <div className="data-collection-container">
       <h1 className="data-collection-title">Data Collection</h1>
 
@@ -129,6 +139,7 @@ const DataCollectionPage = () => {
         </button>
       </form>
     </div>
+  </div>
   );
 };
 

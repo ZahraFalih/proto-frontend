@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import logo from "../assets/icons/logo.png";
+import '../styles/global.css'; 
 
 const ShowFile = () => {
   const { fileId } = useParams();
@@ -67,6 +69,14 @@ const ShowFile = () => {
   };
 
   return (
+    <div className='page-container'>
+    <div className="header">
+      <img src={logo} alt="logo" className="header-logo" />    
+      <div className="header-links">  
+      <a href="#">INFO</a>
+      <a href="#">ABOUT</a>
+      </div>
+    </div>
     <div
       style={{
         minHeight: "100vh",
@@ -194,6 +204,7 @@ const ShowFile = () => {
         </div>
       )}
     </div>
+  </div>
   );
 };
 

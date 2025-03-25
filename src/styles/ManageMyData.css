@@ -122,27 +122,27 @@
 
 
 .dashboard-button-container {
-position: fixed;
-bottom: 40px;
-left: 50%;
-transform: translateX(-50%);
-z-index: 10;
+ position: fixed;
+ bottom: 40px;
+ left: 50%;
+ transform: translateX(-50%);
+ z-index: 10;
 }
 
 /* Tuned-down version of Uiverse-styled Button */
 .uiverse-btn {
-border: none;
-width: 11em;
-height: 3.5em;
-border-radius: 2em;
-display: flex;
-justify-content: center;
-align-items: center;
-gap: 8px;
-background: #1E88E5;
-cursor: pointer;
-transition: all 300ms ease-in-out;
-box-shadow: 0 2px 6px rgba(30, 136, 229, 0.3);
+ border: none;
+ width: 11em;
+ height: 3.5em;
+ border-radius: 2em;
+ display: flex;
+ justify-content: center;
+ align-items: center;
+ gap: 8px;
+ background: #1E88E5;
+ cursor: pointer;
+ transition: all 300ms ease-in-out;
+ box-shadow: 0 2px 6px rgba(30, 136, 229, 0.3);
 }
 
 .uiverse-btn .sparkle {
@@ -279,6 +279,5 @@ justify-content: center;
 
 .plusButton:hover > .plusIcon,
 .plusButton:focus-visible > .plusIcon {
-  fill: black;
   transform: rotate(90deg);
 }

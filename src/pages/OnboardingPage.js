@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import '../styles/OnboardingPage.css'; 
 import { toast } from "react-toastify";
+import logo from "../assets/icons/logo.png";
+import '../styles/global.css'; 
 
 const OnboardingPage = () => {
   const [businessType, setBusinessType] = useState("");
@@ -80,6 +82,14 @@ const OnboardingPage = () => {
   };
   
   return (
+    <div className='page-container'>
+    <div className="header">
+      <img src={logo} alt="logo" className="header-logo" />    
+      <div className="header-links">  
+      <a href="#">INFO</a>
+      <a href="#">ABOUT</a>
+      </div>
+    </div>
     <div className="onboarding-container">
       <h1 className="onboarding-title">Business Onboarding</h1>
 
@@ -157,6 +167,7 @@ const OnboardingPage = () => {
         </button>
       </form>
     </div>
+  </div>
   );
 };
 
