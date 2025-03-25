@@ -4,6 +4,8 @@ import ReactMarkdown from "react-markdown";
 import '../styles/DashboardPage.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 
 function DashboardPage() {
   // State for metrics and summary
@@ -168,14 +170,15 @@ function DashboardPage() {
                 <tr key={metric}>
                   <td>{metric}</td>
                   <td>
-                    {loadingBusiness
-                      ? "Loading..."
-                      : renderValue(businessMetrics[metric] || "N/A")}
+                  {loadingBusiness
+                  ? <Skeleton width={100} height={20} />
+                  : renderValue(businessMetrics[metric] || "N/A")}
+
                   </td>
                   <td>
-                    {loadingRole
-                      ? "Loading..."
-                      : renderValue(roleModelMetrics[metric] || "N/A")}
+                  {loadingRole
+                  ? <Skeleton width={100} height={20} />
+                  : renderValue(roleModelMetrics[metric] || "N/A")}
                   </td>
                   <td>{idealStandards[metric] || "N/A"}</td>
                 </tr>
