@@ -7,6 +7,7 @@ import "../styles/DashboardPage.css";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import logo from "../assets/icons/logo.png";
+import { Link } from 'react-router-dom';
 
 
 function DashboardPage() {
@@ -144,8 +145,8 @@ function DashboardPage() {
       <div className="header">
         <img src={logo} alt="logo" className="header-logo" />
         <div className="header-links">
-          <a href="#">INFO</a>
-          <a href="#">ABOUT</a>
+        <Link to="/datacollection">Add Files</Link>
+        <Link to="/manage-data">Manage my Data</Link>
         </div>
       </div>
 
