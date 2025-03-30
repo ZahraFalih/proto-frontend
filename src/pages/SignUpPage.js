@@ -7,8 +7,6 @@ import '../styles/global.css';
 import logo from "../assets/icons/logo.png";
 
 const SignUpPage = () => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,8 +38,6 @@ const SignUpPage = () => {
           username,
           email,
           password,
-          first_name: firstName,
-          last_name: lastName,
         }),
       });
 
@@ -80,23 +76,6 @@ const SignUpPage = () => {
         {error && <p className="error-message">{error}</p>}
   
         <form onSubmit={handleSignUp} className="signup-form">
-          <input
-            type="text"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            required
-            className="signup-input"
-            placeholder="First Name"
-          />
-  
-          <input
-            type="text"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            required
-            className="signup-input"
-            placeholder="Last Name"
-          />
   
           <input
             type="text"
