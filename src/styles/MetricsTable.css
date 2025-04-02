@@ -1,0 +1,27 @@
+/* Table styling */
+.metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+.metrics-table th,
+.metrics-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: left;
+  font-size: 16px;
+}
+
+.metrics-table th {
+  background-color: #0756A4;
+  color: white;
+}
+
+.metrics-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.metrics-table tr:hover {
+  background-color: #e0e0e0;
+}
