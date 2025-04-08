@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 const PageOnboardingForm = () => {
   const [form, setForm] = useState({
     page_type: "",
-    page_url: ""
+    url: ""
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -93,8 +93,8 @@ const PageOnboardingForm = () => {
       <label className="onboarding-label">Page URL</label>
       <input
         type="url"
-        name="page_url"
-        value={form.page_url}
+        name="url"
+        value={form.url}
         onChange={handleChange}
         required
         className="onboarding-input"

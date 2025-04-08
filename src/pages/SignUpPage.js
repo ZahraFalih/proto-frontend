@@ -35,7 +35,6 @@ const SignUpPage = () => {
         },
         credentials: "include",
         body: JSON.stringify({
-          username,
           email,
           password,
         }),
@@ -77,14 +76,6 @@ const SignUpPage = () => {
   
         <form onSubmit={handleSignUp} className="signup-form">
   
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            className="signup-input"
-            placeholder="Username"
-          />
   
           <input
             type="email"

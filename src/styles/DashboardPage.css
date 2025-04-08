@@ -1,206 +1,65 @@
-/* General Dashboard Container */
-.dashboard-container {
-  min-height: 100vh;
-  padding: 20px;
-  background-color: #F5F5F5;
+/* ========================= HEADER ========================= */
+.header {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
+  background-color: #FFFFFF;
+  padding: 16px 32px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-/* Title Styling */
-.title {
-  font-size: 32px;
-  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+.header-logo {
+  height: 40px;
+}
+
+.header-links a {
+  margin-left: 20px;
+  text-decoration: none;
   color: #0756A4;
-  margin-bottom: 20px;
-}
-
-/* Error Text */
-.error-text {
-  font-size: 16px;
-  color: #D8000C;
-  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
-  margin: 10px 0;
-}
-
-/* ========================= DASHBOARD LAYOUT ========================= */
-.dashboard-content {
-  display: flex;
-  width: 90%;
-  max-width: 1200px;
-  gap: 30px;
-}
-
-/* Left Column - Metrics Table */
-.metrics-container {
-  width: 65%;
-  background-color: #FFFFFF;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  overflow-x: auto;
-}
-
-/* Right Column - Placeholder Widgets */
-.widgets-container {
-  width: 35%;
-  background-color: #FFFFFF;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  text-align: center;
-}
-
-/* Table Styling */
-.metrics-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-
-.metrics-table th {
-  background-color: #0756A4;
-  color: white;
-  font-size: 18px;
-  padding: 12px;
-  text-align: left;
-}
-
-.metrics-table td {
-  border: 1px solid #ddd;
-  padding: 10px;
-  font-size: 16px;
-  text-align: left;
-  color: #333;
-}
-
-.metrics-table tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-
-.metrics-table tr:hover {
-  background-color: #e0e0e0;
-}
-
-/* ========================= GLORIOUS HYPNOTIZING BUTTON ========================= */
-.glowing-button-container {
-  margin-top: 30px;
-  text-align: center;
-}
-
-.glowing-button {
-  padding: 14px 28px;
-  font-size: 20px;
-  font-weight: bold;
-  color: #fff;
-  text-transform: uppercase;
-  background: linear-gradient(45deg, #ff0066, #ffcc00, #33ccff, #ff33cc);
-  border: none;
-  border-radius: 50px;
-  cursor: pointer;
-  outline: none;
-  position: relative;
-  overflow: hidden;
-  animation: glow-animation 1.5s infinite alternate;
-  transition: all 0.3s ease-in-out;
-}
-
-@keyframes glow-animation {
-  0% {
-    box-shadow: 0 0 10px rgba(255, 0, 102, 0.5), 0 0 20px rgba(255, 204, 0, 0.5), 0 0 30px rgba(51, 204, 255, 0.5), 0 0 40px rgba(255, 51, 204, 0.5);
-  }
-  100% {
-    box-shadow: 0 0 20px rgba(255, 0, 102, 0.8), 0 0 30px rgba(255, 204, 0, 0.8), 0 0 40px rgba(51, 204, 255, 0.8), 0 0 50px rgba(255, 51, 204, 0.8);
-  }
-}
-
-.glowing-button:hover {
-  transform: scale(1.05);
-  background: linear-gradient(45deg, #ff33cc, #33ccff, #ffcc00, #ff0066);
-}
-
-/* ========================= ADDED STYLES FOR AI SECTION ========================= */
-.answer-section {
-  margin-top: 2rem;
-  padding-top: 1rem;
-}
-
-.dashboard-button-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.summary-result {
-  margin-top: 1rem;
-  line-height: 1.6;
-  font-size: 1rem;
-  padding: 0 1rem;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
-  text-align: left;
-}
-
-.summary-loader {
-  margin-top: 1rem;
-  padding: 0 1rem;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.chunk-fade-wrapper {
-  display: inline;
-}
-
-.chunk-fade {
-  opacity: 0;
-  animation: fadeInChunk 0.6s ease-out forwards;
-  display: inline;
-  white-space: pre-wrap;
-}
-
-@keyframes fadeInChunk {
-  to {
-    opacity: 1;
-  }
-}
-
-.uiverse-btn {
-  border: none;
-  width: 11em;
-  height: 3.5em;
-  border-radius: 2em;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  background: #1E88E5;
-  cursor: pointer;
-  transition: all 300ms ease-in-out;
-  box-shadow: 0 2px 6px rgba(30, 136, 229, 0.3);
-}
-
-.uiverse-btn .sparkle {
-  fill: #ffffff;
-  transition: all 400ms ease;
-}
-
-.uiverse-btn .text {
   font-weight: 600;
-  color: white;
-  font-size: 0.95rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.uiverse-btn:hover {
-  background: #1565C0;
-  box-shadow: 0 4px 10px rgba(30, 136, 229, 0.4);
-  transform: translateY(-1px);
+.header-links a:hover {
+  text-decoration: underline;
 }
 
-.uiverse-btn:hover .sparkle {
-  transform: scale(1.1);
+/* ========================= MINIMALISTIC TABS ========================= */
+.tab-container {
+  display: flex;
+  gap: 24px;
+  padding: 16px 32px;
+  background-color: #fff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tab {
+  font-size: 16px;
+  font-weight: 500;
+  color: #0756A4;
+  padding: 8px 0;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.3s ease, color 0.3s ease;
+}
+
+.tab:hover {
+  color: #03396c; /* a slightly darker tone */
+  border-bottom-color: #03396c;
+}
+
+.active-tab {
+  font-weight: 600;
+  border-bottom-color: #0756A4;
+  color: #0756A4;
+}
+
+/* ========================= MINIMALISTIC CONTENT CONTAINER ========================= */
+.tab-content {
+  background-color: #fff;
+  margin: 32px;
+  padding: 24px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }

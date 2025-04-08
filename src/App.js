@@ -21,7 +21,7 @@ function App() {
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/datacollection" element={<DataCollectionPage />} />
         <Route path="/manage-data" element={<ManageMyData />} /> 
-        <Route path="/dashboard" element={<Dashboard />} /> 
+        <Route path="/dashboard/:pageId?" element={<Dashboard />} /> 
         <Route path="/show/:fileId" element={<ShowFile />} />
       </Routes>
       <ToastContainer 
