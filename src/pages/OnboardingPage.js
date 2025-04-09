@@ -35,7 +35,7 @@ const OnboardingPage = () => {
         ) : step === 2 ? (
           <BusinessOnboardingForm onSuccess={() => setStep(3)} />
         ) : (
-          <PageOnboardingForm />
+          <PageOnboardingForm onSuccess={() => navigate('/manage-data')} />
         )}
       </div>
     </div>

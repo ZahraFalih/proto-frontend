@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
-const PageOnboardingForm = () => {
+const PageOnboardingForm = ({ onSuccess }) => {
   const [form, setForm] = useState({
     page_type: "",
     url: ""
@@ -53,7 +53,7 @@ const PageOnboardingForm = () => {
 
       if (response.ok) {
         toast.success("Page onboarded successfully!");
-        navigate("/dashboard");
+        onSuccess();
       } else {
         if (response.status === 401) {
           sessionStorage.removeItem("access_token");
