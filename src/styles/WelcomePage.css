@@ -24,7 +24,6 @@ html, body {
   width: 100%;
 }
 
-/* LEFT HALF */
 .left-section {
   flex: 1.6;
   background-color: var(--color-primary);
