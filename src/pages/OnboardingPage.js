@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
-import { toast } from "react-toastify";
-import logo from "../assets/icons/logo.png";
 import "../styles/OnboardingPage.css";
 import "../styles/global.css";
-import "../styles/OnboardingPage.css";
 
 const companiesData = [
   { id: 1, name: "Amazon", category: "Online Retail & Marketplace" },
@@ -55,7 +52,6 @@ const companiesData = [
   { id: 45, name: "Vakko", category: "Luxury Goods" },
 ];
 
-
 const OnboardingPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [error, setError] = useState(null);
@@ -68,62 +64,47 @@ const OnboardingPage = () => {
   useEffect(() => {
     const token = getAccessToken();
     if (!token) {
-      toast.error("Authentication required. Redirecting to login...");
       navigate("/login");
     }
   }, [navigate]);
 
   // ----- STEP 1: User-Onboard Data -----
-// State for user onboarding
-const [firstName, setFirstName] = useState("");
-const [lastName, setLastName] = useState("");
-const [username, setUsername] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
+  const [role, setRole] = useState("");
 
-const handleUserOnboard = async (e) => {
-  e.preventDefault();
-  setError(null);
-  setLoading(true);
+  const handleUserOnboard = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
-  if (firstName.trim() === "" || lastName.trim() === "" || username.trim() === "") {
-    setError("Please fill in all required fields.");
-    setLoading(false);
-    return;
-  }
+    try {
+      const response = await fetch("http://127.0.0.1:8000/onboard/user-onboard/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          username: username,
+          role: role,
+          token: getAccessToken(),
+        }),
+      });
 
-  const token = getAccessToken();
-  if (!token) {
-    setError("Authentication required. Please log in again.");
-    setLoading(false);
-    return;
-  }
-
-  try {
-    const response = await fetch("http://127.0.0.1:8000/onboard/user-onboard/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        first_name: firstName,
-        last_name: lastName,
-        username: username,
-        token: token,
-      }),
-    });
-
-    const data = await response.json();
-    if (response.ok) {
-      toast.success("User onboarding completed!");
-      setCurrentStep(2);
-    } else {
-      setError(data.error || "Something went wrong. Please try again.");
+      const data = await response.json();
+      if (response.ok) {
+        setCurrentStep(2);
+      } else {
+        setError(data.error || "Something went wrong. Please try again.");
+      }
+    } catch (err) {
+      setError("Failed to connect to the server.");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("User onboarding error:", err);
-    setError("Failed to connect to the server.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // ----- STEP 2: Business-Onboard Data -----
   const [businessType, setBusinessType] = useState("");
@@ -150,24 +131,6 @@ const handleUserOnboard = async (e) => {
     setError(null);
     setLoading(true);
   
-    if (
-      businessName.length > 35 ||
-      businessURL.length > 70 ||
-      !businessType ||
-      !selectedCompanyId
-    ) {
-      setError("Please complete all fields correctly.");
-      setLoading(false);
-      return;
-    }
-  
-    const token = getAccessToken();
-    if (!token) {
-      setError("Authentication required. Please log in.");
-      setLoading(false);
-      return;
-    }
-  
     try {
       const response = await fetch("http://127.0.0.1:8000/onboard/business-onboard/", {
         method: "POST",
@@ -178,24 +141,21 @@ const handleUserOnboard = async (e) => {
           url: businessURL,
           name: businessName,
           role_model: selectedCompanyId,
-          token: token,
+          token: getAccessToken(),
         }),
       });
       const data = await response.json();
       if (response.ok) {
-        toast.success("Business onboarding completed!");
         setCurrentStep(3);
       } else {
         if (response.status === 401) {
           setError("Session expired. Please log in again.");
-          sessionStorage.removeItem("access_token");
           navigate("/login");
         } else {
           setError(data.error || "Something went wrong. Please try again.");
         }
       }
     } catch (err) {
-      console.error("Business onboarding error:", err);
       setError("Failed to connect to the server.");
     } finally {
       setLoading(false);
@@ -212,20 +172,6 @@ const handleUserOnboard = async (e) => {
     setError(null);
     setLoading(true);
   
-    // Validate required fields
-    if (!pageType || pageURL.trim() === "") {
-      setError("Please fill in all required fields.");
-      setLoading(false);
-      return;
-    }
-  
-    const token = getAccessToken();
-    if (!token) {
-      setError("Authentication required. Please log in again.");
-      setLoading(false);
-      return;
-    }
-  
     try {
       const response = await fetch("http://127.0.0.1:8000/onboard/page-onboard/", {
         method: "POST",
@@ -234,29 +180,36 @@ const handleUserOnboard = async (e) => {
         body: JSON.stringify({
           page_type: pageType,
           url: pageURL,
-          token: token,
+          token: getAccessToken(),
         }),
       });
       const data = await response.json();
   
       if (response.ok) {
-        toast.success("Page onboarding completed!");
         navigate("/manage-data");
       } else {
         if (response.status === 401) {
           setError("Session expired. Please log in again.");
-          sessionStorage.removeItem("access_token");
           navigate("/login");
         } else {
           setError(data.error || "Something went wrong. Please try again.");
         }
       }
     } catch (err) {
-      console.error("Page onboarding error:", err);
       setError("Failed to connect to the server.");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Calculate progress percentage for the progress bar
+  const progressPercentage = ((currentStep - 1) / 2) * 100;
+
+  // Helper function to determine step status
+  const getStepStatus = (step) => {
+    if (currentStep > step) return "completed";
+    if (currentStep === step) return "active";
+    return "";
   };
 
   // Render the form for the current step
@@ -265,149 +218,215 @@ const handleUserOnboard = async (e) => {
       case 1:
         return (
           <form onSubmit={handleUserOnboard} className="onboarding-form">
-            <h2>User Onboarding</h2>
-            {error && <p className="error-message">{error}</p>}
+            <div className="form-header">
+              <h2 className="onboarding-title">Let's Get to Know You!</h2>
+              <p className="onboarding-subtitle">Tell us who you are - we're excited to meet you!</p>
+              {error && <p className="error-message">{error}</p>}
+            </div>
 
-            <label className="onboarding-label">First Name</label>
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-              className="onboarding-input"
-            />
+            <div className="form-content">
+              <div className="form-group">
+                <label className="onboarding-label">First Name</label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  className="onboarding-input"
+                  placeholder="Alan"
+                />
+              </div>
 
-            <label className="onboarding-label">Last Name</label>
-            <input
-              type="text"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              required
-              className="onboarding-input"
-            />
+              <div className="form-group">
+                <label className="onboarding-label">Last Name</label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  className="onboarding-input"
+                  placeholder="Turing"
+                />
+              </div>
 
-            <label className="onboarding-label">Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              className="onboarding-input"
-            />
+              <div className="form-group">
+                <label className="onboarding-label">Username</label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  className="onboarding-input"
+                  placeholder="alan2ring"
+                />
+              </div>
 
-            <button type="submit" disabled={loading} className="onboarding-button">
-              {loading ? "Submitting..." : "Submit"}
-            </button>
+              <div className="form-group">
+                <label className="onboarding-label">Your Role</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  required
+                  className="onboarding-select"
+                >
+                  <option value="" disabled>Select your role</option>
+                  <option value="product_manager">Product Manager</option>
+                  <option value="product_owner">Product Owner</option>
+                  <option value="ux_designer">UX Designer</option>
+                  <option value="ui_designer">UI Designer</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-footer">
+              <button type="submit" disabled={loading} className="onboarding-button">
+                <span className="button-text">
+                  {loading ? "Just a moment..." : "Continue"}
+                </span>
+                <span className="button-icon">→</span>
+              </button>
+            </div>
           </form>
         );
       case 2:
         return (
           <form onSubmit={handleBusinessOnboard} className="onboarding-form">
-          <h2>Business Onboarding</h2>
-          {error && <p className="error-message">{error}</p>}
-      
-          <label className="onboarding-label">Type of Business</label>
-          <select
-            value={businessType}
-            onChange={(e) => setBusinessType(e.target.value)}
-            required
-            className="onboarding-select"
-          >
-            <option value="" disabled>
-              Select a business type
-            </option>
-            {[
-              "Online Retail & Marketplace",
-              "Fashion & Apparel",
-              "Cosmetics & Beauty",
-              "Electronics & Gadgets",
-              "Food & Grocery",
-              "Toys & Baby Products",
-              "Furniture & Home Decor",
-              "Jewelry & Accessories",
-              "Luxury Goods",
-            ].map((type, index) => (
-              <option key={index} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-      
-          <label className="onboarding-label">Select Your Industry Shark</label>
-          <select
-            value={selectedCompanyId}
-            onChange={(e) => setSelectedCompanyId(e.target.value)}
-            required
-            className="onboarding-select"
-            disabled={!filteredCompanies.length}
-          >
-            <option value="" disabled>
-              {filteredCompanies.length ? "Select a company" : "Choose type first"}
-            </option>
-            {filteredCompanies.map((company) => (
-              <option key={company.id} value={company.id}>
-                {company.name}
-              </option>
-            ))}
-          </select>
-      
-          <label className="onboarding-label">Your Business URL</label>
-          <input
-            type="url"
-            value={businessURL}
-            onChange={(e) => setBusinessURL(e.target.value)}
-            maxLength={70}
-            required
-            className="onboarding-input"
-          />
-      
-          <label className="onboarding-label">Name of the Business</label>
-          <input
-            type="text"
-            value={businessName}
-            onChange={(e) => setBusinessName(e.target.value)}
-            maxLength={35}
-            required
-            className="onboarding-input"
-          />
-      
-          <button type="submit" disabled={loading} className="onboarding-button">
-            {loading ? "Submitting..." : "Submit"}
-          </button>
-        </form>
+            <div className="form-header">
+              <h2 className="onboarding-title">Your Business Journey</h2>
+              <p className="onboarding-subtitle">Help us understand your business better</p>
+              {error && <p className="error-message">{error}</p>}
+            </div>
+
+            <div className="form-content">
+              <div className="form-group">
+                <label className="onboarding-label">Type of Business</label>
+                <select
+                  value={businessType}
+                  onChange={(e) => setBusinessType(e.target.value)}
+                  required
+                  className="onboarding-select"
+                >
+                  <option value="" disabled>Select your business type</option>
+                  {[
+                    "Online Retail & Marketplace",
+                    "Fashion & Apparel",
+                    "Cosmetics & Beauty",
+                    "Electronics & Gadgets",
+                    "Food & Grocery",
+                    "Toys & Baby Products",
+                    "Furniture & Home Decor",
+                    "Jewelry & Accessories",
+                    "Luxury Goods",
+                  ].map((type, index) => (
+                    <option key={index} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="onboarding-label">Your Industry Role Model</label>
+                <select
+                  value={selectedCompanyId}
+                  onChange={(e) => setSelectedCompanyId(e.target.value)}
+                  required
+                  className="onboarding-select"
+                  disabled={!filteredCompanies.length}
+                >
+                  <option value="" disabled>
+                    {filteredCompanies.length ? "Choose your inspiration" : "Select type first"}
+                  </option>
+                  {filteredCompanies.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="onboarding-label">Business URL</label>
+                <input
+                  type="url"
+                  value={businessURL}
+                  onChange={(e) => setBusinessURL(e.target.value)}
+                  maxLength={70}
+                  required
+                  className="onboarding-input"
+                  placeholder="https://your-business.com"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="onboarding-label">Business Name</label>
+                <input
+                  type="text"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  maxLength={35}
+                  required
+                  className="onboarding-input"
+                  placeholder="Your Business Name"
+                />
+              </div>
+            </div>
+
+            <div className="form-footer">
+              <button type="submit" disabled={loading} className="onboarding-button">
+                <span className="button-text">
+                  {loading ? "Just a moment..." : "Continue"}
+                </span>
+                <span className="button-icon">→</span>
+              </button>
+            </div>
+          </form>
         );
       case 3:
         return (
           <form onSubmit={handlePageOnboard} className="onboarding-form">
-          <h2>Page Onboarding</h2>
-          {error && <p className="error-message">{error}</p>}
-      
-          <label className="onboarding-label">Page Type</label>
-          <select
-            value={pageType}
-            onChange={(e) => setPageType(e.target.value)}
-            required
-            className="onboarding-select"
-          >
-            <option value="" disabled>Select a page type</option>
-            <option value="Product Page">Product Page</option>
-            <option value="Search Results Page">Search Results Page</option>
-            <option value="Landing Page">Landing Page</option>
-          </select>
-      
-          <label className="onboarding-label">Page URL</label>
-          <input
-            type="url"
-            value={pageURL}
-            onChange={(e) => setPageURL(e.target.value)}
-            required
-            className="onboarding-input"
-          />
-      
-          <button type="submit" disabled={loading} className="onboarding-button">
-            {loading ? "Submitting..." : "Submit"}
-          </button>
-        </form>
+            <div className="form-header">
+              <h2 className="onboarding-title">Final Touch!</h2>
+              <p className="onboarding-subtitle">Let's set up your first page for analysis</p>
+              {error && <p className="error-message">{error}</p>}
+            </div>
+
+            <div className="form-content">
+              <div className="form-group">
+                <label className="onboarding-label">Page Type</label>
+                <select
+                  value={pageType}
+                  onChange={(e) => setPageType(e.target.value)}
+                  required
+                  className="onboarding-select"
+                >
+                  <option value="" disabled>Choose your page type</option>
+                  <option value="Product Page">Product Page</option>
+                  <option value="Search Results Page">Search Results Page</option>
+                  <option value="Landing Page">Landing Page</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="onboarding-label">Page URL</label>
+                <input
+                  type="url"
+                  value={pageURL}
+                  onChange={(e) => setPageURL(e.target.value)}
+                  required
+                  className="onboarding-input"
+                  placeholder="https://your-business.com/page"
+                />
+              </div>
+            </div>
+
+            <div className="form-footer">
+              <button type="submit" disabled={loading} className="onboarding-button">
+                <span className="button-text">
+                  {loading ? "Just a moment..." : "Let's Begin!"}
+                </span>
+                <span className="button-icon">→</span>
+              </button>
+            </div>
+          </form>
         );
       default:
         return null;
@@ -415,20 +434,28 @@ const handleUserOnboard = async (e) => {
   };
 
   return (
-    <div className="page-container">
-      <div className="header">
-        <img src={logo} alt="logo" className="header-logo" />
-        <div className="header-links">
-          <a href="#">INFO</a>
-          <a href="#">ABOUT</a>
+    <div className="onboarding-container">
+      <div className="onboarding-card">
+        <div className="progress-container">
+          <div className="progress-wrapper">
+            <div className="progress-bar">
+              <div 
+                className="progress-fill" 
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            <div className={`progress-step ${getStepStatus(1)}`}>1</div>
+            <div className={`progress-step ${getStepStatus(2)}`}>2</div>
+            <div className={`progress-step ${getStepStatus(3)}`}>3</div>
+          </div>
         </div>
-      </div>
-      <div className="onboarding-container">
-        <TransitionGroup>
-          <CSSTransition key={currentStep} timeout={300} classNames="fade">
-            {renderStep()}
-          </CSSTransition>
-        </TransitionGroup>
+        <div className="onboarding-content">
+          <TransitionGroup>
+            <CSSTransition key={currentStep} timeout={300} classNames="fade">
+              {renderStep()}
+            </CSSTransition>
+          </TransitionGroup>
+        </div>
       </div>
     </div>
   );
