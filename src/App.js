@@ -1,8 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import WelcomePage from './pages/welcomePage';
-import LoginPage from './pages/LoginPage'; 
-import SignUpPage from './pages/SignUpPage'; 
+import AuthPage from './pages/AuthPage'; // <-- new import
 import OnboardingPage from './pages/OnboardingPage'; 
 import DataCollectionPage from './pages/DataCollectionPage';
 import ManageMyData from './pages/ManageMyData';  
@@ -16,14 +15,14 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<WelcomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/auth" element={<AuthPage />} /> {/* merged route */}
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/datacollection" element={<DataCollectionPage />} />
         <Route path="/manage-data" element={<ManageMyData />} /> 
         <Route path="/dashboard/:pageId?" element={<Dashboard />} /> 
         <Route path="/show/:fileId" element={<ShowFile />} />
       </Routes>
+
       <ToastContainer 
         position="top-right"
         autoClose={3000}
