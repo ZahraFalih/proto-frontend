@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import DashboardHeaderPanel from '../components/dashboard/DashboardHeaderPanel';
+import UBAPanel from '../components/dashboard/UBAPanel';
+import UIPanel from '../components/dashboard/UIPanel';
+import WebMetricsPanel from '../components/dashboard/WebMetricsPanel';
 
 export default function Dashboard() {
   const [pages, setPages] = useState([]);
   const [activeTabSlug, setActiveTabSlug] = useState('');
 
-  // Helper to turn "Landing Page" → "landing-page"
   const slugify = (str) =>
     str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
 
@@ -38,6 +40,7 @@ export default function Dashboard() {
     <>
       <DashboardHeaderPanel />
       <main className="dashboard-body">
+        {/* Tabs */}
         <div className="tabs-container">
           {pages.map((page) => {
             const slug = slugify(page.type);
@@ -46,7 +49,6 @@ export default function Dashboard() {
                 key={page.id}
                 className={`tab ${activeTabSlug === slug ? 'active' : ''}`}
                 onClick={() => handleTabClick(slug)}
-                data-tab={slug}
               >
                 {page.type}
               </button>
@@ -54,20 +56,11 @@ export default function Dashboard() {
           })}
         </div>
 
+        {/* Always-visible panels */}
         <div id="content-placeholder">
-          {pages.map((page) => {
-            const slug = slugify(page.type);
-            return (
-              <div
-                key={page.id}
-                id={slug}
-                className={`tab-content ${activeTabSlug === slug ? 'active' : ''}`}
-              >
-                {/* Replace this with your real content component */}
-                Content for {page.type}
-              </div>
-            );
-          })}
+          <UBAPanel />
+          <UIPanel />
+          <WebMetricsPanel />
         </div>
       </main>
     </>
