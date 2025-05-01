@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import logo from '../assets/icons/logo.png';
 import '../styles/AuthPage.css';
+import '../styles/global.css';
 
 function AuthPage() {
   const [email, setEmail] = useState('');
@@ -63,7 +64,7 @@ function AuthPage() {
         if (mode === 'login') {
           toast.success('Login successful! Redirecting…');
           setTimeout(() => {
-            navigate(data.first_login ? '/onboarding' : '/manage-data');
+            navigate(data.first_login ? '/onboarding' : '/dashboard');
           }, 800);
         } else {
           toast.success('Account created! Redirecting to login…');
