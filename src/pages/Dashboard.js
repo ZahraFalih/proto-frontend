@@ -58,9 +58,9 @@ export default function Dashboard() {
 
         {/* Always-visible panels */}
         <div id="content-placeholder">
+        <WebMetricsPanel />
           <UBAPanel />
           <UIPanel />
-          <WebMetricsPanel />
         </div>
       </main>
     </>
