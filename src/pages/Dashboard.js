@@ -1,40 +1,73 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import DashboardHeaderPanel from '../components/dashboard/DashboardHeaderPanel';
 
 export default function Dashboard() {
+  const [pages, setPages] = useState([]);
+  const [activeTabSlug, setActiveTabSlug] = useState('');
+
+  // Helper to turn "Landing Page" → "landing-page"
+  const slugify = (str) =>
+    str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+
   useEffect(() => {
-    const tabs     = document.querySelectorAll('.tab');
-    const contents = document.querySelectorAll('.tab-content');
-    tabs.forEach(tab =>
-      tab.addEventListener('click', () => {
-        const target = tab.dataset.tab;
-        tabs.forEach(t => t.classList.remove('active'));
-        contents.forEach(c => c.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById(target).classList.add('active');
+    const token = sessionStorage.getItem('access_token');
+    fetch('http://127.0.0.1:8000/toolkit/user-pages/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
+      mode: 'cors',
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        return res.json();
       })
-    );
+      .then((data) => {
+        setPages(data);
+        if (data.length) {
+          setActiveTabSlug(slugify(data[0].type));
+        }
+      })
+      .catch((err) => console.error('Failed fetching pages:', err));
   }, []);
+
+  const handleTabClick = (slug) => setActiveTabSlug(slug);
 
   return (
     <>
       <DashboardHeaderPanel />
       <main className="dashboard-body">
         <div className="tabs-container">
-          <button className="tab active" data-tab="example1">Example 1</button>
-          <button className="tab"        data-tab="example2">Example 2</button>
-          <button className="tab"        data-tab="example3">Example 3</button>
+          {pages.map((page) => {
+            const slug = slugify(page.type);
+            return (
+              <button
+                key={page.id}
+                className={`tab ${activeTabSlug === slug ? 'active' : ''}`}
+                onClick={() => handleTabClick(slug)}
+                data-tab={slug}
+              >
+                {page.type}
+              </button>
+            );
+          })}
         </div>
+
         <div id="content-placeholder">
-          <div id="example1" className="tab-content active">
-            Content for Example 1
-          </div>
-          <div id="example2" className="tab-content">
-            Content for Example 2
-          </div>
-          <div id="example3" className="tab-content">
-            Content for Example 3
-          </div>
+          {pages.map((page) => {
+            const slug = slugify(page.type);
+            return (
+              <div
+                key={page.id}
+                id={slug}
+                className={`tab-content ${activeTabSlug === slug ? 'active' : ''}`}
+              >
+                {/* Replace this with your real content component */}
+                Content for {page.type}
+              </div>
+            );
+          })}
         </div>
       </main>
     </>
