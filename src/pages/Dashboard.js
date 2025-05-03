@@ -10,11 +10,9 @@ export default function Dashboard() {
   const [pages, setPages] = useState([]);
   const [activeTabSlug, setActiveTabSlug] = useState('');
 
-  /* turn "Landing Page" → "landing-page" */
   const slugify = str =>
     str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
 
-  /* grab user pages */
   useEffect(() => {
     const token = sessionStorage.getItem('access_token');
     if (!token) {
@@ -36,7 +34,6 @@ export default function Dashboard() {
       .then(data => {
         console.log('[Dashboard] Pages payload:', data);
         setPages(data);
-
         if (data.length) {
           const defaultSlug = slugify(data[0].type);
           setActiveTabSlug(defaultSlug);
@@ -46,52 +43,44 @@ export default function Dashboard() {
       .catch(err => console.error('[Dashboard] Fetch failed:', err));
   }, []);
 
-  // click handler now also updates URL
   const handleTabClick = (slug, id) => {
     setActiveTabSlug(slug);
     const params = new URLSearchParams(window.location.search);
     params.set('page_id', id);
-    window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+    window.history.pushState({}, '', `${window.location.pathname}?${params}`);
   };
 
   const handleAddTab = () => {
-    // This function will be connected to backend functionality later
-    console.log("Add new page tab clicked");
-    // For now, we'll just show an alert
-    alert("Add new page functionality will be implemented in future updates");
+    console.log('Add new page tab clicked');
+    alert('Add new page functionality will be implemented in future updates');
   };
 
-  /* figure out the currently active page and its ID */
   const activePage = pages.find(p => slugify(p.type) === activeTabSlug);
   const activePageId = activePage ? activePage.id : null;
 
   return (
     <div className="dashboard-container">
-      {/* Fixed header section */}
       <div className="dashboard-header-section">
         <div className="dashboard-content-wrapper">
-      <DashboardHeaderPanel />
+          <DashboardHeaderPanel />
 
-        {/* Tabs */}
-        <div className="tabs-container">
-          {pages.map(page => {
-            const slug = slugify(page.type);
-            return (
-              <button
-                key={page.id}
-                className={`tab ${activeTabSlug === slug ? 'active' : ''}`}
-                onClick={() => handleTabClick(slug, page.id)}
+          <div className="tabs-container" role="tablist">
+            {pages.map(page => {
+              const slug = slugify(page.type);
+              return (
+                <button
+                  key={page.id}
+                  className={`tab ${activeTabSlug === slug ? 'active' : ''}`}
+                  onClick={() => handleTabClick(slug, page.id)}
                   aria-selected={activeTabSlug === slug}
                   role="tab"
-              >
-                {page.type}
-              </button>
-            );
-          })}
-            
-            {/* Add tab button */}
-            <button 
-              className="add-tab-button" 
+                >
+                  {page.type}
+                </button>
+              );
+            })}
+            <button
+              className="add-tab-button"
               onClick={handleAddTab}
               aria-label="Add new page"
               title="Add new page"
@@ -100,19 +89,13 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
-        </div>
+      </div>
 
-      {/* Scrollable content area */}
       <main className="dashboard-body">
-        <div className="dashboard-content-wrapper">
-        <div id="content-placeholder">
-          {/* Pass the pageId prop down so it can fire off its two async calls */}
+        <div className="dashboard-content-wrapper" id="content-placeholder">
           <WebMetricsPanel pageId={activePageId} />
-
-          {/* Other panels */}
-          <UBAPanel />
+          <UBAPanel pageId={activePageId} />     {/* ← HERE */}
           <UIPanel pageId={activePageId} />
-          </div>
         </div>
       </main>
     </div>

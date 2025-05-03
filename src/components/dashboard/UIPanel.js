@@ -20,7 +20,7 @@ export default function UIPanel({ pageId }) {
         setLoading(false);
         console.log(`[UIPanel] Loaded from cache for pageId=${pageId}`);
         return;
-      } catch (e) {
+      } catch {
         console.warn('[UIPanel] Corrupted cache, ignoring.');
       }
     }
@@ -64,40 +64,33 @@ export default function UIPanel({ pageId }) {
 
       {!loading && !error && (
         <div className="ui-eval-body">
+          {/* Left column: ratings */}
           <div className="ui-categories-container">
-            {categories.map(({ name, score, evidence }) => (
-              <div key={name} className="ui-category" title={evidence}>
+            {categories.map(({ name, score }) => (
+              <div key={name} className="ui-category">
                 <span className="category-name">{name.replace(/_/g, ' ')}</span>
                 <div className="rating-container">
                   <div className="rating-bar">
                     <div 
                       className="rating-fill" 
                       style={{ width: `${(score / 5) * 100}%` }}
-                    ></div>
+                    />
                   </div>
                   <span className="rating-value">{score}/5</span>
                 </div>
               </div>
             ))}
           </div>
-          
-          <div className="ui-info-container">
-            <h3 className="ui-info-title">Why UI Matters for Sales</h3>
-            <p className="ui-info-text">
-              A well-designed user interface creates a strong foundation for your business by making interactions intuitive and seamless. Studies show that 88% of online shoppers won't return to a website after a poor user experience.
-            </p>
-            <p className="ui-info-text">
-              Effective UI design directly impacts:
-            </p>
-            <ul className="ui-info-text">
-              <li>Conversion rates - intuitive interfaces guide users toward purchase</li>
-              <li>Customer retention - pleasant experiences encourage repeat visits</li>
-              <li>Brand perception - professional design builds credibility and trust</li>
-              <li>Customer support costs - intuitive interfaces reduce help requests</li>
-            </ul>
-            <p className="ui-info-text">
-              Focus on improving your lowest-scoring categories first to see the biggest impact on user satisfaction and sales performance.
-            </p>
+
+          {/* Right column: evidence */}
+          <div className="ui-evidence-container">
+            <h3 className="ui-info-title">Evidence</h3>
+            {categories.map(({ name, evidence }) => (
+              <div key={name} className="evidence-item">
+                <strong className="evidence-name">{name.replace(/_/g, ' ')}:</strong>
+                <p className="evidence-text">{evidence}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}

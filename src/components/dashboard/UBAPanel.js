@@ -1,147 +1,123 @@
 // components/dashboard/UBAPanel.js
-import React, { useState } from 'react';
-import Plot from 'react-plotly.js';
+import React, { useState, useEffect } from 'react';
 import '../../styles/UBAPanel.css';
 
-export default function UBAPanel() {
-  const [currentChart, setCurrentChart] = useState(0);
-  
-  // Define chart data
-  const charts = [
-    {
-      title: 'Video Plays Across Sessions',
-      data: [
-        {
-          type: 'bar',
-          x: ['sess1', 'sess2', 'sess3', 'sess4', 'sess5', 'sess6'],
-          y: [2, 1, 0, 0, 3, 1],
-          name: 'Video Plays',
-          marker: { color: '#0756A4' },
-        },
-      ],
-      layout: {
-        title: 'Video Plays Across Sessions',
-        xaxis: { title: 'Session ID' },
-        yaxis: { title: 'Number of Video Plays' },
-        margin: { t: 40, r: 20, l: 50, b: 50 },
-      }
-    },
-    {
-      title: 'Clicks Over Sessions',
-      data: [
-        {
-          type: 'scatter',
-          mode: 'lines+markers',
-          x: ['sess1', 'sess2', 'sess3', 'sess4', 'sess5', 'sess6'],
-          y: [5, 3, 6, 2, 4, 7],
-          name: 'Clicks per Session',
-          marker: { color: '#2279D0' },
-          line: { color: '#0756A4' },
-        },
-      ],
-      layout: {
-        title: 'Clicks Over Sessions',
-        xaxis: { title: 'Session ID' },
-        yaxis: { title: 'Click Count' },
-        margin: { t: 40, r: 20, l: 50, b: 50 },
-      }
-    },
-    {
-      title: 'Session Duration',
-      data: [
-        {
-          type: 'bar',
-          x: ['sess1', 'sess2', 'sess3', 'sess4', 'sess5', 'sess6'],
-          y: [3.2, 4.1, 2.8, 5.4, 3.9, 4.5],
-          name: 'Minutes Spent',
-          marker: { 
-            color: '#0756A4',
-            opacity: 0.8,
-          },
-        },
-      ],
-      layout: {
-        title: 'Session Duration in Minutes',
-        xaxis: { title: 'Session ID' },
-        yaxis: { title: 'Duration (minutes)' },
-        margin: { t: 40, r: 20, l: 50, b: 50 },
-      }
-    }
-  ];
+export default function UBAPanel({ pageId }) {
+  const [observations, setObservations] = useState([]);
+  const [rawReport,    setRawReport]    = useState('');
+  const [links,        setLinks]        = useState([]);
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState(null);
 
-  const nextChart = () => {
-    setCurrentChart((currentChart + 1) % charts.length);
-  };
+  useEffect(() => {
+    if (!pageId) return;
+    setLoading(true);
+    setError(null);
+    setObservations([]);
+    setRawReport('');
+    setLinks([]);
 
-  const prevChart = () => {
-    setCurrentChart((currentChart - 1 + charts.length) % charts.length);
-  };
+    // 1) fetch the UBA report
+    fetch(`http://127.0.0.1:8000/ask-ai/evaluate-uba/?page_id=${pageId}`)
+      .then(res => {
+        if (!res.ok) throw new Error(`UBA fetch failed: ${res.status}`);
+        return res.json();
+      })
+      .then(ubaData => {
+        const report = ubaData.uba_report || '';
+        setRawReport(report);
+
+        // parse observations out of the report
+        const parts = report.split(/\r?\n\r?\n(?=Observation)/g);
+        const parsed = parts.map(text => {
+          const p = text.match(/1\s*-\s*Problem:\s*([\s\S]*?)\s*2\s*-\s*Analysis:/);
+          const a = text.match(/2\s*-\s*Analysis:\s*([\s\S]*?)\s*3\s*-\s*Solution:/);
+          const s = text.match(/3\s*-\s*Solution:\s*([\s\S]*)/);
+          return {
+            problem:  p?.[1].trim() || '',
+            analysis: a?.[1].trim() || '',
+            solution: s?.[1].trim() || '',
+          };
+        });
+        setObservations(parsed);
+
+        // 2) then fetch your problem→solutions endpoint
+        return fetch(
+          `http://127.0.0.1:8000/ask-ai/web-search/?page_id=${pageId}`
+        );
+      })
+      .then(res2 => {
+        if (!res2.ok) throw new Error(`Solutions fetch failed: ${res2.status}`);
+        return res2.json();
+      })
+      .then(solData => {
+        // flatten every solution.source into one array
+        const allLinks = (solData.results || [])
+          .flatMap(r => (r.solutions || []).map(s => s.source))
+          .filter(Boolean);
+        setLinks(allLinks);
+      })
+      .catch(err => {
+        console.error('[UBAPanel] error', err);
+        setError(err.message);
+      })
+      .finally(() => setLoading(false));
+  }, [pageId]);
 
   return (
     <div className="panel-container">
-      <div className="panel-header">User Behaviour Analytics Panel</div>
-      <div className="uba-plot-wrapper">
-        <div className="uba-info-container">
-          <h3 className="uba-info-title">Understanding User Behavior</h3>
-          <p className="uba-info-text">
-            User Behavior Analytics (UBA) provides valuable insights into how visitors interact with your website, helping you identify patterns, pain points, and opportunities for improvement.
-          </p>
-          <p className="uba-info-text">
-            By analyzing metrics like click patterns, session duration, and video engagement, you can optimize your user experience to increase conversions and customer satisfaction.
-          </p>
-          <p className="uba-info-text">
-            Use these insights to:
-            <br />• Identify and address user journey bottlenecks
-            <br />• Optimize high-value interaction points
-            <br />• Make data-driven UX improvement decisions
-          </p>
-        </div>
+      <div className="panel-header">User Behaviour Analytics</div>
 
-        <div className="uba-charts-container">
-          <div className="uba-chart">
-            <Plot
-              data={charts[currentChart].data}
-              layout={{
-                ...charts[currentChart].layout,
-                autosize: true,
-                paper_bgcolor: 'rgba(0,0,0,0)',
-                plot_bgcolor: 'rgba(0,0,0,0)',
-                font: { family: 'Gill Sans, sans-serif' },
-              }}
-              style={{ width: '100%', height: '100%' }}
-              useResizeHandler={true}
-              config={{ responsive: true, displayModeBar: false }}
-            />
-          </div>
+      {/* Debug / Raw Report */}
+      <div className="uba-debug">
+        <p><strong>Page ID:</strong> {pageId || '—'}</p>
+        {rawReport && (
+          <details>
+            <summary>Raw UBA report ({rawReport.length} chars)</summary>
+            <pre style={{ maxHeight: 150, overflowY: 'auto' }}>{rawReport}</pre>
+          </details>
+        )}
+      </div>
 
-          <div className="uba-navigation">
-            <button 
-              className="uba-nav-button" 
-              onClick={prevChart}
-              aria-label="Previous chart"
-            >
-              ←
-            </button>
-            
-            <div className="uba-nav-indicator">
-              {charts.map((_, index) => (
-                <div 
-                  key={index} 
-                  className={`uba-nav-dot ${index === currentChart ? 'active' : ''}`}
-                  onClick={() => setCurrentChart(index)}
-                />
-              ))}
-            </div>
-            
-            <button 
-              className="uba-nav-button" 
-              onClick={nextChart}
-              aria-label="Next chart"
-            >
-              →
-            </button>
+      {/* Observations */}
+      <div className="uba-info-container">
+        {loading && <p>Loading observations…</p>}
+        {error   && <p className="uba-error-text">Error: {error}</p>}
+        {!loading && !error && observations.length === 0 && (
+          <p>No observations found.</p>
+        )}
+        {!loading && !error && observations.map((obs, i) => (
+          <div key={i} className="uba-observation">
+            <h4>Observation {i + 1}</h4>
+            <p><strong>Problem:</strong> {obs.problem}</p>
+            <p><strong>Analysis:</strong> {obs.analysis}</p>
+            <p><strong>Solution:</strong> {obs.solution}</p>
           </div>
-        </div>
+        ))}
+      </div>
+
+      {/* Links */}
+      <div className="uba-links-container">
+        <h4>Related Resources</h4>
+        {loading && <p>Loading links…</p>}
+        {!loading && !error && links.length === 0 && (
+          <p>No resources available.</p>
+        )}
+        {!loading && !error && links.length > 0 && (
+          <ul className="uba-link-list">
+            {links.map((url, idx) => (
+              <li key={idx}>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {url}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
