@@ -5,8 +5,8 @@ body {
   font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
   color: #333;
   line-height: 1.6;
-  padding: 1rem;
 }
+
 
 .header {
   overflow: hidden;
@@ -45,4 +45,89 @@ body {
 .header a.active {
   background-color: dodgerblue;
   color: white;
+}
+.footer {
+  margin-top: auto; /* Push footer to the bottom */
+  background-color: #ffffff;
+  text-align: center;
+  padding: 12px 0;
+  font-size: 14px;
+  color: #777;
+  border-top: 1px solid #eaeaea;
+}
+
+
+/* === Global Form Styles === */
+.form-group { position: relative; }
+.form-input {
+  width: 100%;
+  padding: 14px 19px;
+  border: 1px solid #ccc;
+  border-radius: 30px;
+  background-color: #fff !important;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.form-input:focus {
+  border-color: var(--color-primary);
+}
+.floating-label {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  background: #fff;
+  padding: 0 4px;
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.form-select:disabled {
+  background-color: #fff !important;
+}
+
+.form-input:not(:placeholder-shown) + .floating-label,
+.form-input:focus + .floating-label {
+  top: 0.2px;
+  left: 17px;
+  padding: 0.1px 1px;
+  font-size: 0.75rem;
+  color: var(--color-primary);
+}
+
+/* === Match select to input aesthetics === */
+.form-select,
+.form-group select {
+  width: 100%;
+  padding: 14px 19px;
+  border: 1px solid #ccc;
+  border-radius: 30px;
+  background-color: #fff !important;
+  font-size: 1rem;
+  line-height: 1.6;
+  outline: none;
+  transition: border-color 0.2s ease;
+  appearance: none; /* keep your custom arrow */
+  background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%237f7f7f' viewBox='0 0 16 16'><path d='M4.646 6.646a.5.5 0 0 1 .708 0L8 9.293l2.646-2.647a.5.5 0 0 1 .708.708L8 10.707 4.646 7.354a.5.5 0 0 1 0-.708z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px 16px;
+}
+
+.form-select:focus,
+.form-group select:focus {
+  border-color: var(--color-primary);
+}
+
+/* If you’re using floating labels for select too: */
+.form-select:not([value=""]) + .floating-label,
+.form-group select:focus + .floating-label {
+  top: 0.2px;
+  left: 17px;
+  padding: 0.1px 1px;
+  font-size: 0.75rem;
+  color: var(--color-primary);
 }
