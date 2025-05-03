@@ -5,16 +5,22 @@ import '../../styles/WebMetricsPanel.css';
 export default function WebMetricsPanel({ pageId }) {
   const [roleMetrics,     setRoleMetrics]     = useState(null);
   const [businessMetrics, setBusinessMetrics] = useState(null);
-  const [loading,         setLoading]         = useState(false);
-  const [error,           setError]           = useState('');
+  const [loadingMetrics,  setLoadingMetrics]  = useState(false);
+  const [errorMetrics,    setErrorMetrics]    = useState('');
 
+  const [evaluation,      setEvaluation]      = useState(null);
+  const [loadingEval,     setLoadingEval]     = useState(false);
+  const [errorEval,       setErrorEval]       = useState('');
+
+  // 1) Fetch role & biz metrics
   useEffect(() => {
-    if (!pageId) return;    // nothing to fetch yet
+    if (!pageId) return;
 
-    setLoading(true);
-    setError('');
+    setLoadingMetrics(true);
+    setErrorMetrics('');
     setRoleMetrics(null);
     setBusinessMetrics(null);
+    console.log('▶️ Starting metrics fetch for page', pageId);
 
     const token = sessionStorage.getItem('access_token');
     const headers = {
@@ -30,57 +36,90 @@ export default function WebMetricsPanel({ pageId }) {
           fetch(roleUrl,     { method: 'GET', headers }),
           fetch(businessUrl, { method: 'GET', headers }),
         ]);
-
         if (!roleRes.ok || !bizRes.ok) {
           const status = !roleRes.ok ? roleRes.status : bizRes.status;
-          throw new Error(`Status ${status}`);
+          throw new Error(`Metrics fetch failed with status ${status}`);
         }
-
         const [roleData, bizData] = await Promise.all([
           roleRes.json(),
           bizRes.json(),
         ]);
-
+        console.log('✅ Metrics fetched:', { roleData, bizData });
         setRoleMetrics(roleData);
         setBusinessMetrics(bizData);
       } catch (err) {
-        console.error(err);
-        setError('Failed to load web metrics.');
+        console.error('❌ Error fetching metrics:', err);
+        setErrorMetrics('Failed to load web metrics.');
       } finally {
-        setLoading(false);
+        setLoadingMetrics(false);
       }
     })();
   }, [pageId]);
 
-  // Define ideal benchmarks
+  // 2) Send business metrics to evaluation endpoint
+  useEffect(() => {
+    if (!businessMetrics) return;
+
+    const bizKey = Object.keys(businessMetrics)[0];
+    const bizObj = businessMetrics[bizKey];
+
+    setLoadingEval(true);
+    setErrorEval('');
+    setEvaluation(null);
+    console.log('▶️ Sending business metrics to evaluator:', bizObj);
+
+    (async () => {
+      try {
+        const resp = await fetch(
+          'http://127.0.0.1:8000/ask-ai/evaluate-web-metrics/',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [bizKey]: bizObj }),
+          }
+        );
+        if (!resp.ok) throw new Error(`Eval status ${resp.status}`);
+        const data = await resp.json();
+        console.log('✅ Evaluation response:', data);
+        setEvaluation(data.web_metrics_report);
+      } catch (err) {
+        console.error('❌ Evaluation error:', err);
+        setErrorEval('Failed to evaluate metrics.');
+      } finally {
+        setLoadingEval(false);
+      }
+    })();
+  }, [businessMetrics]);
+
+  // Ideal benchmarks
   const idealBenchmarks = {
     'First Contentful Paint': {
       value: '1.0 s',
-      desc: 'Time until the browser renders the first bit of content from the DOM, providing the first feedback to the user that the page is loading.'
+      desc: 'Time until the browser renders the first bit of content from the DOM.'
     },
     'Speed Index': {
       value: '1.5 s',
-      desc: 'How quickly content is visually displayed during page load. Lower scores mean content is painted faster.'
+      desc: 'How quickly content is visually displayed during page load.'
     },
     'Largest Contentful Paint (LCP)': {
       value: '2.5 s',
-      desc: 'Time when the largest content element in the viewport becomes visible. Vital for perceived loading speed.'
+      desc: 'Time when the largest content element in the viewport becomes visible.'
     },
     'Time to Interactive': {
       value: '5.0 s',
-      desc: 'Time until the page is fully interactive, with events handling input and animation running smoothly.'
+      desc: 'Time until the page is fully interactive.'
     },
     'Total Blocking Time (TBT)': {
       value: '200 ms',
-      desc: 'Sum of time between First Contentful Paint and Time to Interactive where the main thread was blocked for long enough to prevent input responsiveness.'
+      desc: 'Sum of long tasks between FCP and TTI that block input responsiveness.'
     },
     'Cumulative Layout Shift (CLS)': {
       value: '0.1',
-      desc: 'Measures visual stability by quantifying how much page elements move unexpectedly. Lower is better.'
+      desc: 'Measures unexpected layout shifts; lower is better.'
     },
   };
 
-  // Build rows for the table
+  // Build rows
   const [sortConfig, setSortConfig] = useState({ key: 'metric', direction: 'asc' });
   const rows = useMemo(() => {
     if (!roleMetrics || !businessMetrics) return [];
@@ -102,15 +141,19 @@ export default function WebMetricsPanel({ pageId }) {
   const sortedRows = useMemo(() => {
     const sorted = [...rows];
     sorted.sort((a, b) => {
-      const aVal = a[sortConfig.key], bVal = b[sortConfig.key];
-      const num = v => { const m = String(v).match(/[\d.]+/); return m ? parseFloat(m[0]) : NaN; };
-      const aNum = num(aVal), bNum = num(bVal);
+      const extractNum = v => {
+        const m = String(v).match(/[\d.]+/);
+        return m ? parseFloat(m[0]) : NaN;
+      };
+      const aNum = extractNum(a[sortConfig.key]);
+      const bNum = extractNum(b[sortConfig.key]);
+
       if (!isNaN(aNum) && !isNaN(bNum)) {
         return sortConfig.direction === 'asc' ? aNum - bNum : bNum - aNum;
       }
       return sortConfig.direction === 'asc'
-        ? String(aVal).localeCompare(String(bVal))
-        : String(bVal).localeCompare(String(aVal));
+        ? String(a[sortConfig.key]).localeCompare(String(b[sortConfig.key]))
+        : String(b[sortConfig.key]).localeCompare(String(a[sortConfig.key]));
     });
     return sorted;
   }, [rows, sortConfig]);
@@ -125,11 +168,18 @@ export default function WebMetricsPanel({ pageId }) {
     <div className="panel-container">
       <div className="panel-header">Web Metrics Panel</div>
       <div className="panel-body">
-        {loading && <div className="loading-indicator">Loading web metrics...</div>}
-        {error && <div className="error">{error}</div>}
+
+        { (loadingMetrics || loadingEval) && (
+          <div className="loading-indicator">
+            {loadingMetrics ? 'Loading web metrics…' : 'Evaluating metrics…'}
+          </div>
+        )}
+        { errorMetrics && <div className="error">{errorMetrics}</div> }
+        { errorEval    && <div className="error">{errorEval}</div> }
 
         {roleMetrics && businessMetrics && (
           <>
+            {/* 🗂 Metrics Table */}
             <div className="metrics-table-container">
               <table className="metrics-table">
                 <thead>
@@ -162,28 +212,25 @@ export default function WebMetricsPanel({ pageId }) {
                 </tbody>
               </table>
             </div>
-            
+
+            {/* 🔍 Evaluation Results */}
             <div className="metrics-info-container">
-              <div>
-                <h3 className="metrics-info-title">Optimize Your Web Performance</h3>
-                <p className="metrics-info-text">
-                  Web performance metrics are crucial indicators of user experience. Fast-loading pages lead to higher engagement, better conversion rates, and improved SEO rankings.
-                </p>
-                <p className="metrics-info-text">
-                  Focus on optimizing your Largest Contentful Paint (LCP) and Cumulative Layout Shift (CLS) as these are core web vitals that Google uses in their ranking algorithm.
-                </p>
-              </div>
-              
-              <div>
-                <h3 className="metrics-info-title">Performance Best Practices</h3>
-                <p className="metrics-info-text">
-                  • Optimize and compress images<br />
-                  • Minimize JavaScript and CSS<br />
-                  • Leverage browser caching<br />
-                  • Reduce server response time<br />
-                  • Implement content delivery networks (CDNs)
-                </p>
-              </div>
+              {evaluation ? (
+                <>
+                  <h3 className="metrics-info-title">Summary</h3>
+                  <p className="metrics-info-text">
+                    {evaluation.overall_summary}
+                  </p>
+                  <h3 className="metrics-info-title">Recommendations</h3>
+                  <ul className="metrics-info-text">
+                    {evaluation.recommendations.map((tip, i) => (
+                      <li key={i}>{tip}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : !loadingEval && (
+                <div className="metrics-info-text">No evaluation available.</div>
+              )}
             </div>
           </>
         )}

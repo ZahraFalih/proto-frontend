@@ -1,6 +1,6 @@
-/* AuthPage.css */
+/* AuthPage.css (cleaned)
 
-/* Variables */
+Variables (keep if not in global)
 :root {
     --color-primary:       #0756A4;
     --color-primary-dark:  #2279D0;
@@ -11,10 +11,10 @@
     --color-error:         #E5484D;
     --radius:              12px;
     --shadow:              0 4px 20px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Page Container */
-  .auth-page {
+}
+
+/* Page Container */
+.auth-page {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -36,7 +36,6 @@
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     will-change: transform, box-shadow;
   }
-  
   .auth-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
@@ -48,13 +47,11 @@
     justify-content: center;
     margin-bottom: 2rem;
   }
-  
   .auth-logo {
     width: 48px;
     height: 48px;
     transition: transform 0.3s ease;
   }
-  
   .auth-logo:hover {
     transform: scale(1.1);
   }
@@ -79,53 +76,12 @@
     font-size: 0.95rem;
   }
   
-  /* Form */
+  /* Form Container */
   .auth-form {
     display: flex;
     flex-direction: column;
     gap: 1.2rem;
     margin-bottom: 2rem;
-  }
-  
-  .form-group {
-    position: relative;
-  }
-  
-  .form-input {
-    width: 100%;
-    padding: 14px 19px;
-    border: 1px solid #ccc;
-    border-radius: 30px;
-    background: #fff;
-    font-size: 1rem;
-    outline: none;
-    transition: border-color 0.2s ease;
-  }
-  
-  .form-input:focus {
-    border-color: var(--color-primary);
-  }
-  
-  .floating-label {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.9rem;
-    color: var(--color-text-muted);
-    background: #fff;
-    padding: 0 4px;
-    pointer-events: none;
-    transition: all 0.2s ease;
-  }
-  
-  .form-input:not(:placeholder-shown) + .floating-label,
-  .form-input:focus + .floating-label {
-    top: 0.2px;
-    left: 17px;
-    padding: 0.1px 1px;
-    font-size: 0.75rem;
-    color: var(--color-primary);
   }
   
   /* Button */
@@ -141,7 +97,6 @@
     cursor: pointer;
     transition: background 0.2s ease;
   }
-  
   .auth-button:hover {
     background: var(--color-primary-dark);
   }
@@ -170,14 +125,12 @@
     font-size: 0.95rem;
     color: var(--color-text-muted);
   }
-  
   .auth-toggle {
     color: var(--color-primary);
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
   }
-  
   .auth-toggle:hover {
     text-decoration: underline;
   }
