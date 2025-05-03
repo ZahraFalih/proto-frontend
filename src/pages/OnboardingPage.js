@@ -186,7 +186,7 @@ const OnboardingPage = () => {
       const data = await response.json();
   
       if (response.ok) {
-        navigate("/manage-data");
+        navigate("dashboard");
       } else {
         if (response.status === 401) {
           setError("Session expired. Please log in again.");
@@ -226,55 +226,60 @@ const OnboardingPage = () => {
 
             <div className="form-content">
               <div className="form-group">
-                <label className="onboarding-label">First Name</label>
                 <input
+                  id="firstName"
                   type="text"
+                  className="form-input"
+                  placeholder=" "
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  onChange={e => setFirstName(e.target.value)}
                   required
-                  className="onboarding-input"
-                  placeholder="Alan"
                 />
+                <label htmlFor="firstName" className="floating-label">First Name</label>
               </div>
 
               <div className="form-group">
-                <label className="onboarding-label">Last Name</label>
                 <input
+                  id="lastName"
                   type="text"
+                  className="form-input"
+                  placeholder=" "
                   value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  onChange={e => setLastName(e.target.value)}
                   required
-                  className="onboarding-input"
-                  placeholder="Turing"
                 />
+                <label htmlFor="lastName" className="floating-label">Last Name</label>
               </div>
 
               <div className="form-group">
-                <label className="onboarding-label">Username</label>
                 <input
+                  id="username"
                   type="text"
+                  className="form-input"
+                  placeholder=" "
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={e => setUsername(e.target.value)}
                   required
-                  className="onboarding-input"
-                  placeholder="alan2ring"
                 />
+                <label htmlFor="username" className="floating-label">Username</label>
               </div>
 
+
               <div className="form-group">
-                <label className="onboarding-label">Your Role</label>
                 <select
+                  id="role"
+                  className="form-select"
                   value={role}
-                  onChange={(e) => setRole(e.target.value)}
+                  onChange={e => setRole(e.target.value)}
                   required
-                  className="onboarding-select"
                 >
-                  <option value="" disabled>Select your role</option>
+                  <option value="" disabled>Choose your role</option>
                   <option value="product_manager">Product Manager</option>
                   <option value="product_owner">Product Owner</option>
                   <option value="ux_designer">UX Designer</option>
                   <option value="ui_designer">UI Designer</option>
                 </select>
+                <label htmlFor="role" className="floating-label">Your Role</label>
               </div>
             </div>
 
@@ -299,12 +304,12 @@ const OnboardingPage = () => {
 
             <div className="form-content">
               <div className="form-group">
-                <label className="onboarding-label">Type of Business</label>
                 <select
+                  id="businesstype"
                   value={businessType}
                   onChange={(e) => setBusinessType(e.target.value)}
                   required
-                  className="onboarding-select"
+                  className="form-select"
                 >
                   <option value="" disabled>Select your business type</option>
                   {[
@@ -321,52 +326,38 @@ const OnboardingPage = () => {
                     <option key={index} value={type}>{type}</option>
                   ))}
                 </select>
+                <label htmlFor="businesstype" className="floating-label">Business Type</label>
               </div>
 
               <div className="form-group">
-                <label className="onboarding-label">Your Industry Role Model</label>
                 <select
+                  id="roleModel"
+                  className="form-select"
                   value={selectedCompanyId}
-                  onChange={(e) => setSelectedCompanyId(e.target.value)}
-                  required
-                  className="onboarding-select"
+                  onChange={e => setSelectedCompanyId(e.target.value)}
                   disabled={!filteredCompanies.length}
+                  required
                 >
-                  <option value="" disabled>
-                    {filteredCompanies.length ? "Choose your inspiration" : "Select type first"}
-                  </option>
-                  {filteredCompanies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                      {company.name}
-                    </option>
+                  <option value="" disabled>{filteredCompanies.length ? "Choose inspiration" : "Select type first"}</option>
+                  {filteredCompanies.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
+                <label htmlFor="roleModel" className="floating-label">Industry Role Model</label>
               </div>
 
-              <div className="form-group">
-                <label className="onboarding-label">Business URL</label>
-                <input
-                  type="url"
-                  value={businessURL}
-                  onChange={(e) => setBusinessURL(e.target.value)}
-                  maxLength={70}
-                  required
-                  className="onboarding-input"
-                  placeholder="https://your-business.com"
-                />
-              </div>
 
               <div className="form-group">
-                <label className="onboarding-label">Business Name</label>
                 <input
+                  id="businessName"
                   type="text"
+                  className="form-input"
+                  placeholder=" "
                   value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
-                  maxLength={35}
+                  onChange={e => setBusinessName(e.target.value)}
                   required
-                  className="onboarding-input"
-                  placeholder="Your Business Name"
                 />
+                <label htmlFor="businessName" className="floating-label">Business Name</label>
               </div>
             </div>
 
@@ -390,31 +381,33 @@ const OnboardingPage = () => {
             </div>
 
             <div className="form-content">
-              <div className="form-group">
-                <label className="onboarding-label">Page Type</label>
+            <div className="form-group">
                 <select
+                  id="pageType"
+                  className="form-select"
                   value={pageType}
-                  onChange={(e) => setPageType(e.target.value)}
+                  onChange={e => setPageType(e.target.value)}
                   required
-                  className="onboarding-select"
                 >
-                  <option value="" disabled>Choose your page type</option>
+                  <option value="" disabled>Choose page type</option>
                   <option value="Product Page">Product Page</option>
                   <option value="Search Results Page">Search Results Page</option>
                   <option value="Landing Page">Landing Page</option>
                 </select>
+                <label htmlFor="pageType" className="floating-label">Page Type</label>
               </div>
 
               <div className="form-group">
-                <label className="onboarding-label">Page URL</label>
                 <input
+                  id="pageURL"
                   type="url"
+                  className="form-input"
+                  placeholder=" "
                   value={pageURL}
-                  onChange={(e) => setPageURL(e.target.value)}
+                  onChange={e => setPageURL(e.target.value)}
                   required
-                  className="onboarding-input"
-                  placeholder="https://your-business.com/page"
                 />
+                <label htmlFor="pageURL" className="floating-label">Page URL</label>
               </div>
             </div>
 
