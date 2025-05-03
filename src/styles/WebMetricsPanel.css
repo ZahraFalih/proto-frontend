@@ -1,0 +1,138 @@
+/* WebMetricsPanel.css */
+
+.panel-container {
+  margin-bottom: 2rem;
+}
+
+.panel-header {
+  font-size: 1.25rem;
+  font-weight: 600;
+  padding: 1.2rem 0;
+  color: #0756A4;
+  margin-bottom: 1rem;
+}
+
+.panel-body {
+  padding: 0;
+  font-family: 'Gill Sans', sans-serif;
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.metrics-table-container {
+  flex: 1;
+  min-width: 280px;
+}
+
+.metrics-info-container {
+  flex: 1;
+  min-width: 280px;
+  max-width: 450px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.metrics-info-text {
+  color: #7F7F7F;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.metrics-info-title {
+  font-weight: 600;
+  color: #0756A4;
+  margin-bottom: 0.8rem;
+  font-size: 1.1rem;
+}
+
+.metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.metrics-table th,
+.metrics-table td {
+  padding: 10px 16px;
+  text-align: left;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.metrics-table th {
+  cursor: pointer;
+  user-select: none;
+  color: #0756A4;
+  font-weight: 600;
+  transition: background-color 0.2s;
+  position: relative;
+}
+
+.metrics-table th:hover {
+  background-color: rgba(7, 86, 164, 0.05);
+}
+
+.metrics-table tr:hover {
+  background-color: rgba(249, 250, 251, 0.8);
+}
+
+.metric-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-icon {
+  cursor: help;
+  color: #0756A4;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  font-size: 0.85rem;
+}
+
+.info-icon:hover {
+  opacity: 1;
+}
+
+.tooltip {
+  position: relative;
+}
+
+.tooltip .tooltip-text {
+  visibility: hidden;
+  width: 220px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px 10px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-weight: normal;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 0.95;
+}
+
+.error {
+  color: #c00;
+  padding: 1rem;
+  text-align: center;
+}
+
+.loading-indicator {
+  padding: 2rem;
+  text-align: center;
+  color: #7F7F7F;
+}

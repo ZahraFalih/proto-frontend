@@ -1,0 +1,98 @@
+.panel-container {
+  margin-bottom: 2rem;
+}
+
+.panel-header {
+  font-size: 1.25rem;
+  font-weight: 600;
+  padding: 1.2rem 0;
+  color: #0756A4;
+  margin-bottom: 1rem;
+}
+
+.uba-plot-wrapper {
+  display: flex;
+  padding: 0;
+  gap: 2rem;
+}
+
+.uba-info-container {
+  flex: 1;
+  min-width: 280px;
+}
+
+.uba-charts-container {
+  flex: 1.5;
+  min-width: 300px;
+  position: relative;
+}
+
+.uba-chart {
+  width: 100%;
+  height: 320px;
+  position: relative;
+}
+
+.uba-info-title {
+  font-weight: 600;
+  color: #0756A4;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.uba-info-text {
+  color: #7F7F7F;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+.uba-navigation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+  gap: 0.5rem;
+}
+
+.uba-nav-button {
+  background: none;
+  border: none;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #0756A4;
+  transition: all 0.2s ease;
+}
+
+.uba-nav-button:hover {
+  background-color: rgba(7, 86, 164, 0.1);
+}
+
+.uba-nav-button:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.uba-nav-indicator {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0 0.5rem;
+}
+
+.uba-nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ddd;
+}
+
+.uba-nav-dot.active {
+  background-color: #0756A4;
+  transform: scale(1.2);
+}

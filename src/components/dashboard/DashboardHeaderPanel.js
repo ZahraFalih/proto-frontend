@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/icons/logo.png";
-import "../../styles/DashboardPage.css";
+import "../../styles/Dashboard.css";
 
 export default function DashboardHeaderPanel() {
   const [userName, setUserName] = useState("Loading…");
@@ -61,7 +61,7 @@ export default function DashboardHeaderPanel() {
   return (
     <>
       {/* HEADER */}
-      <header className="header">
+      <header className="dashboard-header">
         <div className="header-content">
           <img src={logo} alt="logo" className="header-logo" />
 
@@ -75,9 +75,15 @@ export default function DashboardHeaderPanel() {
 
             {menuOpen && (
               <div className="user-menu anim-dropdown">
-                <button className="menu-btn" onClick={() => openPanel("data")}>My Data</button>
-                <button className="menu-btn" onClick={() => openPanel("pref")}>Preferences</button>
-                <button className="menu-btn" onClick={() => openPanel("sett")}>Settings</button>
+                <button className="menu-btn" onClick={() => openPanel("data")}>
+                  My Data
+                </button>
+                <button className="menu-btn" onClick={() => openPanel("pref")}>
+                  Preferences
+                </button>
+                <button className="menu-btn" onClick={() => openPanel("sett")}>
+                  Settings
+                </button>
 
                 <div className="menu-divider" />
 
@@ -103,8 +109,12 @@ export default function DashboardHeaderPanel() {
             <div className="modal-icon">😞</div>
             <p className="modal-text">Are you sure you want to log out?</p>
             <div className="modal-actions">
-              <button className="modal-btn confirm" onClick={doLogout}>I have to..</button>
-              <button className="modal-btn cancel" onClick={() => setConfirmOpen(false)}>Cancel</button>
+              <button className="modal-btn confirm" onClick={doLogout}>
+                I have to..
+              </button>
+              <button className="modal-btn cancel" onClick={() => setConfirmOpen(false)}>
+                Cancel
+              </button>
             </div>
           </div>
         </div>
@@ -115,9 +125,24 @@ export default function DashboardHeaderPanel() {
         <div className="panel-overlay anim-fade" onClick={() => setPanelOpen(false)}>
           <div className="panel-box anim-scale" onClick={(e) => e.stopPropagation()}>
             <div className="panel-tabs">
-              <button className={`panel-tab ${panelTab === "data" ? "active" : ""}`} onClick={() => setPanelTab("data")}>My Data</button>
-              <button className={`panel-tab ${panelTab === "pref" ? "active" : ""}`} onClick={() => setPanelTab("pref")}>Preferences</button>
-              <button className={`panel-tab ${panelTab === "sett" ? "active" : ""}`} onClick={() => setPanelTab("sett")}>Settings</button>
+              <button
+                className={`panel-tab ${panelTab === "data" ? "active" : ""}`}
+                onClick={() => setPanelTab("data")}
+              >
+                My Data
+              </button>
+              <button
+                className={`panel-tab ${panelTab === "pref" ? "active" : ""}`}
+                onClick={() => setPanelTab("pref")}
+              >
+                Preferences
+              </button>
+              <button
+                className={`panel-tab ${panelTab === "sett" ? "active" : ""}`}
+                onClick={() => setPanelTab("sett")}
+              >
+                Settings
+              </button>
             </div>
             <div className="panel-content">
               {panelTab === "data" && <p className="placeholder">My Data panel (empty)</p>}
