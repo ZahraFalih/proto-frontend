@@ -15,9 +15,7 @@ export default function Dashboard() {
     const token = sessionStorage.getItem('access_token');
     fetch('http://127.0.0.1:8000/toolkit/user-pages/', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
       mode: 'cors',
     })
@@ -27,14 +25,13 @@ export default function Dashboard() {
       })
       .then((data) => {
         setPages(data);
-        if (data.length) {
-          setActiveTabSlug(slugify(data[0].type));
-        }
+        if (data.length) setActiveTabSlug(slugify(data[0].type));
       })
       .catch((err) => console.error('Failed fetching pages:', err));
   }, []);
 
-  const handleTabClick = (slug) => setActiveTabSlug(slug);
+  const activePage =
+    pages.find((p) => slugify(p.type) === activeTabSlug) || null;
 
   return (
     <>
@@ -48,7 +45,7 @@ export default function Dashboard() {
               <button
                 key={page.id}
                 className={`tab ${activeTabSlug === slug ? 'active' : ''}`}
-                onClick={() => handleTabClick(slug)}
+                onClick={() => setActiveTabSlug(slug)}
               >
                 {page.type}
               </button>
@@ -56,11 +53,11 @@ export default function Dashboard() {
           })}
         </div>
 
-        {/* Always-visible panels */}
+        {/* Panels */}
         <div id="content-placeholder">
-        <WebMetricsPanel />
-          <UBAPanel />
-          <UIPanel />
+          <WebMetricsPanel pageId={activePage?.id} />
+          <UBAPanel /* pageId={activePage?.id} */ />
+          <UIPanel  /* pageId={activePage?.id} */ />
         </div>
       </main>
     </>
