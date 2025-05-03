@@ -22,6 +22,10 @@ export default function Dashboard() {
     }
 
     fetch('http://127.0.0.1:8000/toolkit/user-pages/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+      mode: 'cors',
       method : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body   : JSON.stringify({ token }),
@@ -59,7 +63,7 @@ export default function Dashboard() {
               <button
                 key={page.id}
                 className={`tab ${activeTabSlug === slug ? 'active' : ''}`}
-                onClick={() => handleTabClick(slug)}
+                onClick={() => setActiveTabSlug(slug)}
               >
                 {page.type}
               </button>
