@@ -11,51 +11,74 @@ export default function UBAPanel({ pageId }) {
 
   useEffect(() => {
     if (!pageId) return;
+
+    const cacheKey = `uba_cache_${pageId}`;
+    const cached   = sessionStorage.getItem(cacheKey);
+
+    if (cached) {
+      // hydrate from cache and skip fetching
+      const { observations, rawReport, links } = JSON.parse(cached);
+      setObservations(observations);
+      setRawReport(rawReport);
+      setLinks(links);
+      return;
+    }
+
     setLoading(true);
     setError(null);
-    setObservations([]);
-    setRawReport('');
-    setLinks([]);
 
-    // 1) fetch the UBA report
+    // Local holders so we can write them to cache later
+    let parsedObs      = [];
+    let reportStr      = '';
+    let gatheredLinks  = [];
+
+    // ── 1) UBA report ────────────────────────────────────────────────
     fetch(`http://127.0.0.1:8000/ask-ai/evaluate-uba/?page_id=${pageId}`)
-      .then(res => {
-        if (!res.ok) throw new Error(`UBA fetch failed: ${res.status}`);
-        return res.json();
+      .then(r => {
+        if (!r.ok) throw new Error(`UBA fetch failed: ${r.status}`);
+        return r.json();
       })
-      .then(ubaData => {
-        const report = ubaData.uba_report || '';
-        setRawReport(report);
+      .then(uba => {
+        reportStr = uba.uba_report || '';
+        setRawReport(reportStr);
 
-        // parse observations out of the report
-        const parts = report.split(/\r?\n\r?\n(?=Observation)/g);
-        const parsed = parts.map(text => {
-          const p = text.match(/1\s*-\s*Problem:\s*([\s\S]*?)\s*2\s*-\s*Analysis:/);
-          const a = text.match(/2\s*-\s*Analysis:\s*([\s\S]*?)\s*3\s*-\s*Solution:/);
-          const s = text.match(/3\s*-\s*Solution:\s*([\s\S]*)/);
+        const parts = reportStr.split(/\r?\n\r?\n(?=Observation)/g);
+        parsedObs = parts.map(txt => {
+          const p = txt.match(/1\s*-\s*Problem:\s*([\s\S]*?)\s*2\s*-\s*Analysis:/);
+          const a = txt.match(/2\s*-\s*Analysis:\s*([\s\S]*?)\s*3\s*-\s*Solution:/);
+          const s = txt.match(/3\s*-\s*Solution:\s*([\s\S]*)/);
           return {
             problem:  p?.[1].trim() || '',
             analysis: a?.[1].trim() || '',
             solution: s?.[1].trim() || '',
           };
         });
-        setObservations(parsed);
+        setObservations(parsedObs);
 
-        // 2) then fetch your problem→solutions endpoint
+        // ── 2) Solutions endpoint ─────────────────────────────────────
         return fetch(
           `http://127.0.0.1:8000/ask-ai/web-search/?page_id=${pageId}`
         );
       })
-      .then(res2 => {
-        if (!res2.ok) throw new Error(`Solutions fetch failed: ${res2.status}`);
-        return res2.json();
+      .then(r2 => {
+        if (!r2.ok) throw new Error(`Solutions fetch failed: ${r2.status}`);
+        return r2.json();
       })
-      .then(solData => {
-        // flatten every solution.source into one array
-        const allLinks = (solData.results || [])
+      .then(sol => {
+        gatheredLinks = (sol.results || [])
           .flatMap(r => (r.solutions || []).map(s => s.source))
           .filter(Boolean);
-        setLinks(allLinks);
+        setLinks(gatheredLinks);
+
+        // ── 3) Cache final payload ───────────────────────────────────
+        sessionStorage.setItem(
+          cacheKey,
+          JSON.stringify({
+            observations: parsedObs,
+            rawReport:    reportStr,
+            links:        gatheredLinks,
+          })
+        );
       })
       .catch(err => {
         console.error('[UBAPanel] error', err);
@@ -64,11 +87,11 @@ export default function UBAPanel({ pageId }) {
       .finally(() => setLoading(false));
   }, [pageId]);
 
+  /* ————————————  render  ———————————— */
   return (
     <div className="panel-container">
       <div className="panel-header">User Behaviour Analytics</div>
 
-      {/* Debug / Raw Report */}
       <div className="uba-debug">
         <p><strong>Page ID:</strong> {pageId || '—'}</p>
         {rawReport && (
@@ -79,7 +102,6 @@ export default function UBAPanel({ pageId }) {
         )}
       </div>
 
-      {/* Observations */}
       <div className="uba-info-container">
         {loading && <p>Loading observations…</p>}
         {error   && <p className="uba-error-text">Error: {error}</p>}
@@ -96,7 +118,6 @@ export default function UBAPanel({ pageId }) {
         ))}
       </div>
 
-      {/* Links */}
       <div className="uba-links-container">
         <h4>Related Resources</h4>
         {loading && <p>Loading links…</p>}
@@ -107,11 +128,7 @@ export default function UBAPanel({ pageId }) {
           <ul className="uba-link-list">
             {links.map((url, idx) => (
               <li key={idx}>
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a href={url} target="_blank" rel="noopener noreferrer">
                   {url}
                 </a>
               </li>
