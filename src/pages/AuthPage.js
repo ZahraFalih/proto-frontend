@@ -8,32 +8,52 @@ import '../styles/AuthPage.css';
 import '../styles/global.css';
 
 function AuthPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState(''); // signup only
+  const [email, setEmail]           = useState('');
+  const [password, setPassword]     = useState('');
   const [confirmPassword, setConfirmPassword] = useState(''); // signup only
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const location = useLocation();
-  const params = new URLSearchParams(location.search);
-  const initialMode = params.get('mode') === 'signup' ? 'signup' : 'login';
-  const [mode, setMode] = useState(initialMode);
-
-  const navigate = useNavigate();
+  const [error, setError]           = useState(null);
+  const [loading, setLoading]       = useState(false);
+  const location                    = useLocation();
+  const params                      = new URLSearchParams(location.search);
+  const initialMode                 = params.get('mode') === 'signup' ? 'signup' : 'login';
+  const [mode, setMode]             = useState(initialMode);
+  const navigate                    = useNavigate();
 
   const toggleMode = () => {
-    setMode(prev => (prev === 'login' ? 'signup' : 'login'));
+    setMode(prev => prev === 'login' ? 'signup' : 'login');
     setError(null);
     setEmail('');
     setPassword('');
-    setUsername('');
     setConfirmPassword('');
   };
 
-  const handleSubmit = async (e) => {
+  // tiny helper: try signup, if "username exists" comes back, append rand and retry once
+  const attemptSignup = async (username, body, tries = 0) => {
+    const resp = await fetch('http://127.0.0.1:8000/auth/signup/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ username, ...body }),
+    });
+    const data = await resp.json();
+
+    // detect duplicate-username error and retry once
+    if (!resp.ok &&
+        data.username &&
+        data.username.some(msg => msg.toLowerCase().includes('already')) &&
+        tries < 1) {
+      const fallback = `${username}${Math.floor(Math.random() * 1000)}`;
+      return attemptSignup(fallback, body, tries + 1);
+    }
+
+    return { resp, data };
+  };
+
+  const handleSubmit = async e => {
     e.preventDefault();
     setError(null);
 
+    // signup validations
     if (mode === 'signup') {
       if (password.length < 6) {
         setError('Password must be at least 6 characters.');
@@ -46,36 +66,44 @@ function AuthPage() {
     }
 
     setLoading(true);
+
     try {
-      const resp = await fetch(`http://127.0.0.1:8000/auth/${mode}/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(
-          mode === 'login'
-            ? { email, password }
-            : { username, email, password }
-        ),
-      });
-      const data = await resp.json();
+      let resp, data;
+
+      if (mode === 'login') {
+        resp = await fetch('http://127.0.0.1:8000/auth/login/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email, password }),
+        });
+        data = await resp.json();
+      } else {
+        // derive username from email
+        const baseUsername = email.split('@')[0].replace(/[^\w.-]/g, '');
+        const body = { email, password };
+        ({ resp, data } = await attemptSignup(baseUsername, body));
+      }
 
       if (resp.ok) {
-        sessionStorage.setItem('access_token', data.access);
         if (mode === 'login') {
+          sessionStorage.setItem('access_token', data.access);
           toast.success('Login successful! Redirecting…');
           setTimeout(() => {
             navigate(data.first_login ? '/onboarding' : '/dashboard');
           }, 800);
         } else {
           toast.success('Account created! Redirecting to login…');
-          setTimeout(() => {
-            setMode('login');
-          }, 1200);
+          setTimeout(() => setMode('login'), 1200);
         }
       } else {
-        setError(data.error || 'Authentication failed.');
+        setError(
+          data.error ||
+          (data.username && data.username.join(' ')) ||
+          'Authentication failed.'
+        );
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -85,39 +113,14 @@ function AuthPage() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        {/* Header */}
         <header className="auth-header">
           <img src={logo} alt="Proto logo" className="auth-logo" />
         </header>
-
-        {/* Title */}
         <h2 className="auth-title">
           {mode === 'login' ? 'Welcome back!' : 'Create your account'}
         </h2>
-
-        {/* Error */}
         {error && <div className="auth-error">{error}</div>}
-
-        {/* Form */}
         <form className="auth-form" onSubmit={handleSubmit}>
-          {mode === 'signup' && (
-            <div className="form-group">
-              <input
-                id="username"
-                type="text"
-                className="form-input"
-                placeholder=" "
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                required
-                autoComplete="username"
-              />
-              <label htmlFor="username" className="floating-label">
-                Username
-              </label>
-            </div>
-          )}
-
           <div className="form-group">
             <input
               id="email"
@@ -170,20 +173,24 @@ function AuthPage() {
 
           <button type="submit" className="auth-button" disabled={loading}>
             {loading && <span className="spinner" />}
-            {loading ? (mode === 'login' ? 'Logging in…' : 'Signing up…') : (mode === 'login' ? 'Log In' : 'Sign Up')}
+            {loading
+              ? mode === 'login'
+                ? 'Logging in…'
+                : 'Signing up…'
+              : mode === 'login'
+              ? 'Log In'
+              : 'Sign Up'}
           </button>
         </form>
 
-        {/* Toggle link */}
         <p className="auth-footer">
-          {mode === 'login' ? "Don't have an account?" : "Already have an account?"}{' '}
+          {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}
           <span className="auth-toggle" onClick={toggleMode}>
             {mode === 'login' ? 'Sign Up' : 'Log In'}
           </span>
         </p>
       </div>
 
-      {/* Toast Notifications */}
       <ToastContainer
         position="top-right"
         autoClose={3000}
