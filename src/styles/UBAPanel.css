@@ -5,11 +5,308 @@
 .panel-header {
   font-size: 1.25rem;
   font-weight: 600;
-  padding: 1.2rem 0;
+  padding: 1.2rem 0 0.6rem;
   color: #0756A4;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
+.panel-subtitle {
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+/* UBA Content Layout */
+.uba-content-container {
+  display: flex;
+  gap: 2.5rem;
+}
+
+.uba-formulation-container {
+  flex: 1.5;
+  min-width: 280px;
+}
+
+.uba-formulation-wrapper {
+  background-color: white;
+  border-radius: 12px;
+  padding: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.uba-formulation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.uba-formulation-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.uba-pin-clear-button {
+  background-color: rgba(7, 86, 164, 0.1);
+  color: #0756A4;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.uba-pin-clear-button:hover {
+  background-color: rgba(7, 86, 164, 0.2);
+}
+
+.uba-formulation-content {
+  padding: 1.5rem;
+}
+
+.uba-links-container {
+  flex: 1;
+  min-width: 240px;
+}
+
+.uba-links-container h4 {
+  font-size: 1.1rem;
+  color: #333;
+  margin-bottom: 1.2rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(7, 86, 164, 0.1);
+  font-weight: 500;
+}
+
+/* Formulation Text */
+.uba-formulation-text {
+  line-height: 1.8;
+  color: #333;
+  font-size: 1rem;
+  letter-spacing: 0.01rem;
+}
+
+/* Loading Styles */
+.uba-loading-text,
+.uba-loading-placeholder {
+  color: #666;
+  font-style: italic;
+  padding: 1rem 0;
+  text-align: center;
+}
+
+.uba-error-text {
+  color: #e53935;
+  padding: 1rem 0;
+  text-align: center;
+}
+
+/* Interaction hint */
+.uba-interaction-hint {
+  display: flex;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding: 0.8rem 1rem;
+  background-color: rgba(7, 86, 164, 0.05);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.uba-hint-icon {
+  margin-right: 0.75rem;
+  font-size: 1.2rem;
+}
+
+/* Observation Segments with Hover and Pinned State */
+.uba-observation-segment {
+  position: relative;
+  padding: 1px 2px;
+  transition: all 0.2s ease;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.uba-observation-segment:hover {
+  background-color: rgba(7, 86, 164, 0.1);
+}
+
+.uba-observation-segment.uba-observation-pinned {
+  background-color: rgba(7, 86, 164, 0.15);
+  box-shadow: 0 1px 3px rgba(7, 86, 164, 0.2);
+}
+
+.uba-observation-segment:hover::after,
+.uba-observation-segment.uba-observation-pinned::after {
+  content: attr(data-observation-number);
+  position: absolute;
+  right: -25px;
+  top: 0;
+  background-color: #0756A4;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.uba-observation-segment.uba-observation-pinned::after {
+  background-color: #0756A4;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Solutions Styling */
+.uba-solutions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.uba-solution-group {
+  position: relative;
+  border-radius: 12px;
+  margin-bottom: 0.25rem;
+  transition: all 0.3s ease;
+  background-color: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.uba-solution-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  position: relative;
+  background-color: white;
+  transition: background-color 0.3s ease;
+}
+
+.uba-solution-header:hover {
+  background-color: #f8f9fc;
+}
+
+.uba-solution-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #eee;
+  color: #666;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-right: 0.8rem;
+  transition: all 0.3s ease;
+}
+
+.uba-solution-group.uba-solution-active .uba-solution-number {
+  background-color: #0756A4;
+  color: white;
+}
+
+.uba-solution-title {
+  flex: 1;
+  margin: 0;
+  font-size: 0.95rem;
+  color: #333;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.uba-solution-toggle {
+  font-size: 1.25rem;
+  color: #0756A4;
+  line-height: 1;
+  margin-left: 0.5rem;
+}
+
+.uba-solution-content {
+  height: 0;
+  overflow: hidden;
+  padding: 0 1rem;
+  transition: height 0.3s ease, padding 0.3s ease;
+}
+
+.uba-solution-group.uba-solution-expanded .uba-solution-content {
+  height: auto;
+  padding: 0.5rem 1.25rem 1.25rem;
+}
+
+.uba-solution-group.uba-solution-active {
+  border-left: 3px solid #0756A4;
+}
+
+.uba-solution-item {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background-color: #f8f9fc;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.uba-solution-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.uba-solution-group.uba-solution-active .uba-solution-item {
+  border-color: rgba(7, 86, 164, 0.1);
+  background-color: #f0f6fc;
+}
+
+.uba-solution-link {
+  color: #0756A4;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  transition: color 0.2s ease;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+.uba-solution-domain {
+  font-weight: 600;
+  color: #0756A4;
+  font-size: 0.85rem;
+  margin-bottom: 0.3rem;
+}
+
+.uba-solution-summary {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #555;
+}
+
+.uba-solution-link:hover .uba-solution-domain {
+  text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .uba-content-container {
+    flex-direction: column;
+  }
+  
+  .uba-links-container, .uba-formulation-container {
+    width: 100%;
+  }
+}
+
+/* Keep original styles for backwards compatibility */
 .uba-plot-wrapper {
   display: flex;
   padding: 0;

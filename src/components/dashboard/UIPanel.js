@@ -4,8 +4,9 @@ import '../../styles/UIPanel.css';
 
 export default function UIPanel({ pageId }) {
   const [categories, setCategories] = useState([]);
-  const [loading,    setLoading]    = useState(false);
-  const [error,      setError]      = useState(null);
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!pageId) return;
@@ -25,7 +26,9 @@ export default function UIPanel({ pageId }) {
       }
     }
 
-    const url = `http://127.0.0.1:8000/ask-ai/evaluate-ui/?page_id=${pageId}`;
+    // Add timestamp to prevent caching
+    const timestamp = Date.now();
+    const url = `http://127.0.0.1:8000/ask-ai/evaluate-ui/?page_id=${pageId}&_t=${timestamp}`;
     console.log(`[UIPanel] Fetching: ${url}`);
 
     setLoading(true);
@@ -55,20 +58,34 @@ export default function UIPanel({ pageId }) {
       .finally(() => setLoading(false));
   }, [pageId]);
 
+  const handleCategoryClick = (categoryName) => {
+    setActiveCategory(activeCategory === categoryName ? null : categoryName);
+  };
+
+  const formatCategoryName = (name) => {
+    return name.replace(/_/g, ' ').split(' ').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+  };
+
   return (
     <div className="panel-container">
       <div className="panel-header">User Interface Evaluation</div>
 
       {loading && <div className="ui-loader">Loading UI evaluation...</div>}
-      {error   && <div className="ui-error">⚠ {error}</div>}
+      {error && <div className="ui-error">⚠ {error}</div>}
 
       {!loading && !error && (
         <div className="ui-eval-body">
           {/* Left column: ratings */}
           <div className="ui-categories-container">
             {categories.map(({ name, score }) => (
-              <div key={name} className="ui-category">
-                <span className="category-name">{name.replace(/_/g, ' ')}</span>
+              <div 
+                key={name} 
+                className={`ui-category ${activeCategory === name ? 'active' : ''}`}
+                onClick={() => handleCategoryClick(name)}
+              >
+                <span className="category-name">{formatCategoryName(name)}</span>
                 <div className="rating-container">
                   <div className="rating-bar">
                     <div 
@@ -82,15 +99,22 @@ export default function UIPanel({ pageId }) {
             ))}
           </div>
 
-          {/* Right column: evidence */}
-          <div className="ui-evidence-container">
-            <h3 className="ui-info-title">Evidence</h3>
+          {/* Right column: explanations */}
+          <div className="ui-explanation-container">
             {categories.map(({ name, evidence }) => (
-              <div key={name} className="evidence-item">
-                <strong className="evidence-name">{name.replace(/_/g, ' ')}:</strong>
-                <p className="evidence-text">{evidence}</p>
+              <div 
+                key={name} 
+                className={`explanation-item ${activeCategory === name ? 'active' : ''}`}
+              >
+                <h4 className="explanation-title">{formatCategoryName(name)}</h4>
+                <p className="explanation-text">{evidence}</p>
               </div>
             ))}
+            {!activeCategory && categories.length > 0 && (
+              <div className="explanation-placeholder">
+                <p>Select a category to see detailed information</p>
+              </div>
+            )}
           </div>
         </div>
       )}
