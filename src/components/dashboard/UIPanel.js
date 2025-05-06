@@ -90,10 +90,10 @@ export default function UIPanel({ pageId }) {
                   <div className="rating-bar">
                     <div 
                       className="rating-fill" 
-                      style={{ width: `${(score / 5) * 100}%` }}
+                      style={{ width: `${(score / 10) * 100}%` }}
                     />
                   </div>
-                  <span className="rating-value">{score}/5</span>
+                  <span className="rating-value">{score}/10</span>
                 </div>
               </div>
             ))}
