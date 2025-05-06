@@ -56,33 +56,16 @@ const OnboardingPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [processingURL, setProcessingURL] = useState(false);
   const [showScreenshotModal, setShowScreenshotModal] = useState(false);
   const [selectedScreenshot, setSelectedScreenshot] = useState(null);
   const [pageId, setPageId] = useState(null);
   const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
-  const [loadingTextIndex, setLoadingTextIndex] = useState(0);
+  const [selectedUbaFile, setSelectedUbaFile] = useState(null);
+  const [pageType, setPageType] = useState("");
   const navigate = useNavigate();
 
-  // Loading text options for the screenshot validation
-  const loadingTexts = [
-    "Processing your screenshot...",
-    "Validating image data...",
-    "Setting up your dashboard...",
-    "Almost there...",
-    "Finalizing your setup..."
-  ];
-
-  // Cycle through loading texts when uploadingScreenshot is true
-  useEffect(() => {
-    let interval;
-    if (uploadingScreenshot || loading) {
-      interval = setInterval(() => {
-        setLoadingTextIndex(prev => (prev + 1) % loadingTexts.length);
-      }, 2000); // Changed to 2 seconds for more frequent changes
-    }
-    return () => clearInterval(interval);
-  }, [uploadingScreenshot, loading, loadingTexts.length]);
+  // Static loading text
+  const loadingText = "Processing your request...";
 
   // Retrieve access token from sessionStorage
   const getAccessToken = () => {
@@ -204,14 +187,20 @@ const OnboardingPage = () => {
   
 
   // ----- STEP 3: Page-Onboard Data -----
-  const [pageType, setPageType] = useState("");
   const [pageURL, setPageURL] = useState("");
+  
+  const handleUbaFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      console.log("UBA file selected:", file.name, "Type:", file.type, "Size:", file.size, "bytes");
+      setSelectedUbaFile(file);
+    }
+  };
   
   const handlePageOnboard = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    setProcessingURL(true);
     
     console.log("Starting page onboarding process...");
     const token = getAccessToken();
@@ -275,7 +264,13 @@ const OnboardingPage = () => {
           }
         } else {
           console.log("All valid, navigating to dashboard");
-          navigate("/dashboard");
+          
+          // If UBA file was provided, upload it
+          if (selectedUbaFile) {
+            await uploadUbaFile(data.id, pageType);
+          } else {
+            navigate("/dashboard");
+          }
         }
       } else {
         if (response.status === 401) {
@@ -299,7 +294,80 @@ const OnboardingPage = () => {
     } finally {
       console.log("Page onboarding process completed");
       setLoading(false);
-      setProcessingURL(false);
+    }
+  };
+
+  const uploadUbaFile = async (pageId, pageTypeName) => {
+    if (!selectedUbaFile) {
+      console.log("No UBA file selected, skipping UBA upload");
+      navigate("/dashboard");
+      return;
+    }
+    
+    setLoading(true);
+    console.log("Starting UBA data upload...");
+    console.log("UBA file:", selectedUbaFile.name, "Type:", selectedUbaFile.type, "Size:", selectedUbaFile.size, "bytes");
+    console.log("Page ID:", pageId);
+    console.log("Page Type:", pageTypeName);
+    
+    try {
+      const formData = new FormData();
+      const token = getAccessToken();
+      formData.append('token', token);
+      formData.append('file', selectedUbaFile);
+      formData.append('page_id', String(pageId));
+      formData.append('name', pageTypeName);
+      
+      console.log("FormData created with token, file, page_id, and name");
+      
+      const response = await fetch("http://127.0.0.1:8000/upload/create/", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+      
+      console.log("Response status:", response.status);
+      
+      let data;
+      try {
+        const textResponse = await response.text();
+        console.log("Raw response text:", textResponse);
+        
+        try {
+          data = JSON.parse(textResponse);
+          console.log("Parsed response data:", data);
+        } catch (parseError) {
+          console.error("Error parsing JSON response:", parseError);
+          console.log("Invalid JSON received");
+          data = { error: "Server returned invalid data" };
+        }
+      } catch (textError) {
+        console.error("Error reading response text:", textError);
+        data = { error: "Couldn't read server response" };
+      }
+      
+      if (response.ok) {
+        console.log("UBA data upload successful, navigating to dashboard");
+        navigate("/dashboard");
+      } else {
+        if (response.status === 401) {
+          console.log("Unauthorized token for UBA upload");
+          setError("Session expired. Please log in again.");
+          navigate("/login");
+        } else {
+          console.log("UBA upload failed:", response.status, data.error || "Unknown error");
+          setError("Failed to upload UBA data. " + (data.error || "Please try again."));
+          // Still navigate to dashboard even if UBA upload fails
+          setTimeout(() => navigate("/dashboard"), 3000);
+        }
+      }
+    } catch (err) {
+      console.error("Exception in UBA upload:", err);
+      setError("Failed to upload UBA data, but your page was successfully onboarded.");
+      // Still navigate to dashboard even if UBA upload fails
+      setTimeout(() => navigate("/dashboard"), 3000);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -594,29 +662,70 @@ const OnboardingPage = () => {
                 <label htmlFor="pageURL" className="floating-label">Page URL</label>
               </div>
               
-              {processingURL && (
-                <div className="validation-message full-width">
-                  <div className="validation-content">
-                    <div className="pulse-loader">
-                      <div className="pulse-loader-dot"></div>
-                      <div className="pulse-loader-dot"></div>
-                      <div className="pulse-loader-dot"></div>
-                    </div>
-                    <div className="validation-text">
-                      <h4>Validating your website</h4>
-                      <p>We're checking your URL and preparing your dashboard...</p>
-                    </div>
+              <div className="form-group full-width">
+                <div className="uba-upload-section">
+                  <div className="uba-upload-header">
+                    <h4>User Behavior Analytics Data</h4>
+                    <p>please upload your page's UBA data</p>
                   </div>
+                  
+                  {selectedUbaFile ? (
+                    <div className="uba-file-selected">
+                      <div className="uba-file-info">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                          <line x1="16" y1="13" x2="8" y2="13"></line>
+                          <line x1="16" y1="17" x2="8" y2="17"></line>
+                          <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <span className="uba-filename">{selectedUbaFile.name}</span>
+                      </div>
+                      <button 
+                        type="button" 
+                        className="uba-remove-btn"
+                        disabled={loading}
+                        onClick={() => {
+                          console.log("Removing selected UBA file");
+                          setSelectedUbaFile(null);
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="uba-upload-area">
+                      <input 
+                        type="file" 
+                        className="uba-file-input" 
+                        onChange={handleUbaFileChange}
+                        disabled={loading}
+                        accept=".csv"
+                        required
+                      />
+                      <div className="uba-upload-content">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                          <line x1="16" y1="13" x2="8" y2="13"></line>
+                          <line x1="16" y1="17" x2="8" y2="17"></line>
+                          <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <span>
+                          <strong>Upload a CSV file</strong>
+                        </span>
+                      </div>
+                    </label>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="form-footer">
               <button type="submit" disabled={loading} className="onboarding-button">
                 {loading ? (
                   <div className="loading-text-container footer-loading">
-                    <span className="current-loading-text">{loadingTexts[loadingTextIndex]}</span>
-                    <span className="button-icon loading-icon">→</span>
+                    <span className="current-loading-text">{loadingText}</span>
                   </div>
                 ) : (
                   <>
@@ -786,7 +895,7 @@ const OnboardingPage = () => {
                       >
                         {uploadingScreenshot ? (
                           <div className="loading-text-container">
-                            <span className="current-loading-text">{loadingTexts[loadingTextIndex]}</span>
+                            <span className="current-loading-text">{loadingText}</span>
                           </div>
                         ) : (
                           <span className="btn-text-center">Upload & Continue</span>

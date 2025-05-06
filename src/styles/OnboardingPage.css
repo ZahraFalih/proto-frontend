@@ -102,7 +102,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 40px 48px 84px;
+    padding: 30px 48px 60px;
     position: relative;
 }
 
@@ -113,19 +113,17 @@
 
 .onboarding-form {
     width: 100%;
-    min-height: 500px;
     max-width: 720px;
-    min-height: 500px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-height: 100%;
+    min-height: 400px;
 }
 
 .form-header {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 30px;
     width: 100%;
     max-width: 500px;
 }
@@ -133,9 +131,9 @@
 .form-content {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 32px 40px;
+    gap: 24px 40px;
     width: 100%;
-    margin-bottom: 84px;
+    margin-bottom: 30px;
 }
 
 .form-group {
@@ -149,15 +147,15 @@
 }
 
 .onboarding-title {
-    font-size: 26px;
+    font-size: 24px;
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
     color: var(--onboarding-primary);
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     font-weight: 600;
 }
 
 .onboarding-subtitle {
-    font-size: 15px;
+    font-size: 14px;
     color: var(--onboarding-text-muted);
     font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
     line-height: 1.5;
@@ -256,7 +254,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 64px;
+    height: 56px;
     background: var(--onboarding-primary);
     display: flex;
     align-items: center;
@@ -917,49 +915,33 @@
   background-color: #f8f9fa;
   border-radius: 8px;
   padding: 16px;
-  margin-bottom: 0;
+  margin-bottom: 20px;
   border: 1px solid #e9ecef;
 }
 
 .screenshot-how-to h4 {
   margin-top: 0;
   margin-bottom: 12px;
-  font-size: 14px;
+  font-size: 15px;
   color: #333;
-  font-weight: 600;
 }
 
-.screenshot-methods {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.screenshot-how-to ol {
+  margin: 0;
+  padding-left: 18px;
 }
 
-.screenshot-method {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.method-number {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background-color: #0055FF;
-  color: white;
-  font-weight: 600;
-  font-size: 12px;
-  flex-shrink: 0;
-}
-
-.method-content {
-  font-size: 13px;
+.screenshot-how-to li {
+  margin-bottom: 10px;
+  font-size: 14px;
   line-height: 1.5;
   color: #4B5563;
-  padding-top: 3px;
+}
+
+.screenshot-how-to ul {
+  margin-top: 5px;
+  margin-bottom: 0;
+  padding-left: 20px;
 }
 
 .screenshot-how-to code {
@@ -967,7 +949,7 @@
   padding: 2px 5px;
   border-radius: 4px;
   font-family: monospace;
-  font-size: 12px;
+  font-size: 13px;
   color: #2563eb;
 }
 
@@ -1167,7 +1149,7 @@
   }
 }
 
-/* Elegant Loading Text Animation */
+/* Static Loading Text */
 .loading-text-container {
   width: 100%;
   overflow: hidden;
@@ -1185,85 +1167,14 @@
   font-weight: 500;
   font-size: 14px;
   color: white;
-  animation: fadeTextIn 2s ease-in-out;
 }
 
-@keyframes fadeTextIn {
-  0% {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  15% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  85% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-}
-
-/* Center button text */
-.btn-text-center {
-  display: inline-block;
-  text-align: center;
-  width: 100%;
-}
-
-/* Screenshot instructions */
-.screenshot-how-to {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 20px;
-  border: 1px solid #e9ecef;
-}
-
-.screenshot-how-to h4 {
-  margin-top: 0;
-  margin-bottom: 12px;
-  font-size: 15px;
-  color: #333;
-}
-
-.screenshot-how-to ol {
-  margin: 0;
-  padding-left: 18px;
-}
-
-.screenshot-how-to li {
-  margin-bottom: 10px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #4B5563;
-}
-
-.screenshot-how-to ul {
-  margin-top: 5px;
-  margin-bottom: 0;
-  padding-left: 20px;
-}
-
-.screenshot-how-to code {
-  background-color: #edf2f7;
-  padding: 2px 5px;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 13px;
-  color: #2563eb;
-}
-
-/* Footer loading animation */
+/* Footer loading text */
 .footer-loading {
   width: auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
 }
 
 .footer-loading .current-loading-text {
@@ -1271,21 +1182,6 @@
   font-weight: 600;
   font-size: 15px;
   letter-spacing: 0.5px;
-}
-
-.loading-icon {
-  animation: pulseArrow 1.5s infinite ease-in-out;
-}
-
-@keyframes pulseArrow {
-  0%, 100% {
-    transform: translateX(0);
-    opacity: 0.7;
-  }
-  50% {
-    transform: translateX(4px);
-    opacity: 1;
-  }
 }
 
 .form-footer .onboarding-button:disabled {
@@ -1306,22 +1202,217 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.5);
-  width: 20%;
-  animation: progressBar 3s infinite linear;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.1));
+  width: 30%;
+  animation: smoothProgressBar 2.5s infinite ease-in-out;
 }
 
-@keyframes progressBar {
+@keyframes smoothProgressBar {
   0% {
-    width: 0%;
-    left: 0;
+    left: -30%;
+    opacity: 0.3;
   }
   50% {
-    width: 40%;
+    opacity: 1;
   }
   100% {
-    width: 0%;
     left: 100%;
+    opacity: 0.3;
   }
+}
+
+/* Center button text */
+.btn-text-center {
+  display: inline-block;
+  text-align: center;
+  width: 100%;
+}
+
+/* Screenshot methods display */
+.screenshot-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.screenshot-method {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.method-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #0055FF;
+  color: white;
+  font-weight: 600;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.method-content {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #4B5563;
+  padding-top: 3px;
+}
+
+/* UBA Upload Modal Styles */
+.uba-content-wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+}
+
+.uba-instructions-column {
+  flex: 1;
+  min-width: 0;
+}
+
+.uba-note {
+  margin-top: 12px;
+  font-style: italic;
+  color: #666;
+  font-size: 13px;
+}
+
+.screenshot-how-to p {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4B5563;
+}
+
+.screenshot-how-to p:last-child {
+  margin-bottom: 0;
+}
+
+/* CSV File Icon */
+.screenshot-file-info svg {
+  color: #22C55E;
+}
+
+/* UBA Upload Section in Form */
+.uba-upload-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  background-color: #f9fafb;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.uba-upload-header {
+  margin-bottom: 8px;
+}
+
+.uba-upload-header h4 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.uba-upload-header p {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.uba-upload-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #d1d5db;
+  border-radius: 6px;
+  padding: 12px;
+  background-color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  min-height: 70px;
+}
+
+.uba-upload-area:hover {
+  border-color: #0055FF;
+  background-color: rgba(0, 85, 255, 0.02);
+}
+
+.uba-upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.uba-upload-content svg {
+  color: #22c55e;
+}
+
+.uba-file-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.uba-file-selected {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #fff;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.uba-file-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.uba-file-info svg {
+  color: #22c55e;
+  flex-shrink: 0;
+}
+
+.uba-filename {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #374151;
+  max-width: 200px;
+}
+
+.uba-remove-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.uba-remove-btn:hover:not(:disabled) {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.uba-remove-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

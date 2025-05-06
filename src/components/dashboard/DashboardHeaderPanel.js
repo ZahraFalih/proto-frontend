@@ -105,15 +105,16 @@ export default function DashboardHeaderPanel() {
       {/* LOGOUT MODAL */}
       {confirmOpen && (
         <div className="modal-overlay anim-fade" onClick={() => setConfirmOpen(false)}>
-          <div className="modal-box anim-scale" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-box logout-modal anim-scale" onClick={(e) => e.stopPropagation()}>
             <div className="modal-icon">😞</div>
+            <h3 className="modal-title">Log out</h3>
             <p className="modal-text">Are you sure you want to log out?</p>
             <div className="modal-actions">
-              <button className="modal-btn confirm" onClick={doLogout}>
-                I have to..
-              </button>
               <button className="modal-btn cancel" onClick={() => setConfirmOpen(false)}>
                 Cancel
+              </button>
+              <button className="modal-btn confirm" onClick={doLogout}>
+                Log out
               </button>
             </div>
           </div>
