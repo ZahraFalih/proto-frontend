@@ -56,22 +56,63 @@ const OnboardingPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [processingURL, setProcessingURL] = useState(false);
+  const [showScreenshotModal, setShowScreenshotModal] = useState(false);
+  const [selectedScreenshot, setSelectedScreenshot] = useState(null);
+  const [pageId, setPageId] = useState(null);
+  const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
+  const [loadingTextIndex, setLoadingTextIndex] = useState(0);
   const navigate = useNavigate();
 
+  // Loading text options for the screenshot validation
+  const loadingTexts = [
+    "Processing your screenshot...",
+    "Validating image data...",
+    "Setting up your dashboard...",
+    "Almost there...",
+    "Finalizing your setup..."
+  ];
+
+  // Cycle through loading texts when uploadingScreenshot is true
+  useEffect(() => {
+    let interval;
+    if (uploadingScreenshot || loading) {
+      interval = setInterval(() => {
+        setLoadingTextIndex(prev => (prev + 1) % loadingTexts.length);
+      }, 2000); // Changed to 2 seconds for more frequent changes
+    }
+    return () => clearInterval(interval);
+  }, [uploadingScreenshot, loading, loadingTexts.length]);
+
   // Retrieve access token from sessionStorage
-  const getAccessToken = () => sessionStorage.getItem("access_token");
+  const getAccessToken = () => {
+    const token = sessionStorage.getItem("access_token");
+    console.log("Retrieved token:", token ? "Token exists" : "Token is missing");
+    return token;
+  };
 
   useEffect(() => {
     const token = getAccessToken();
+    console.log("Checking token on component mount");
     if (!token) {
+      console.log("No token found, redirecting to login");
       navigate("/login");
+    } else {
+      console.log("Token found, user is authenticated");
     }
   }, [navigate]);
+
+  // Add effect to log when pageId or showScreenshotModal changes
+  useEffect(() => {
+    console.log("Modal visibility changed:", showScreenshotModal);
+    if (showScreenshotModal) {
+      console.log("Modal is now visible with pageId:", pageId);
+    }
+  }, [showScreenshotModal, pageId]);
 
   // ----- STEP 1: User-Onboard Data -----
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [username, setUsername] = useState("");
   const [role, setRole] = useState("");
 
   const handleUserOnboard = async (e) => {
@@ -87,7 +128,6 @@ const OnboardingPage = () => {
         body: JSON.stringify({
           first_name: firstName,
           last_name: lastName,
-          username: username,
           role: role,
           token: getAccessToken(),
         }),
@@ -171,34 +211,190 @@ const OnboardingPage = () => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    setProcessingURL(true);
+    
+    console.log("Starting page onboarding process...");
+    const token = getAccessToken();
+    const requestData = { page_type: pageType, url: pageURL, token };
+    console.log("Request data:", requestData);
   
     try {
-      const response = await fetch("http://127.0.0.1:8000/onboard/page-onboard/", {
+      console.log("Sending request to /onboard/page-onboard/");
+      const requestOptions = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          page_type: pageType,
-          url: pageURL,
-          token: getAccessToken(),
-        }),
-      });
-      const data = await response.json();
+        body: JSON.stringify(requestData),
+      };
+      console.log("Request options:", JSON.stringify(requestOptions, (key, value) => 
+        key === 'body' ? JSON.parse(value) : value));
+      
+      const response = await fetch("http://127.0.0.1:8000/onboard/page-onboard/", requestOptions);
+      
+      console.log("Response status:", response.status);
+      console.log("Response headers:", Object.fromEntries([...response.headers]));
+      
+      let data;
+      try {
+        const textResponse = await response.text();
+        console.log("Raw response text:", textResponse);
+        
+        try {
+          data = JSON.parse(textResponse);
+          console.log("Parsed response data:", data);
+          console.log("ID in response:", data.id);
+          
+          // Defend against missing fields
+          if (!data.id && data.id !== 0) {
+            console.error("Response is missing required id field");
+          }
+        } catch (parseError) {
+          console.error("Error parsing JSON response:", parseError);
+          console.log("Invalid JSON received");
+          data = { error: "Server returned invalid data" };
+        }
+      } catch (textError) {
+        console.error("Error reading response text:", textError);
+        data = { error: "Couldn't read server response" };
+      }
   
       if (response.ok) {
-        navigate("dashboard");
+        console.log("Response OK, checking URL validity");
+        if (data.url === null) {
+          console.log("URL is null, showing error");
+          setError("Invalid URL provided. Please check your URL and try again.");
+        } else if (data.screenshot_path === null) {
+          console.log("Screenshot path is null, opening upload modal");
+          if (data.id) {
+            console.log("Setting page_id to:", data.id);
+            setPageId(data.id);
+            setShowScreenshotModal(true);
+          } else {
+            console.error("Error: id is missing in the response");
+            setError("Server error: Missing page information. Please try again.");
+          }
+        } else {
+          console.log("All valid, navigating to dashboard");
+          navigate("/dashboard");
+        }
       } else {
         if (response.status === 401) {
+          console.log("Unauthorized, redirecting to login");
           setError("Session expired. Please log in again.");
           navigate("/login");
+        } else if (response.status === 500) {
+          console.log("Internal server error occurred");
+          setError("The server encountered an error. Please try again later.");
+        } else if (response.status === 400) {
+          console.log("Bad request:", data.error || "Unknown validation error");
+          setError(data.error || "Please check your input and try again.");
         } else {
-          setError(data.error || "Something went wrong. Please try again.");
+          console.log("Other error:", response.status, data.error || "Unknown error");
+          setError(data.error || `Server error (${response.status}). Please try again.`);
         }
       }
     } catch (err) {
-      setError("Failed to connect to the server.");
+      console.error("Exception in page onboarding:", err);
+      setError("Failed to connect to the server. Please check your network connection.");
     } finally {
+      console.log("Page onboarding process completed");
       setLoading(false);
+      setProcessingURL(false);
+    }
+  };
+
+  const handleScreenshotUpload = async (e) => {
+    e.preventDefault();
+    
+    if (!selectedScreenshot) {
+      console.log("No screenshot selected");
+      return;
+    }
+    
+    if (!pageId && pageId !== 0) {
+      console.log("Error: page_id is missing or undefined:", pageId);
+      setError("Missing page information. Please try again from the beginning.");
+      return;
+    }
+    
+    setUploadingScreenshot(true);
+    console.log("Starting screenshot upload...");
+    console.log("Screenshot file:", selectedScreenshot.name, "Type:", selectedScreenshot.type, "Size:", selectedScreenshot.size, "bytes");
+    console.log("Page ID:", pageId);
+    
+    try {
+      const formData = new FormData();
+      const token = getAccessToken();
+      formData.append('token', token);
+      formData.append('page_id', String(pageId));
+      console.log("Page ID being sent:", String(pageId));
+      formData.append('screenshot', selectedScreenshot);
+      
+      console.log("FormData created with token and page_id");
+      console.log("Token included:", token ? "Yes" : "No");
+      console.log("Page ID included:", pageId ? "Yes" : "No");
+      console.log("Screenshot included:", selectedScreenshot ? "Yes" : "No");
+      console.log("Sending request to /onboard/upload-screenshot/");
+      
+      const response = await fetch("http://127.0.0.1:8000/onboard/upload-screenshot/", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+      
+      console.log("Response status:", response.status);
+      
+      let data;
+      try {
+        const textResponse = await response.text();
+        console.log("Raw response text:", textResponse);
+        
+        try {
+          data = JSON.parse(textResponse);
+          console.log("Parsed response data:", data);
+        } catch (parseError) {
+          console.error("Error parsing JSON response:", parseError);
+          console.log("Invalid JSON received");
+          data = { error: "Server returned invalid data" };
+        }
+      } catch (textError) {
+        console.error("Error reading response text:", textError);
+        data = { error: "Couldn't read server response" };
+      }
+      
+      if (response.ok) {
+        console.log("Screenshot upload successful, navigating to dashboard");
+        setShowScreenshotModal(false);
+        navigate("/dashboard");
+      } else {
+        if (response.status === 401) {
+          console.log("Unauthorized token for screenshot upload");
+          setError("Session expired. Please log in again.");
+        } else if (response.status === 500) {
+          console.log("Internal server error during screenshot upload");
+          setError("The server encountered an error processing your screenshot. Please try again.");
+        } else if (response.status === 400) {
+          console.log("Bad request for screenshot upload:", data.error);
+          setError(data.error || "Invalid screenshot data. Please try another image.");
+        } else {
+          console.log("Screenshot upload failed:", response.status, data.error || "Unknown error");
+          setError(data.error || `Upload failed (${response.status}). Please try again.`);
+        }
+      }
+    } catch (err) {
+      console.error("Exception in screenshot upload:", err);
+      setError("Failed to connect to the server. Please check your network connection.");
+    } finally {
+      console.log("Screenshot upload process completed");
+      setUploadingScreenshot(false);
+    }
+  };
+  
+  const handleScreenshotChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      console.log("Screenshot selected:", file.name, "Type:", file.type, "Size:", file.size, "bytes");
+      setSelectedScreenshot(file);
     }
   };
 
@@ -224,7 +420,7 @@ const OnboardingPage = () => {
               {error && <p className="error-message">{error}</p>}
             </div>
 
-            <div className="form-content">
+            <div className="form-content two-column">
               <div className="form-group">
                 <input
                   id="firstName"
@@ -251,21 +447,7 @@ const OnboardingPage = () => {
                 <label htmlFor="lastName" className="floating-label">Last Name</label>
               </div>
 
-              <div className="form-group">
-                <input
-                  id="username"
-                  type="text"
-                  className="form-input"
-                  placeholder=" "
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  required
-                />
-                <label htmlFor="username" className="floating-label">Username</label>
-              </div>
-
-
-              <div className="form-group">
+              <div className="form-group full-width">
                 <select
                   id="role"
                   className="form-select"
@@ -302,7 +484,7 @@ const OnboardingPage = () => {
               {error && <p className="error-message">{error}</p>}
             </div>
 
-            <div className="form-content">
+            <div className="form-content two-column">
               <div className="form-group">
                 <select
                   id="businesstype"
@@ -347,7 +529,7 @@ const OnboardingPage = () => {
               </div>
 
 
-              <div className="form-group">
+              <div className="form-group full-width">
                 <input
                   id="businessName"
                   type="text"
@@ -380,14 +562,15 @@ const OnboardingPage = () => {
               {error && <p className="error-message">{error}</p>}
             </div>
 
-            <div className="form-content">
-            <div className="form-group">
+            <div className="form-content two-column">
+              <div className="form-group">
                 <select
                   id="pageType"
                   className="form-select"
                   value={pageType}
                   onChange={e => setPageType(e.target.value)}
                   required
+                  disabled={loading}
                 >
                   <option value="" disabled>Choose page type</option>
                   <option value="Product Page">Product Page</option>
@@ -406,18 +589,43 @@ const OnboardingPage = () => {
                   value={pageURL}
                   onChange={e => setPageURL(e.target.value)}
                   required
+                  disabled={loading}
                 />
                 <label htmlFor="pageURL" className="floating-label">Page URL</label>
               </div>
+              
+              {processingURL && (
+                <div className="validation-message full-width">
+                  <div className="validation-content">
+                    <div className="pulse-loader">
+                      <div className="pulse-loader-dot"></div>
+                      <div className="pulse-loader-dot"></div>
+                      <div className="pulse-loader-dot"></div>
+                    </div>
+                    <div className="validation-text">
+                      <h4>Validating your website</h4>
+                      <p>We're checking your URL and preparing your dashboard...</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="form-footer">
               <button type="submit" disabled={loading} className="onboarding-button">
-                <span className="button-text">
-                  {loading ? "Just a moment..." : "Let's Begin!"}
-                </span>
-                <span className="button-icon">→</span>
+                {loading ? (
+                  <div className="loading-text-container footer-loading">
+                    <span className="current-loading-text">{loadingTexts[loadingTextIndex]}</span>
+                    <span className="button-icon loading-icon">→</span>
+                  </div>
+                ) : (
+                  <>
+                    <span className="button-text">Let's Begin!</span>
+                    <span className="button-icon">→</span>
+                  </>
+                )}
               </button>
+              {loading && <div className="footer-progress-bar"></div>}
             </div>
           </form>
         );
@@ -450,6 +658,148 @@ const OnboardingPage = () => {
           </TransitionGroup>
         </div>
       </div>
+      
+      {/* Screenshot Upload Modal */}
+      {showScreenshotModal && pageId && (
+        <div className="screenshot-modal-overlay">
+          <div className="screenshot-modal">
+            <div className="screenshot-modal-header">
+              <h3>Upload Website Screenshot</h3>
+              <button 
+                className="screenshot-modal-close" 
+                onClick={() => {
+                  console.log("Closing screenshot modal");
+                  setShowScreenshotModal(false);
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="screenshot-modal-body">
+              {error && (
+                <div className="screenshot-error">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  <span>{error}</span>
+                </div>
+              )}
+              
+              <div className="screenshot-content-wrapper">
+                <div className="screenshot-instructions-column">
+                  <p className="screenshot-instruction">
+                    We were unable to automatically capture a screenshot of your website due to security restrictions. Please upload a screenshot manually.
+                  </p>
+                  
+                  <div className="screenshot-how-to">
+                    <h4>How to capture a screenshot:</h4>
+                    <div className="screenshot-methods">
+                      <div className="screenshot-method">
+                        <div className="method-number">1</div>
+                        <div className="method-content">
+                          <strong>Browser Tools:</strong> Press <code>Ctrl+Shift+S</code> (Windows) or <code>Cmd+Shift+S</code> (Mac)
+                        </div>
+                      </div>
+                      <div className="screenshot-method">
+                        <div className="method-number">2</div>
+                        <div className="method-content">
+                          <strong>Context Menu:</strong> Right-click on page and select "Take Screenshot"
+                        </div>
+                      </div>
+                      <div className="screenshot-method">
+                        <div className="method-number">3</div>
+                        <div className="method-content">
+                          <strong>System Tools:</strong> <code>Win+Shift+S</code> (Windows) or <code>Cmd+Shift+4</code> (Mac)
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="screenshot-upload-column">
+                  <form onSubmit={handleScreenshotUpload} className="screenshot-form">
+                    <div className="screenshot-upload-container">
+                      {selectedScreenshot ? (
+                        <div className="screenshot-file-selected">
+                          <div className="screenshot-file-info">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                              <polyline points="13 2 13 9 20 9"></polyline>
+                            </svg>
+                            <span className="screenshot-filename">{selectedScreenshot.name}</span>
+                          </div>
+                          <button 
+                            type="button" 
+                            className="screenshot-remove-btn"
+                            onClick={() => {
+                              console.log("Removing selected screenshot");
+                              setSelectedScreenshot(null);
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="screenshot-upload-area">
+                          <input 
+                            type="file" 
+                            className="screenshot-file-input" 
+                            onChange={handleScreenshotChange}
+                            accept="image/*"
+                          />
+                          <div className="screenshot-upload-content">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                              <path d="M16 5h6v6"></path>
+                              <path d="M8 12l3 3 8-8"></path>
+                            </svg>
+                            <span className="screenshot-upload-text">
+                              <strong>Click to upload</strong> or drag and drop
+                            </span>
+                            <span className="screenshot-upload-hint">
+                              PNG, JPG, or WEBP (max 10MB)
+                            </span>
+                          </div>
+                        </label>
+                      )}
+                    </div>
+                    
+                    <div className="screenshot-modal-actions">
+                      <button 
+                        type="button" 
+                        className="screenshot-cancel-btn"
+                        onClick={() => {
+                          console.log("Closing screenshot modal");
+                          setShowScreenshotModal(false);
+                        }}
+                        disabled={uploadingScreenshot}
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="submit"
+                        className="screenshot-submit-btn"
+                        disabled={!selectedScreenshot || uploadingScreenshot}
+                      >
+                        {uploadingScreenshot ? (
+                          <div className="loading-text-container">
+                            <span className="current-loading-text">{loadingTexts[loadingTextIndex]}</span>
+                          </div>
+                        ) : (
+                          <span className="btn-text-center">Upload & Continue</span>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
