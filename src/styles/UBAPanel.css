@@ -93,6 +93,124 @@
   letter-spacing: 0.01rem;
 }
 
+.uba-formulation-text p {
+  margin: 0.8em 0;
+}
+
+.uba-formulation-text p:first-child {
+  margin-top: 0;
+}
+
+.uba-formulation-text p:last-child {
+  margin-bottom: 0;
+}
+
+.uba-formulation-text h1,
+.uba-formulation-text h2,
+.uba-formulation-text h3,
+.uba-formulation-text h4,
+.uba-formulation-text h5,
+.uba-formulation-text h6 {
+  margin: 1.5em 0 0.8em;
+  color: #0756A4;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.uba-formulation-text h1:first-child,
+.uba-formulation-text h2:first-child,
+.uba-formulation-text h3:first-child,
+.uba-formulation-text h4:first-child,
+.uba-formulation-text h5:first-child,
+.uba-formulation-text h6:first-child {
+  margin-top: 0;
+}
+
+.uba-formulation-text ul,
+.uba-formulation-text ol {
+  margin: 0.8em 0;
+  padding-left: 1.5em;
+}
+
+.uba-formulation-text li {
+  margin: 0.3em 0;
+}
+
+.uba-formulation-text a {
+  color: #0756A4;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(7, 86, 164, 0.2);
+  transition: border-color 0.2s ease;
+}
+
+.uba-formulation-text a:hover {
+  border-bottom-color: #0756A4;
+}
+
+.uba-formulation-text code {
+  background-color: rgba(7, 86, 164, 0.1);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.uba-formulation-text pre {
+  background-color: #f8f9fc;
+  padding: 1em;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.uba-formulation-text pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+.uba-formulation-text blockquote {
+  margin: 1em 0;
+  padding-left: 1em;
+  border-left: 3px solid #0756A4;
+  color: #666;
+  font-style: italic;
+}
+
+.uba-formulation-text hr {
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin: 1.5em 0;
+}
+
+.uba-formulation-text table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+}
+
+.uba-formulation-text th,
+.uba-formulation-text td {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0.5em;
+  text-align: left;
+}
+
+.uba-formulation-text th {
+  background-color: #f8f9fc;
+  font-weight: 600;
+}
+
+/* Ensure markdown inside observation segments maintains styles */
+.uba-observation-segment .uba-formulation-text {
+  display: inline;
+}
+
+.uba-observation-segment p {
+  display: inline;
+  margin: 0;
+}
+
 /* Loading Styles */
 .uba-loading-text,
 .uba-loading-placeholder {

@@ -106,7 +106,7 @@ export default function Dashboard() {
       <main className="dashboard-body">
         <div className="dashboard-content-wrapper" id="content-placeholder">
           <WebMetricsPanel pageId={activePageId} />
-          <UBAPanel pageId={activePageId} />    s
+          <UBAPanel pageId={activePageId} />  
           <UIPanel pageId={activePageId} />
         </div>
       </main>

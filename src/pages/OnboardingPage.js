@@ -65,7 +65,7 @@ const OnboardingPage = () => {
   const navigate = useNavigate();
 
   // Static loading text
-  const loadingText = "Processing your request...";
+  const loadingText = "This might take a minute..";
 
   // Retrieve access token from sessionStorage
   const getAccessToken = () => {
@@ -96,7 +96,7 @@ const OnboardingPage = () => {
   // ----- STEP 1: User-Onboard Data -----
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [role, setRole] = useState("");
+  const [user_role, setRole] = useState("");
 
   const handleUserOnboard = async (e) => {
     e.preventDefault();
@@ -111,7 +111,7 @@ const OnboardingPage = () => {
         body: JSON.stringify({
           first_name: firstName,
           last_name: lastName,
-          role: role,
+          user_role: user_role,
           token: getAccessToken(),
         }),
       });
@@ -517,19 +517,20 @@ const OnboardingPage = () => {
 
               <div className="form-group full-width">
                 <select
-                  id="role"
+                  id="user_role"
                   className="form-select"
-                  value={role}
+                  value={user_role}
                   onChange={e => setRole(e.target.value)}
                   required
                 >
-                  <option value="" disabled>Choose your role</option>
-                  <option value="product_manager">Product Manager</option>
-                  <option value="product_owner">Product Owner</option>
-                  <option value="ux_designer">UX Designer</option>
-                  <option value="ui_designer">UI Designer</option>
+                  <option value="" disabled>Choose your role at your work</option>
+                  <option value="Product Owner">Product Owner</option>
+                  <option value="Product Analyst">Product Analyst</option>
+                  <option value="Product Manager">Product Manager</option>
+                  <option value="UX Designer">UX Designer</option>
+                  <option value="Frontend Developer">Frontend Developer</option>
                 </select>
-                <label htmlFor="role" className="floating-label">Your Role</label>
+                <label htmlFor="user_role" className="floating-label">Your Role</label>
               </div>
             </div>
 

@@ -1,5 +1,6 @@
 // components/dashboard/UBAPanel.js
 import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import '../../styles/UBAPanel.css';
 
 export default function UBAPanel({ pageId }) {
@@ -46,22 +47,71 @@ export default function UBAPanel({ pageId }) {
     setError(null);
 
     try {
+      // Get auth token
+      const token = sessionStorage.getItem('access_token');
+      console.log('[UBAPanel] Auth token retrieved:', token ? 'Token found' : 'Token missing');
+      const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
       // Append a cache-busting query parameter 
       const timestamp = Date.now();
       
-      // ── 1) UBA formulation ─────────────────────────────────────────────
-      const formUrl = `http://127.0.0.1:8000/ask-ai/formulate-uba-answer/?page_id=${pageId}&_t=${timestamp}`;
-      console.log('[UBAPanel] Fetching formulation from:', formUrl);
+      // ── 1) Evaluate UBA (must be called first) ─────────────────────────────────────
+      const evaluateUrl = `http://127.0.0.1:8000/ask-ai/evaluate-uba/?page_id=${pageId}&_t=${timestamp}`;
+      console.log('[UBAPanel] Starting UBA evaluation:', evaluateUrl);
       
-      const formResponse = await fetch(formUrl);
+      const evaluateResponse = await fetch(evaluateUrl, { headers });
+      console.log('[UBAPanel] UBA evaluation response status:', evaluateResponse.status);
+      
+      if (!evaluateResponse.ok) {
+        const errorText = await evaluateResponse.text();
+        console.error('[UBAPanel] UBA evaluation error response:', errorText);
+        throw new Error(`UBA evaluation failed: ${evaluateResponse.status} - ${errorText}`);
+      }
+      
+      const evaluateData = await evaluateResponse.json();
+      console.log('[UBAPanel] UBA evaluation completed');
+
+      // ── 2) Web Search (must be called after evaluation) ─────────────────────────────────────
+      const searchUrl = `http://127.0.0.1:8000/ask-ai/web-search/?page_id=${pageId}&_t=${timestamp}`;
+      console.log('[UBAPanel] Fetching web search results:', searchUrl);
+      
+      const searchResponse = await fetch(searchUrl, { headers });
+      console.log('[UBAPanel] Web search response status:', searchResponse.status);
+      
+      if (!searchResponse.ok) {
+        const errorText = await searchResponse.text();
+        console.error('[UBAPanel] Web search error response:', errorText);
+        throw new Error(`Web search failed: ${searchResponse.status} - ${errorText}`);
+      }
+      
+      const searchData = await searchResponse.json();
+      console.log('[UBAPanel] Received web search data:', {
+        hasResults: !!searchData.results,
+        resultCount: searchData.results?.length
+      });
+
+      // Process solutions with their associated problem
+      const problemSolutions = searchData.results || [];
+      setSolutions(problemSolutions);
+
+      // ── 3) UBA formulation (must be called last) ─────────────────────────────────────────────
+      const formUrl = `http://127.0.0.1:8000/ask-ai/formulate-uba-answer/?page_id=${pageId}&_t=${timestamp}`;
+      console.log('[UBAPanel] Fetching UBA formulation:', formUrl);
+      
+      const formResponse = await fetch(formUrl, { headers });
       console.log('[UBAPanel] Formulation response status:', formResponse.status);
       
       if (!formResponse.ok) {
-        throw new Error(`UBA formulation fetch failed: ${formResponse.status}`);
+        const errorText = await formResponse.text();
+        console.error('[UBAPanel] Formulation error response:', errorText);
+        throw new Error(`UBA formulation fetch failed: ${formResponse.status} - ${errorText}`);
       }
       
       const data = await formResponse.json();
-      console.log('[UBAPanel] Received formulation data:', data);
+      console.log('[UBAPanel] Received formulation data:', {
+        hasFormulation: !!data.uba_formulation,
+        observationCount: data.uba_formulation ? Object.keys(data.uba_formulation).length : 0
+      });
       
       if (!data.uba_formulation) {
         throw new Error('No UBA formulation data received');
@@ -69,14 +119,15 @@ export default function UBAPanel({ pageId }) {
       
       // Process observations
       const observations = data.uba_formulation;
-      console.log('[UBAPanel] Processing observations:', Object.keys(observations).length);
-      
       let combinedText = '';
       let sectionData = [];
       
       Object.entries(observations).forEach(([key, text], index) => {
-        if (!text) return; // Skip empty observations
-        console.log(`[UBAPanel] Processing observation ${index + 1}, length:`, text.length);
+        if (!text) {
+          console.log(`[UBAPanel] Skipping empty observation ${index + 1}`);
+          return;
+        }
+        
         const startPos = combinedText.length;
         combinedText += text + ' ';
         const endPos = combinedText.length - 1;
@@ -90,42 +141,22 @@ export default function UBAPanel({ pageId }) {
       });
       
       const formText = combinedText.trim();
-      console.log('[UBAPanel] Final formulation length:', formText.length);
-      console.log('[UBAPanel] Number of sections:', sectionData.length);
-
-        // ── 2) Solutions endpoint ─────────────────────────────────────
-      const linksUrl = `http://127.0.0.1:8000/ask-ai/web-search/?page_id=${pageId}&_t=${timestamp}`;
-      console.log('[UBAPanel] Fetching links from:', linksUrl);
       
-      const linksResponse = await fetch(linksUrl);
-      console.log('[UBAPanel] Links response status:', linksResponse.status);
-      
-      if (!linksResponse.ok) {
-        throw new Error(`Solutions fetch failed: ${linksResponse.status}`);
-      }
-      
-      const sol = await linksResponse.json();
-      console.log('[UBAPanel] Received links data:', sol);
-      
-      // Process solutions with their associated problem
-      const problemSolutions = sol.results || [];
-      console.log('[UBAPanel] Number of problem categories:', problemSolutions.length);
-      
-      if (problemSolutions.length > 0) {
-        console.log('[UBAPanel] First problem:', problemSolutions[0].problem);
-        console.log('[UBAPanel] First problem solutions:', problemSolutions[0].solutions?.length);
-      }
-
       // Update state
       setFormulation(formText);
       setObservationSections(sectionData);
-      setSolutions(problemSolutions);
       
       // Cache the results
       persistToCache(formText, sectionData, problemSolutions);
+      
+      console.log('[UBAPanel] Successfully completed all requests and updated state:', {
+        formulationLength: formText.length,
+        sectionsCount: sectionData.length,
+        solutionsCount: problemSolutions.length
+      });
     } catch (err) {
       console.error('[UBAPanel] Error in data fetch:', err);
-        setError(err.message);
+      setError(err.message);
     } finally {
       console.log('[UBAPanel] Request chain completed');
       setLoading(false);
@@ -192,23 +223,21 @@ export default function UBAPanel({ pageId }) {
 
   const renderFormulation = () => {
     console.log('[UBAPanel] Rendering formulation, length:', formulation?.length);
-    console.log('[UBAPanel] Number of sections:', observationSections?.length);
     
     if (!formulation) {
-      console.log('[UBAPanel] No formulation text available');
       return null;
     }
     
     if (!observationSections || observationSections.length === 0) {
-      console.log('[UBAPanel] No sections available, rendering plain text');
-      return <p className="uba-formulation-text">{formulation}</p>;
+      return (
+        <div className="uba-formulation-text">
+          <ReactMarkdown>{formulation}</ReactMarkdown>
+        </div>
+      );
     }
     
     const segments = observationSections.map((section, index) => {
       const text = formulation.substring(section.startPos, section.endPos + 1);
-      console.log(`[UBAPanel] Processing segment ${index + 1}, length:`, text.length);
-      
-      // Determine if this segment is pinned
       const isPinned = pinnedObservation === section.observationNumber;
       
       return (
@@ -220,12 +249,11 @@ export default function UBAPanel({ pageId }) {
           onMouseLeave={handleObservationLeave}
           onClick={() => handleObservationClick(section.observationNumber)}
         >
-          {text}
+          <ReactMarkdown>{text}</ReactMarkdown>
         </span>
       );
     });
     
-    console.log('[UBAPanel] Total segments created:', segments.length);
     return <div className="uba-formulation-text">{segments}</div>;
   };
 

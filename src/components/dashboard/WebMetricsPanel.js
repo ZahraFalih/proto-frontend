@@ -1,6 +1,7 @@
 // pages/WebMetricsPanel.js
 import React, { useEffect, useState, useMemo } from 'react';
 import '../../styles/Dashboard.css';
+import '../../styles/WebMetricsPanel.css';
 
 export default function WebMetricsPanel({ pageId }) {
   /* ─────────── state ─────────── */
@@ -41,10 +42,19 @@ export default function WebMetricsPanel({ pageId }) {
 
   /* ─────────── fetch block ─────────── */
   useEffect(() => {
-    if (!pageId) return;
-    if (hydrateFromCache()) return; // served from cache
+    console.log('[WebMetricsPanel] Component mounted or pageId changed:', pageId);
+    if (!pageId) {
+      console.log('[WebMetricsPanel] No pageId provided, skipping fetch');
+      return;
+    }
+    
+    if (hydrateFromCache()) {
+      console.log('[WebMetricsPanel] Data loaded from cache for pageId:', pageId);
+      return; // served from cache
+    }
 
     const run = async () => {
+      console.log('[WebMetricsPanel] Starting data fetch for pageId:', pageId);
       setLoading(true);
       setError('');
       setRoleMetrics(null);
@@ -54,43 +64,103 @@ export default function WebMetricsPanel({ pageId }) {
       try {
         /* 1️⃣ fetch role + business metrics */
         const token = sessionStorage.getItem('access_token');
+        console.log('[WebMetricsPanel] Auth token retrieved:', token ? 'Token found' : 'Token missing');
         const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
         // Add cache busting timestamp
         const timestamp = Date.now();
         const roleUrl = `http://127.0.0.1:8000/toolkit/web-metrics/role-model/?page_id=${pageId}&_t=${timestamp}`;
         const bizUrl = `http://127.0.0.1:8000/toolkit/web-metrics/business/?page_id=${pageId}&_t=${timestamp}`;
+        
+        console.log('[WebMetricsPanel] Fetching role metrics from:', roleUrl);
+        console.log('[WebMetricsPanel] Fetching business metrics from:', bizUrl);
 
         const [roleRes, bizRes] = await Promise.all([
           fetch(roleUrl, { headers }),
           fetch(bizUrl, { headers }),
         ]);
+        
+        console.log('[WebMetricsPanel] Role metrics response status:', roleRes.status);
+        console.log('[WebMetricsPanel] Business metrics response status:', bizRes.status);
+        
         if (!roleRes.ok || !bizRes.ok)
           throw new Error('Could not fetch web metrics');
 
         const [roleData, bizData] = await Promise.all([roleRes.json(), bizRes.json()]);
+        console.log('[WebMetricsPanel] Role metrics data:', roleData);
+        console.log('[WebMetricsPanel] Business metrics data:', bizData);
+        
         setRoleMetrics(roleData);
         setBusinessMetrics(bizData);
 
         /* 2️⃣ evaluate business metrics */
         const bizKey = Object.keys(bizData)[0];
-        const evalRes = await fetch(
-          'http://127.0.0.1:8000/ask-ai/evaluate-web-metrics/',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ [bizKey]: bizData[bizKey] }),
-          }
-        );
-        if (!evalRes.ok) throw new Error('Evaluation API failed');
-        const evalJson = await evalRes.json();
-        setEvaluation(evalJson.web_metrics_report);
+        console.log('[WebMetricsPanel] Business metrics key:', bizKey);
+        
+        try {
+          // Get the business metrics key and value
+          const bizValue = bizData[bizKey];
+          
+          // Log the raw business metrics data
+          console.log('[WebMetricsPanel] Raw business metrics:', {
+            bizKey,
+            bizValue,
+            fullBizData: bizData
+          });
+          
+          // Create the payload with the exact format the backend expects
+          const evalPayload = bizData;  // Send the raw metrics object directly
+          
+          // Make the API call
+          const evalRes = await fetch(
+            `http://127.0.0.1:8000/ask-ai/evaluate-web-metrics/?page_id=${pageId}`,
+            {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(evalPayload),
+            }
+          );
 
-        /* 3️⃣ save everything to cache */
-        persistToCache(roleData, bizData, evalJson.web_metrics_report);
+          if (!evalRes.ok) {
+            throw new Error(`Evaluation API failed (${evalRes.status})`);
+          }
+
+          const evalJson = await evalRes.json();
+          
+          if (!evalJson.web_metrics_report) {
+            throw new Error('Invalid evaluation response format');
+          }
+          
+          setEvaluation(evalJson.web_metrics_report);
+          persistToCache(roleData, bizData, evalJson.web_metrics_report);
+        } catch (evalErr) {
+          console.error('[WebMetricsPanel] Evaluation error:', evalErr);
+          setError('Metrics loaded, but AI evaluation failed. Basic metrics are still available.');
+          
+          // Create a fallback evaluation object
+          setEvaluation({
+            overall_summary: "AI evaluation is currently unavailable. Basic metrics are still displayed.",
+            recommendations: [
+              "Optimize image sizes and use modern formats like WebP",
+              "Minimize render-blocking resources (JS and CSS)",
+              "Implement proper caching strategies",
+              "Consider using a Content Delivery Network (CDN)",
+              "Reduce server response times"
+            ],
+            metric_analysis: []
+          });
+          
+          // Still cache metrics without AI evaluation
+          persistToCache(roleData, bizData, null);
+        }
       } catch (err) {
-        console.error('[WebMetricsPanel] error →', err);
-        setError('Failed to load or evaluate metrics.');
+        console.error('[WebMetricsPanel] metrics fetch error →', err);
+        // Only handle the case where metrics fetching failed
+        // Evaluation errors are already handled in the nested try-catch
+        setError('Failed to load metrics data.');
       } finally {
         console.log('[WebMetricsPanel] Request completed');
         setLoading(false);
@@ -209,7 +279,7 @@ export default function WebMetricsPanel({ pageId }) {
       {loading && <div className="wm-loading">Analyzing performance metrics...</div>}
       {error && <div className="wm-error">{error}</div>}
       
-      {!loading && !error && processedMetrics.length > 0 && (
+      {!loading && processedMetrics.length > 0 && (
         <div className="wm-container">
           <div className="wm-metrics-grid">
             {processedMetrics.map((item) => (
@@ -276,7 +346,25 @@ export default function WebMetricsPanel({ pageId }) {
                   </ul>
                 </>
               ) : (
-                <p className="wm-summary-text">Click on a metric card to see detailed information.</p>
+                <>
+                  <p className="wm-summary-text">
+                    {error ? 
+                      "AI evaluation is currently unavailable. Here are the basic metrics for your website." : 
+                      "Click on a metric card to see detailed information."}
+                  </p>
+                  {error && (
+                    <>
+                      <h4>General Recommendations</h4>
+                      <ul className="wm-recommendations">
+                        <li>Optimize image sizes and use modern formats like WebP</li>
+                        <li>Minimize render-blocking resources (JS and CSS)</li>
+                        <li>Implement proper caching strategies</li>
+                        <li>Consider using a Content Delivery Network (CDN)</li>
+                        <li>Reduce server response times</li>
+                      </ul>
+                    </>
+                  )}
+                </>
               )}
             </div>
           </div>
