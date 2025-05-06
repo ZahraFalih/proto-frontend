@@ -143,7 +143,7 @@
   display: flex;
   align-items: center;
   background: #fff;
-  padding: 0 1.5rem;
+  padding: 30px;
   overflow-x: auto;
   scrollbar-width: none;
   border-top: 1px solid rgba(0,0,0,0.05);
@@ -163,7 +163,7 @@
   align-items: center;
   gap: 1.5rem;
   padding: 0;
-  height: 100%; /* Full height for centering */
+  height: 50px; /* Full height for centering */
 }
 
 .tab {
@@ -488,3 +488,30 @@
     gap: 1.5rem;
   }
 } 
+/* ensure labels stack their inputs */
+.modal-box form label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 500;
+}
+
+/* style the dropdown */
+.modal-box form select {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+/* reuse existing form spacing */
+.modal-box form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* sizing for both modals and panel boxes */
+.modal-box,
+.panel-box {
+  width: 90%;
+  padding: 1.5rem;
+}

@@ -1,6 +1,6 @@
 // pages/WebMetricsPanel.js
 import React, { useEffect, useState, useMemo } from 'react';
-import '../../styles/WebMetricsPanel.css';
+import '../../styles/Dashboard.css';
 
 export default function WebMetricsPanel({ pageId }) {
   /* ─────────── state ─────────── */
