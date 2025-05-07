@@ -4,7 +4,10 @@ import { useNavigate } from "react-router-dom";
 import logo from "../../assets/icons/logo.png";
 import "../../styles/Dashboard.css";
 
-export default function DashboardHeaderPanel() {
+const slugify = (str = "") =>
+  str.toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]/g, "");
+
+export default function DashboardHeaderPanel({ pages = [], onPageDeleted }) {
   const [userName, setUserName] = useState("Loading…");
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -56,6 +59,26 @@ export default function DashboardHeaderPanel() {
       sessionStorage.removeItem("access_token");
       navigate("/auth?mode=login");
     });
+  };
+
+  const handleDelete = async (id, type) => {
+    try {                                
+        const url = `http://127.0.0.1:8000/onboard/pages/${id}/${encodeURIComponent(
+            type
+          )}/`;
+      
+          const res = await fetch(url, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        onPageDeleted?.(id); 
+      } catch (err) {
+        console.error("[Header] Failed to delete page:", err);
+    }
   };
 
   return (
@@ -120,7 +143,6 @@ export default function DashboardHeaderPanel() {
           </div>
         </div>
       )}
-
       {/* DATA / PREF / SETT MODAL */}
       {panelOpen && (
         <div className="panel-overlay anim-fade" onClick={() => setPanelOpen(false)}>
@@ -146,7 +168,30 @@ export default function DashboardHeaderPanel() {
               </button>
             </div>
             <div className="panel-content">
-              {panelTab === "data" && <p className="placeholder">My Data panel (empty)</p>}
+              {panelTab === "data" && (
+                <div className="manage-page-container">
+                  {pages.length ? (
+                    <ul className="manage-page-list">
+                      {pages.map((p) => (
+                        <li key={p.id} className="manage-page-item">
+                          <span className="page-label">{p.type}</span>
+              
+                          <div className="page-actions">
+                            <button
+                              className="delete-page-button"
+                              onClick={() => handleDelete(p.id, p.type)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>No pages added yet.</p>
+                  )}
+                </div>
+              )}            
               {panelTab === "pref" && <p className="placeholder">Preferences panel (empty)</p>}
               {panelTab === "sett" && <p className="placeholder">Settings panel (empty)</p>}
             </div>

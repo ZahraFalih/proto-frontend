@@ -1162,3 +1162,117 @@
 .modal-btn.confirm:hover {
   background-color: #0041CC;
 }
+/* ───────────────────────────────
+   Manage-Pages panel
+   ─────────────────────────────── */
+/* ─────────── wrapper box ─────────── */
+.manage-page-container {
+  background: var(--color-card, #fff);
+  border: 1px solid var(--color-bg, #e5e7eb);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: var(--shadow, 0 4px 12px rgba(0,0,0,0.05));
+  max-height: 420px;        /* scroll instead of blowing up */
+  overflow-y: auto;
+}
+
+/* existing list + item rules from last message still apply */
+
+/* action column (so future buttons line up) */
+.page-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+}
+
+   .manage-data {
+    padding: 1rem 0.5rem;
+    max-height: 400px;        /* scroll if it gets out of hand */
+    overflow-y: auto;
+  }
+  
+  .manage-page-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .manage-page-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    background: var(--color-card, #fff);
+    border: 1px solid var(--color-bg, #e5e7eb);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    box-shadow: var(--shadow, 0 2px 6px rgba(0,0,0,0.05));
+    font-size: 0.95rem;
+  }
+  
+  .page-label {
+    font-weight: 600;
+    color: var(--color-text, #333);
+    text-transform: capitalize;
+    flex: 1 1 auto;          /* takes up remaining space */
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  
+  .delete-page-button {
+    flex: 0 0 auto;
+    background: var(--color-error, #e5484d);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms ease-in-out, transform 120ms;
+  }
+  
+  .delete-page-button:hover {
+    background: #c93d41;      /* a hair darker */
+  }
+  
+  .delete-page-button:active {
+    transform: translateY(1px);
+  }
+  
+  .delete-page-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .section-heading {
+    margin: 1rem 0 0.5rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--color-text-muted, #555);
+  }
+  
+  /* “Replace” button */
+  .update-file-button {
+    background: var(--color-primary-dark, #2279d0);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms ease, transform 120ms;
+  }
+  
+  .update-file-button:hover {
+    background: var(--color-primary, #0756a4);
+  }
+  
+  .update-file-button:active {
+    transform: translateY(1px);
+  }
+  

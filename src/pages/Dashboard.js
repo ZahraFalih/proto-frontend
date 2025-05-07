@@ -100,7 +100,10 @@ export default function Dashboard() {
     <div className="dashboard-container">
       <div className="dashboard-header-section">
         <div className="dashboard-content-wrapper">
-          <DashboardHeaderPanel />
+          <DashboardHeaderPanel 
+          pages={pages}
+          onPageDeleted={handlePageDeleted}
+          />
           <NavBar
             pages={pages}
             activeTabSlug={activeTabSlug}
