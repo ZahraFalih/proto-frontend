@@ -1,7 +1,9 @@
 // components/dashboard/UBAPanel.js
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { UBASkeleton } from '../common/Skeleton';
 import '../../styles/UBAPanel.css';
+import '../../styles/Dashboard.css';
 
 export default function UBAPanel({ pageId }) {
   const [formulation, setFormulation] = useState('');
@@ -370,7 +372,8 @@ export default function UBAPanel({ pageId }) {
                 </button>
               )}
             </div>
-            {loading && <p className="uba-loading-text">Loading analysis…</p>}
+            
+            {loading && <UBASkeleton />}
             {error && <p className="uba-error-text">Error: {error}</p>}
             {!loading && !error && !formulation && (
               <p className="uba-loading-placeholder">Analyzing user behavior patterns...</p>
@@ -385,11 +388,11 @@ export default function UBAPanel({ pageId }) {
               </div>
             )}
           </div>
-      </div>
+        </div>
 
-      <div className="uba-links-container">
-        <h4>Related Resources</h4>
-          {loading && <p className="uba-loading-text">Loading resources…</p>}
+        <div className="uba-links-container">
+          <h4>Related Resources</h4>
+          {loading && <UBASkeleton />}
           {!loading && !error && renderSolutions()}
         </div>
       </div>

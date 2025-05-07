@@ -1,5 +1,6 @@
 // components/dashboard/UIPanel.js
 import React, { useEffect, useState } from 'react';
+import { UISkeleton } from '../common/Skeleton';
 import '../../styles/UIPanel.css';
 
 export default function UIPanel({ pageId }) {
@@ -16,7 +17,7 @@ export default function UIPanel({ pageId }) {
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        setCategories(parsed);
+        setCategories(parsed || []);
         setError(null);
         setLoading(false);
         console.log(`[UIPanel] Loaded from cache for pageId=${pageId}`);
@@ -36,24 +37,44 @@ export default function UIPanel({ pageId }) {
     setCategories([]);
 
     fetch(url, { headers: { Accept: 'application/json' } })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then(data => {
         let evaluation = data.evaluation;
         if (typeof evaluation === 'string') {
-          evaluation = JSON.parse(evaluation);
+          try {
+            evaluation = JSON.parse(evaluation);
+          } catch (e) {
+            console.error('[UIPanel] Failed to parse evaluation string:', e);
+            throw new Error('Invalid evaluation data format');
+          }
         }
 
         if (!evaluation?.categories) {
           throw new Error('No categories in response');
         }
 
-        setCategories(evaluation.categories);
-        sessionStorage.setItem(cacheKey, JSON.stringify(evaluation.categories));
-        console.log(`[UIPanel] Cached response for pageId=${pageId}`);
+        // Process categories, ensuring evidence is handled as a string
+        const categoriesArray = Array.isArray(evaluation.categories) 
+          ? evaluation.categories.map(cat => ({
+              name: cat.name || '',
+              score: cat.score || 0,
+              evidence: cat.evidence || ''
+            }))
+          : [];
+
+        setCategories(categoriesArray);
+        sessionStorage.setItem(cacheKey, JSON.stringify(categoriesArray));
+        console.log(`[UIPanel] Cached response for pageId=${pageId}, categories:`, categoriesArray);
       })
       .catch(err => {
         console.error('[UIPanel] Fetch failed:', err);
         setError(err.message || 'Unknown error');
+        setCategories([]); // Ensure categories is an empty array on error
       })
       .finally(() => setLoading(false));
   }, [pageId]);
@@ -68,18 +89,23 @@ export default function UIPanel({ pageId }) {
     ).join(' ');
   };
 
+  const getActiveCategory = () => {
+    const category = categories.find(c => c.name === activeCategory);
+    return category || { evidence: '' };
+  };
+
   return (
     <div className="panel-container">
       <div className="panel-header">User Interface Evaluation</div>
 
-      {loading && <div className="ui-loader">Loading UI evaluation...</div>}
+      {loading && <UISkeleton />}
       {error && <div className="ui-error">⚠ {error}</div>}
 
       {!loading && !error && (
         <div className="ui-eval-body">
           {/* Left column: ratings */}
           <div className="ui-categories-container">
-            {categories.map(({ name, score }) => (
+            {Array.isArray(categories) && categories.map(({ name, score }) => (
               <div 
                 key={name} 
                 className={`ui-category ${activeCategory === name ? 'active' : ''}`}
@@ -99,20 +125,20 @@ export default function UIPanel({ pageId }) {
             ))}
           </div>
 
-          {/* Right column: explanations */}
-          <div className="ui-explanation-container">
-            {categories.map(({ name, evidence }) => (
-              <div 
-                key={name} 
-                className={`explanation-item ${activeCategory === name ? 'active' : ''}`}
-              >
-                <h4 className="explanation-title">{formatCategoryName(name)}</h4>
-                <p className="explanation-text">{evidence}</p>
+          {/* Right column: evidence */}
+          <div className="ui-evidence-container">
+            {activeCategory ? (
+              <div className="ui-evidence">
+                <h3>{formatCategoryName(activeCategory)}</h3>
+                <div className="ui-evidence-content">
+                  <div className="evidence-item">
+                    <p>{getActiveCategory().evidence}</p>
+                  </div>
+                </div>
               </div>
-            ))}
-            {!activeCategory && categories.length > 0 && (
-              <div className="explanation-placeholder">
-                <p>Select a category to see detailed information</p>
+            ) : (
+              <div className="ui-evidence-placeholder">
+                Select a category to see detailed analysis
               </div>
             )}
           </div>

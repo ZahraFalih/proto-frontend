@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import "../styles/OnboardingPage.css";
 import "../styles/global.css";
+import LoadingText from '../components/common/LoadingText';
 
 const companiesData = [
   { id: 1, name: "Amazon", category: "Online Retail & Marketplace" },
@@ -63,9 +64,6 @@ const OnboardingPage = () => {
   const [selectedUbaFile, setSelectedUbaFile] = useState(null);
   const [pageType, setPageType] = useState("");
   const navigate = useNavigate();
-
-  // Static loading text
-  const loadingText = "This might take a minute..";
 
   // Retrieve access token from sessionStorage
   const getAccessToken = () => {
@@ -262,7 +260,7 @@ const OnboardingPage = () => {
               if (selectedUbaFile) {
                 await uploadUbaFile(data.id, pageType);
               } else {
-                navigate("/dashboard");
+                navigate("/dashboard", { state: { fromOnboarding: true } });
               }
             }
           } else {
@@ -298,7 +296,7 @@ const OnboardingPage = () => {
   const uploadUbaFile = async (pageId, pageTypeName) => {
     if (!selectedUbaFile) {
       console.log("No UBA file selected, skipping UBA upload");
-      navigate("/dashboard");
+      navigate("/dashboard", { state: { fromOnboarding: true } });
       return;
     }
     
@@ -346,7 +344,7 @@ const OnboardingPage = () => {
       
       if (response.ok) {
         console.log("UBA data upload successful, navigating to dashboard");
-        navigate("/dashboard");
+        navigate("/dashboard", { state: { fromOnboarding: true } });
       } else {
         if (response.status === 401) {
           console.log("Unauthorized token for UBA upload");
@@ -356,14 +354,14 @@ const OnboardingPage = () => {
           console.log("UBA upload failed:", response.status, data.error || "Unknown error");
           setError("Failed to upload UBA data. " + (data.error || "Please try again."));
           // Still navigate to dashboard even if UBA upload fails
-          setTimeout(() => navigate("/dashboard"), 3000);
+          setTimeout(() => navigate("/dashboard", { state: { fromOnboarding: true } }), 3000);
         }
       }
     } catch (err) {
       console.error("Exception in UBA upload:", err);
       setError("Failed to upload UBA data, but your page was successfully onboarded.");
       // Still navigate to dashboard even if UBA upload fails
-      setTimeout(() => navigate("/dashboard"), 3000);
+      setTimeout(() => navigate("/dashboard", { state: { fromOnboarding: true } }), 3000);
     } finally {
       setLoading(false);
     }
@@ -438,7 +436,7 @@ const OnboardingPage = () => {
           await uploadUbaFile(pageId, pageType);
         } else {
           console.log("No UBA file to upload, navigating to dashboard");
-          navigate("/dashboard");
+          navigate("/dashboard", { state: { fromOnboarding: true } });
         }
       } else {
         if (response.status === 401) {
@@ -733,7 +731,7 @@ const OnboardingPage = () => {
               <button type="submit" disabled={loading} className="onboarding-button">
                 {loading ? (
                   <div className="loading-text-container footer-loading">
-                    <span className="current-loading-text">{loadingText}</span>
+                    <LoadingText />
                   </div>
                 ) : (
                   <>
@@ -902,9 +900,7 @@ const OnboardingPage = () => {
                         disabled={!selectedScreenshot || uploadingScreenshot}
                       >
                         {uploadingScreenshot ? (
-                          <div className="loading-text-container">
-                            <span className="current-loading-text">{loadingText}</span>
-                          </div>
+                          <LoadingText />
                         ) : (
                           <span className="btn-text-center">Upload & Continue</span>
                         )}

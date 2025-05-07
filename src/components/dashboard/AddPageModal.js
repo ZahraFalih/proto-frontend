@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { CSSTransition } from 'react-transition-group';
 import { useNavigate } from 'react-router-dom';
+import ProgressLoader from '../common/ProgressLoader';
 import '../../styles/AddPageModal.css';
 
 const PAGE_TYPES = ['Landing Page', 'Search Results Page', 'Product Page'];
@@ -21,6 +22,7 @@ export default function AddPageModal({
   const [loading, setLoading] = useState(false);
   const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
   const [error, setError] = useState(null);
+  const [showProgressLoader, setShowProgressLoader] = useState(false);
   const navigate = useNavigate();
 
   const reset = () => {
@@ -172,123 +174,212 @@ export default function AddPageModal({
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      if (!selectedType || !pageURL) {
+        throw new Error('Please fill in all required fields');
+      }
+
+      console.log('[AddPageModal] Starting page creation with:', {
+        type: selectedType,
+        url: pageURL,
+        ubaFileName: selectedUbaFile?.name
+      });
+
+      // First create the page
+      const token = sessionStorage.getItem('access_token');
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+
+      console.log('[AddPageModal] Making request to page-onboard endpoint');
+      
+      const pageResponse = await fetch('http://127.0.0.1:8000/onboard/page-onboard/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          token: token,
+          page_type: selectedType,
+          url: pageURL
+        })
+      });
+
+      if (!pageResponse.ok) {
+        const errorText = await pageResponse.text();
+        console.error('[AddPageModal] Error response:', {
+          status: pageResponse.status,
+          statusText: pageResponse.statusText,
+          body: errorText
+        });
+        throw new Error(`Failed to add page: ${pageResponse.status} - ${errorText || pageResponse.statusText}`);
+      }
+
+      const newPage = await pageResponse.json();
+      console.log('[AddPageModal] Successfully created page:', newPage);
+
+      // If we have a UBA file, upload it
+      if (selectedUbaFile && newPage.id) {
+        console.log('[AddPageModal] Uploading UBA file');
+        const formData = new FormData();
+        formData.append('token', token);
+        formData.append('file', selectedUbaFile);
+        formData.append('page_id', String(newPage.id));
+        formData.append('name', selectedType);
+
+        const ubaResponse = await fetch('http://127.0.0.1:8000/upload/create/', {
+          method: 'POST',
+          credentials: 'include',
+          body: formData
+        });
+
+        if (!ubaResponse.ok) {
+          console.error('[AddPageModal] UBA upload failed:', await ubaResponse.text());
+          throw new Error('Failed to upload UBA file');
+        }
+
+        console.log('[AddPageModal] Successfully uploaded UBA file');
+      }
+      
+      setShowProgressLoader(true);
+      onPageAdded(newPage);
+    } catch (err) {
+      console.error('[AddPageModal] Error in handleSubmit:', err);
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  const handleProgressComplete = () => {
+    setShowProgressLoader(false);
+    onClose();
+  };
+
   return (
-    <CSSTransition in={visible} timeout={300} classNames="modal" unmountOnExit>
-      <div className="modal-overlay">
-        <div className="modal-box">
-          <div className="modal-header">
-            <h2 className="modal-title">Add New Page</h2>
-            <button className="close-button" onClick={handleClose}>&times;</button>
-          </div>
+    <>
+      {showProgressLoader && <ProgressLoader onComplete={handleProgressComplete} />}
+      
+      <CSSTransition in={visible} timeout={300} classNames="modal" unmountOnExit>
+        <div className="modal-overlay" onClick={handleClose}>
+          <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">Add New Page</h2>
+              <button className="close-button" onClick={handleClose}>&times;</button>
+            </div>
 
-          {showScreenshotModal ? (
-            <form className="modal-form" onSubmit={handleScreenshotUpload}>
-              {error && <div className="error-message">{error}</div>}
-              <div className="form-group">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={e => setSelectedScreenshot(e.target.files?.[0] || null)}
-                  required
-                />
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="cancel-button" onClick={handleClose}>
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="submit-button"
-                  disabled={uploadingScreenshot}
-                >
-                  {uploadingScreenshot ? 'Uploading…' : 'Upload Screenshot'}
-                </button>
-              </div>
-            </form>
-          ) : (
-            <form className="modal-form" onSubmit={handlePageOnboard}>
-              {error && <div className="error-message">{error}</div>}
-
-              <div className="form-group">
-                <select
-                  className="form-select"
-                  value={selectedType}
-                  onChange={e => setSelectedType(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>
-                    Select page type
-                  </option>
-                  {PAGE_TYPES.filter(type => !existingPageTypes.includes(type)).map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <input
-                  type="url"
-                  className="form-input"
-                  placeholder=" "
-                  value={pageURL}
-                  onChange={e => setPageURL(e.target.value)}
-                  required
-                />
-                <label className="floating-label">Page URL</label>
-              </div>
-
-              <div className="form-group uba-upload-section">
-                <div className="uba-upload-header">
-                  <h4>UBA Data</h4><p>Upload CSV</p>
+            {showScreenshotModal ? (
+              <form className="modal-form" onSubmit={handleScreenshotUpload}>
+                {error && <div className="error-message">{error}</div>}
+                <div className="form-group">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => setSelectedScreenshot(e.target.files?.[0] || null)}
+                    required
+                  />
                 </div>
-                {selectedUbaFile ? (
-                  <div className="uba-file-selected">
-                    <div className="uba-file-info">
-                      <span className="uba-filename">{selectedUbaFile.name}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="uba-remove-btn"
-                      onClick={() => setSelectedUbaFile(null)}
-                      disabled={loading}
-                    >&times;</button>
-                  </div>
-                ) : (
-                  <label className="uba-upload-area">
-                    <input
-                      type="file"
-                      className="uba-file-input"
-                      accept=".csv"
-                      onChange={handleUbaFileChange}
-                      disabled={loading}
-                      required
-                    />
-                    <div className="uba-upload-content">
-                      <strong>Upload CSV file</strong>
-                    </div>
-                  </label>
-                )}
-              </div>
+                <div className="modal-footer">
+                  <button type="button" className="cancel-button" onClick={handleClose}>
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="submit-button"
+                    disabled={uploadingScreenshot}
+                  >
+                    {uploadingScreenshot ? 'Uploading…' : 'Upload Screenshot'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                {error && <div className="error-message">{error}</div>}
 
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="cancel-button"
-                  onClick={handleClose}
-                  disabled={loading}
-                >Cancel</button>
-                <button
-                  type="submit"
-                  className="submit-button"
-                  disabled={loading || !selectedType || !pageURL}
-                >
-                  {loading ? 'Processing...' : 'Continue'}
-                </button>
-              </div>
-            </form>
-          )}
+                <div className="form-group">
+                  <select
+                    className="form-select"
+                    value={selectedType}
+                    onChange={e => setSelectedType(e.target.value)}
+                    required
+                  >
+                    <option value="" disabled>
+                      Select page type
+                    </option>
+                    {PAGE_TYPES.filter(type => !existingPageTypes.includes(type)).map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <input
+                    type="url"
+                    className="form-input"
+                    placeholder=" "
+                    value={pageURL}
+                    onChange={e => setPageURL(e.target.value)}
+                    required
+                  />
+                  <label className="floating-label">Page URL</label>
+                </div>
+
+                <div className="form-group uba-upload-section">
+                  <div className="uba-upload-header">
+                    <h4>UBA Data</h4><p>Upload CSV</p>
+                  </div>
+                  {selectedUbaFile ? (
+                    <div className="uba-file-selected">
+                      <div className="uba-file-info">
+                        <span className="uba-filename">{selectedUbaFile.name}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="uba-remove-btn"
+                        onClick={() => setSelectedUbaFile(null)}
+                        disabled={loading}
+                      >&times;</button>
+                    </div>
+                  ) : (
+                    <label className="uba-upload-area">
+                      <input
+                        type="file"
+                        className="uba-file-input"
+                        accept=".csv"
+                        onChange={handleUbaFileChange}
+                        disabled={loading}
+                        required
+                      />
+                      <div className="uba-upload-content">
+                        <strong>Upload CSV file</strong>
+                      </div>
+                    </label>
+                  )}
+                </div>
+
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    onClick={handleClose}
+                    disabled={loading}
+                  >Cancel</button>
+                  <button
+                    type="submit"
+                    className="submit-button"
+                    disabled={loading || !selectedType || !pageURL}
+                  >
+                    {loading ? 'Processing...' : 'Continue'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
-      </div>
-    </CSSTransition>
+      </CSSTransition>
+    </>
   );
 }
