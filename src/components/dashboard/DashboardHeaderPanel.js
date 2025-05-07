@@ -62,6 +62,7 @@ export default function DashboardHeaderPanel() {
     <>
       {/* HEADER */}
       <header className="dashboard-header">
+      <h3 className="header-title">SEPHORA</h3>
         <div className="header-content">
           <img src={logo} alt="logo" className="header-logo" />
 

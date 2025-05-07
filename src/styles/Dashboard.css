@@ -582,3 +582,49 @@
 .modal-btn.confirm:hover {
   background-color: #0041CC;
 }
+
+.header-title {
+  font-size: 1.50rem;
+  font-weight: 700;
+  position: relative;
+  cursor: default;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  display: inline-block;
+  margin: 0;
+  left: 500px;
+  top: 30px;
+}
+
+/* Hover “pop” */
+.header-title:hover {
+  transform: translateY(-3px) scale(1.05);
+  opacity: 0.9;
+}
+
+/* Animated underline */
+.header-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  width: 100%;
+  height: 3px;
+  background: var(--color-primary);
+  border-radius: var(--radius);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s ease;
+}
+
+.header-title:hover::after {
+  transform: scaleX(1);
+}
+
+/* If you want a delayed fade-in on page load */
+@keyframes fadeInHeader {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.header-title {
+  animation: fadeInHeader 0.6s ease-out both;
+}
