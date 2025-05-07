@@ -1,155 +1,294 @@
+// src/components/dashboard/AddPageModal.js
 import React, { useState } from 'react';
-import "../../styles/Dashboard.css";
+import { CSSTransition } from 'react-transition-group';
+import { useNavigate } from 'react-router-dom';
+import '../../styles/AddPageModal.css';
 
-const PAGE_TYPES = [
-  'Landing Page',
-  'Search Results Page',
-  'Product Page'
-];
+const PAGE_TYPES = ['Landing Page', 'Search Results Page', 'Product Page'];
 
 export default function AddPageModal({
   visible,
   onClose,
   onPageAdded,
-  onPageDeleted,       // 👈 add this
-  pages = [],          // 👈 add this
   existingPageTypes = []
 }) {
-  if (!visible) return null;
+  const [selectedType, setSelectedType] = useState('');
+  const [pageURL, setPageURL] = useState('');
+  const [selectedUbaFile, setSelectedUbaFile] = useState(null);
+  const [pageId, setPageId] = useState(null);
+  const [selectedScreenshot, setSelectedScreenshot] = useState(null);
+  const [showScreenshotModal, setShowScreenshotModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  // Determine which types are still available
-  const availableTypes = PAGE_TYPES.filter(
-    t => !existingPageTypes.includes(t)
-  );
-  const [url, setUrl] = useState('');
-  const [pageType, setPageType] = useState(availableTypes[0] || '');
+  const reset = () => {
+    setSelectedType('');
+    setPageURL('');
+    setSelectedUbaFile(null);
+    setSelectedScreenshot(null);
+    setShowScreenshotModal(false);
+    setError(null);
+  };
+  const handleClose = () => { reset(); onClose(); };
 
-  const handleSubmit = async e => {
+  const handleUbaFileChange = e => {
+    const file = e.target.files?.[0];
+    if (file) setSelectedUbaFile(file);
+  };
+
+  // STEP 1: create page record
+  const handlePageOnboard = async e => {
     e.preventDefault();
+    setError(null);
+    if (!selectedType || !pageURL) {
+      setError('Please fill in all required fields');
+      return;
+    }
+    setLoading(true);
     const token = sessionStorage.getItem('access_token');
-    const payload = { url, page_type: pageType, token };
+    const payload = { page_type: selectedType, url: pageURL, token };
 
     try {
-      const res = await fetch(
-        'http://127.0.0.1:8000/onboard/page-onboard/',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+      const res = await fetch('http://127.0.0.1:8000/onboard/page-onboard/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = { error: 'Invalid server response' }; }
+
+      if (!res.ok) {
+        if (res.status === 401) { setError('Session expired.'); navigate('/login'); }
+        else { setError(data.error || `Error ${res.status}`); }
+      }
+      else if (data.url == null) {
+        setError('Invalid URL provided.');
+      }
+      else if (data.id != null) {
+        setPageId(data.id);
+
+        // screenshot missing? show that step
+        if (!data.screenshot_path) {
+          setShowScreenshotModal(true);
         }
-      );
-      if (!res.ok) throw new Error(`Status ${res.status}`);
-      const newPage = await res.json();
-      onPageAdded(newPage);
-      onClose();
-    } catch (err) {
-      console.error('Failed to add page:', err);
-      // TODO: display error to user
+        // already has screenshot, move to UBA or finish
+        else if (selectedUbaFile) {
+          await uploadUbaFile(data.id);
+        } else {
+          onPageAdded(data);
+          handleClose();
+          navigate('/dashboard');
+        }
+      } else {
+        setError('Server error: Missing page ID.');
+      }
+    } catch {
+      setError('Network error.');
+    } finally {
+      setLoading(false);
     }
   };
-  const handleAdd = async e => {
+
+  // STEP 2: upload UBA file
+  const uploadUbaFile = async id => {
+    if (!selectedUbaFile) {
+      navigate('/dashboard');
+      return;
+    }
+    setLoading(true);
+    const formData = new FormData();
+    const token = sessionStorage.getItem('access_token');
+    formData.append('token', token);
+    formData.append('file', selectedUbaFile);
+    formData.append('page_id', String(id));
+    formData.append('name', selectedType);
+
+    try {
+      const res = await fetch('http://127.0.0.1:8000/upload/create/', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+      if (res.ok) {
+        onPageAdded({ id, type: selectedType, url: pageURL });
+        handleClose();
+        navigate('/dashboard');
+      } else {
+        setError('UBA upload failed.');
+        setTimeout(() => navigate('/dashboard'), 3000);
+      }
+    } catch {
+      setError('UBA upload network error.');
+      setTimeout(() => navigate('/dashboard'), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // STEP 3: upload screenshot, then chain to UBA if needed
+  const handleScreenshotUpload = async e => {
     e.preventDefault();
+    setError(null);
+    if (!selectedScreenshot || pageId == null) {
+      setError('Screenshot or page ID missing.');
+      return;
+    }
+    setUploadingScreenshot(true);
+    const formData = new FormData();
     const token = sessionStorage.getItem('access_token');
-    const payload = { url, page_type: pageType, token };
+    formData.append('token', token);
+    formData.append('page_id', String(pageId));
+    formData.append('screenshot', selectedScreenshot);
 
     try {
       const res = await fetch(
-        'http://127.0.0.1:8000/onboard/page-onboard/',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }
+        'http://127.0.0.1:8000/onboard/upload-screenshot/',
+        { method: 'POST', credentials: 'include', body: formData }
       );
-      if (!res.ok) throw new Error(`Status ${res.status}`);
-      const newPage = await res.json();
-      onPageAdded(newPage);
-      onClose();
-    } catch (err) {
-      console.error('Failed to add page:', err);
-    }
-  };
-  const handleDelete = async id => {
-    const token = sessionStorage.getItem('access_token');
-    try {
-      const res = await fetch(
-        `http://127.0.0.1:8000/onboard/page-onboard/${id}/`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (!res.ok) throw new Error(`Status ${res.status}`);
-      onPageDeleted(id);
-    } catch (err) {
-      console.error('Failed to delete page:', err);
-    }
-  };
 
+      if (!res.ok) {
+        setError('Screenshot upload failed.');
+        setTimeout(() => navigate('/dashboard'), 3000);
+      }
+      else {
+        // now that screenshot is done, proceed
+        if (selectedUbaFile) {
+          await uploadUbaFile(pageId);
+        } else {
+          onPageAdded({ id: pageId, type: selectedType, url: pageURL });
+          handleClose();
+          navigate('/dashboard');
+        }
+      }
+    } catch {
+      setError('Screenshot upload network error.');
+      setTimeout(() => navigate('/dashboard'), 3000);
+    } finally {
+      setUploadingScreenshot(false);
+    }
+  };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box panel-box" onClick={e => e.stopPropagation()}>
-        <h2>Manage Pages</h2>
+    <CSSTransition in={visible} timeout={300} classNames="modal" unmountOnExit>
+      <div className="modal-overlay">
+        <div className="modal-box">
+          <div className="modal-header">
+            <h2 className="modal-title">Add New Page</h2>
+            <button className="close-button" onClick={handleClose}>&times;</button>
+          </div>
 
-        {/* Existing pages */}
-        <ul className="modal-page-list">
-          {pages.map(p => (
-            <li key={p.id} className="modal-page-item">
-              {p.type}
-              <button
-                type="button"
-                className="delete-page-button"
-                onClick={() => handleDelete(p.id)}
-              >
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
+          {showScreenshotModal ? (
+            <form className="modal-form" onSubmit={handleScreenshotUpload}>
+              {error && <div className="error-message">{error}</div>}
+              <div className="form-group">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={e => setSelectedScreenshot(e.target.files?.[0] || null)}
+                  required
+                />
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="cancel-button" onClick={handleClose}>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="submit-button"
+                  disabled={uploadingScreenshot}
+                >
+                  {uploadingScreenshot ? 'Uploading…' : 'Upload Screenshot'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form className="modal-form" onSubmit={handlePageOnboard}>
+              {error && <div className="error-message">{error}</div>}
 
-        {/* Add new page form */}
-        {availableTypes.length > 0 ? (
-          <form onSubmit={handleAdd} className="modal-add-form">
-            <label>
-              URL:
-              <input
-                type="url"
-                value={url}
-                onChange={e => setUrl(e.target.value)}
-                required
-              />
-            </label>
-
-            <label>
-              Page Type:
-              <select
-                value={pageType}
-                onChange={e => setPageType(e.target.value)}
-                required
-              >
-                {availableTypes.map(t => (
-                  <option key={t} value={t}>
-                    {t}
+              <div className="form-group">
+                <select
+                  className="form-select"
+                  value={selectedType}
+                  onChange={e => setSelectedType(e.target.value)}
+                  required
+                >
+                  <option value="" disabled>
+                    Select page type
                   </option>
-                ))}
-              </select>
-            </label>
+                  {PAGE_TYPES.filter(type => !existingPageTypes.includes(type)).map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="modal-actions">
-              <button type="submit">Add Page</button>
-              <button type="button" onClick={onClose}>
-                Close
-              </button>
-            </div>
-          </form>
-        ) : (
-          <p>All three page types have been added.</p>
-        )}
+              <div className="form-group">
+                <input
+                  type="url"
+                  className="form-input"
+                  placeholder=" "
+                  value={pageURL}
+                  onChange={e => setPageURL(e.target.value)}
+                  required
+                />
+                <label className="floating-label">Page URL</label>
+              </div>
+
+              <div className="form-group uba-upload-section">
+                <div className="uba-upload-header">
+                  <h4>UBA Data</h4><p>Upload CSV</p>
+                </div>
+                {selectedUbaFile ? (
+                  <div className="uba-file-selected">
+                    <div className="uba-file-info">
+                      <span className="uba-filename">{selectedUbaFile.name}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="uba-remove-btn"
+                      onClick={() => setSelectedUbaFile(null)}
+                      disabled={loading}
+                    >&times;</button>
+                  </div>
+                ) : (
+                  <label className="uba-upload-area">
+                    <input
+                      type="file"
+                      className="uba-file-input"
+                      accept=".csv"
+                      onChange={handleUbaFileChange}
+                      disabled={loading}
+                      required
+                    />
+                    <div className="uba-upload-content">
+                      <strong>Upload CSV file</strong>
+                    </div>
+                  </label>
+                )}
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="cancel-button"
+                  onClick={handleClose}
+                  disabled={loading}
+                >Cancel</button>
+                <button
+                  type="submit"
+                  className="submit-button"
+                  disabled={loading || !selectedType || !pageURL}
+                >
+                  {loading ? 'Processing...' : 'Continue'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
-    </div>
+    </CSSTransition>
   );
 }

@@ -232,11 +232,6 @@ const OnboardingPage = () => {
           data = JSON.parse(textResponse);
           console.log("Parsed response data:", data);
           console.log("ID in response:", data.id);
-          
-          // Defend against missing fields
-          if (!data.id && data.id !== 0) {
-            console.error("Response is missing required id field");
-          }
         } catch (parseError) {
           console.error("Error parsing JSON response:", parseError);
           console.log("Invalid JSON received");
@@ -252,24 +247,27 @@ const OnboardingPage = () => {
         if (data.url === null) {
           console.log("URL is null, showing error");
           setError("Invalid URL provided. Please check your URL and try again.");
-        } else if (data.screenshot_path === null) {
-          console.log("Screenshot path is null, opening upload modal");
-          if (data.id) {
+        } else {
+          // Store the page ID regardless of screenshot path status
+          if (data.id || data.id === 0) {
             console.log("Setting page_id to:", data.id);
             setPageId(data.id);
-            setShowScreenshotModal(true);
+            
+            if (data.screenshot_path === null) {
+              console.log("Screenshot path is null, opening upload modal");
+              setShowScreenshotModal(true);
+            } else {
+              console.log("Screenshot path exists, proceeding with UBA upload if needed");
+              // If UBA file was provided, upload it
+              if (selectedUbaFile) {
+                await uploadUbaFile(data.id, pageType);
+              } else {
+                navigate("/dashboard");
+              }
+            }
           } else {
             console.error("Error: id is missing in the response");
             setError("Server error: Missing page information. Please try again.");
-          }
-        } else {
-          console.log("All valid, navigating to dashboard");
-          
-          // If UBA file was provided, upload it
-          if (selectedUbaFile) {
-            await uploadUbaFile(data.id, pageType);
-          } else {
-            navigate("/dashboard");
           }
         }
       } else {
@@ -431,13 +429,22 @@ const OnboardingPage = () => {
       }
       
       if (response.ok) {
-        console.log("Screenshot upload successful, navigating to dashboard");
+        console.log("Screenshot upload successful");
         setShowScreenshotModal(false);
-        navigate("/dashboard");
+        
+        // If we have a UBA file, upload it using the existing pageId
+        if (selectedUbaFile) {
+          console.log("UBA file exists, proceeding with upload");
+          await uploadUbaFile(pageId, pageType);
+        } else {
+          console.log("No UBA file to upload, navigating to dashboard");
+          navigate("/dashboard");
+        }
       } else {
         if (response.status === 401) {
           console.log("Unauthorized token for screenshot upload");
           setError("Session expired. Please log in again.");
+          navigate("/login");
         } else if (response.status === 500) {
           console.log("Internal server error during screenshot upload");
           setError("The server encountered an error processing your screenshot. Please try again.");
