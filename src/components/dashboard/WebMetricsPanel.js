@@ -1,5 +1,6 @@
 // pages/WebMetricsPanel.js
 import React, { useEffect, useState, useMemo } from 'react';
+import { MetricsCardSkeleton } from '../common/Skeleton';
 import '../../styles/Dashboard.css';
 import '../../styles/WebMetricsPanel.css';
 
@@ -276,7 +277,20 @@ export default function WebMetricsPanel({ pageId }) {
       <div className="panel-header">Web Performance Metrics</div>
       <div className="panel-subtitle">When we accessed your website, these are the metrics we recorded..</div>
       
-      {loading && <div className="wm-loading">Analyzing performance metrics...</div>}
+      {loading && (
+        <div className="wm-container">
+          <div className="wm-metrics-grid">
+            {[1, 2, 3, 4].map(i => (
+              <MetricsCardSkeleton key={i} />
+            ))}
+          </div>
+          <div className="wm-details-panel">
+            <div className="skeleton skeleton-metrics-header" style={{ margin: '1.25rem' }} />
+            <div className="skeleton" style={{ height: '200px', margin: '1.25rem' }} />
+          </div>
+        </div>
+      )}
+      
       {error && <div className="wm-error">{error}</div>}
       
       {!loading && processedMetrics.length > 0 && (
