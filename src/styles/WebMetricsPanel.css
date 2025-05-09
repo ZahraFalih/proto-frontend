@@ -2,6 +2,9 @@
 
 .panel-container {
   margin-bottom: 2rem;
+  position: relative;
+  min-height: 200px;
+  scroll-margin-top: 20px;
 }
 
 .panel-header {
@@ -10,6 +13,7 @@
   padding: 1.2rem 0 0.6rem;
   color: #0756A4;
   margin-bottom: 0;
+  position: relative;
 }
 
 .panel-subtitle {
@@ -28,6 +32,10 @@
   font-weight: 500;
   border-radius: 12px;
   background-color: #f8f9fc;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .wm-loading {

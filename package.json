@@ -15,7 +15,9 @@
     "react-router-dom": "^6.0.0",
     "react-scripts": "latest",
     "react-toastify": "^11.0.5",
-    "react-transition-group": "^4.4.5"
+    "react-transition-group": "^4.4.5",
+    "remark-gfm": "^4.0.1",
+    "scroll-to-top": "^1.1.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.0.0",

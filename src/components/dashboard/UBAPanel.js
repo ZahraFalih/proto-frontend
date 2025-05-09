@@ -4,8 +4,9 @@ import ReactMarkdown from 'react-markdown';
 import { UBASkeleton } from '../common/Skeleton';
 import '../../styles/UBAPanel.css';
 import '../../styles/Dashboard.css';
+import { getToken } from '../../utils/auth';
 
-export default function UBAPanel({ pageId }) {
+export default function UBAPanel({ pageId, onSummaryReady }) {
   const [formulation, setFormulation] = useState('');
   const [observationSections, setObservationSections] = useState([]);
   const [solutions, setSolutions] = useState([]);
@@ -28,6 +29,10 @@ export default function UBAPanel({ pageId }) {
       setFormulation(formulation);
       setObservationSections(observationSections);
       setSolutions(solutions);
+      // Notify parent of cached UBA analysis
+      if (typeof onSummaryReady === 'function') {
+        onSummaryReady(formulation);
+      }
       return true;
     } catch {
       sessionStorage.removeItem(cacheKey); // corrupted cache
@@ -50,7 +55,7 @@ export default function UBAPanel({ pageId }) {
 
     try {
       // Get auth token
-      const token = sessionStorage.getItem('access_token');
+      const token = getToken();
       console.log('[UBAPanel] Auth token retrieved:', token ? 'Token found' : 'Token missing');
       const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
@@ -150,6 +155,11 @@ export default function UBAPanel({ pageId }) {
       
       // Cache the results
       persistToCache(formText, sectionData, problemSolutions);
+
+      // Notify parent of UBA analysis
+      if (typeof onSummaryReady === 'function') {
+        onSummaryReady(formText);
+      }
       
       console.log('[UBAPanel] Successfully completed all requests and updated state:', {
         formulationLength: formText.length,

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { setToken } from '../utils/auth';
 
 import logo from '../assets/icons/logo.png';
 import '../styles/AuthPage.css';
@@ -87,7 +88,7 @@ function AuthPage() {
 
       if (resp.ok) {
         if (mode === 'login') {
-          sessionStorage.setItem('access_token', data.access);
+          setToken(data.access);
           toast.success('Login successful! Redirecting…');
           setTimeout(() => {
             navigate(data.first_login ? '/onboarding' : '/dashboard');

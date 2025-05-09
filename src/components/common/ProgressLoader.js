@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../../styles/ProgressLoader.css';
 
 export default function ProgressLoader({ onComplete }) {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const [key, setKey] = useState(0);
+  const startTimeRef = useRef(Date.now());
+  const lastUpdateTimeRef = useRef(Date.now());
+  const animationFrameRef = useRef(null);
 
   const steps = [
     "Getting things ready for you...",
@@ -14,36 +17,61 @@ export default function ProgressLoader({ onComplete }) {
     "Adding the finishing touches 🎨",
     "Just a moment of patience...",
     "Making everything perfect ✨",
-    "Final preparations..."
+    "Final preparations...",
+    "Sabır Acıdır Ama Meyvesi Tatlıdır 🍎",
+    "الصبر مفتاح الفرج.. ⌛"
   ];
 
   useEffect(() => {
-    const duration = 30000;    // total 30s
-    const interval = 50;       // tick every 50ms
-    const totalTicks = duration / interval;
-    const increment = 100 / totalTicks;
+    const duration = 90000; // 90 seconds
+    let lastTimestamp = performance.now();
 
-    let currentProgress = 0;
-    const timer = setInterval(() => {
-      currentProgress += increment;
-      if (currentProgress >= 100) {
-        clearInterval(timer);
-        setProgress(100);
+    const updateProgress = (timestamp) => {
+      // Calculate the time elapsed since last update, considering tab visibility
+      const deltaTime = document.hidden ? 0 : timestamp - lastTimestamp;
+      lastTimestamp = timestamp;
+
+      // Update progress based on actual time elapsed
+      const elapsedTime = Date.now() - startTimeRef.current;
+      const newProgress = Math.min((elapsedTime / duration) * 100, 100);
+      
+      setProgress(newProgress);
+
+      if (newProgress >= 100) {
         setTimeout(onComplete, 500);
       } else {
-        setProgress(currentProgress);
+        animationFrameRef.current = requestAnimationFrame(updateProgress);
       }
-    }, interval);
+    };
 
-    // Change message every 3 seconds, cycling through `steps.length`
+    // Start the animation
+    animationFrameRef.current = requestAnimationFrame(updateProgress);
+
+    // Change message every 4 seconds
     const stepTimer = setInterval(() => {
       setCurrentStep(prev => (prev + 1) % steps.length);
       setKey(prev => prev + 1);
-    }, 3000);
+    }, 4000);
+
+    // Handle tab visibility changes
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // When tab becomes visible again, update the start time to account for hidden duration
+        const hiddenDuration = Date.now() - lastUpdateTimeRef.current;
+        startTimeRef.current += hiddenDuration;
+        lastTimestamp = performance.now();
+      }
+      lastUpdateTimeRef.current = Date.now();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      clearInterval(timer);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
       clearInterval(stepTimer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [onComplete, steps.length]);
 
@@ -58,7 +86,10 @@ export default function ProgressLoader({ onComplete }) {
         <div className="progress-line-container">
           <div 
             className="progress-line" 
-            style={{ transform: `scaleX(${progress / 100})` }}
+            style={{ 
+              transform: `scaleX(${progress / 100})`,
+              transition: 'transform 0.1s linear'
+            }}
           />
         </div>
       </div>

@@ -4,6 +4,7 @@ import { CSSTransition, TransitionGroup } from "react-transition-group";
 import "../styles/OnboardingPage.css";
 import "../styles/global.css";
 import LoadingText from '../components/common/LoadingText';
+import { getToken } from '../utils/auth';
 
 const companiesData = [
   { id: 1, name: "Amazon", category: "Online Retail & Marketplace" },
@@ -65,19 +66,12 @@ const OnboardingPage = () => {
   const [pageType, setPageType] = useState("");
   const navigate = useNavigate();
 
-  // Retrieve access token from sessionStorage
-  const getAccessToken = () => {
-    const token = sessionStorage.getItem("access_token");
-    console.log("Retrieved token:", token ? "Token exists" : "Token is missing");
-    return token;
-  };
-
   useEffect(() => {
-    const token = getAccessToken();
+    const token = getToken();
     console.log("Checking token on component mount");
     if (!token) {
       console.log("No token found, redirecting to login");
-      navigate("/login");
+      navigate("/auth?mode=login");
     } else {
       console.log("Token found, user is authenticated");
     }
@@ -110,7 +104,7 @@ const OnboardingPage = () => {
           first_name: firstName,
           last_name: lastName,
           user_role: user_role,
-          token: getAccessToken(),
+          token: getToken(),
         }),
       });
 
@@ -162,7 +156,7 @@ const OnboardingPage = () => {
           url: businessURL,
           name: businessName,
           role_model: selectedCompanyId,
-          token: getAccessToken(),
+          token: getToken(),
         }),
       });
       const data = await response.json();
@@ -201,7 +195,7 @@ const OnboardingPage = () => {
     setLoading(true);
     
     console.log("Starting page onboarding process...");
-    const token = getAccessToken();
+    const token = getToken();
     const requestData = { page_type: pageType, url: pageURL, token };
     console.log("Request data:", requestData);
   
@@ -308,7 +302,7 @@ const OnboardingPage = () => {
     
     try {
       const formData = new FormData();
-      const token = getAccessToken();
+      const token = getToken();
       formData.append('token', token);
       formData.append('file', selectedUbaFile);
       formData.append('page_id', String(pageId));
@@ -344,7 +338,10 @@ const OnboardingPage = () => {
       
       if (response.ok) {
         console.log("UBA data upload successful, navigating to dashboard");
-        navigate("/dashboard", { state: { fromOnboarding: true } });
+        navigate("/dashboard", { 
+          state: { fromOnboarding: true },
+          search: `?page_id=${pageId}`  // Add page_id to URL
+        });
       } else {
         if (response.status === 401) {
           console.log("Unauthorized token for UBA upload");
@@ -354,14 +351,20 @@ const OnboardingPage = () => {
           console.log("UBA upload failed:", response.status, data.error || "Unknown error");
           setError("Failed to upload UBA data. " + (data.error || "Please try again."));
           // Still navigate to dashboard even if UBA upload fails
-          setTimeout(() => navigate("/dashboard", { state: { fromOnboarding: true } }), 3000);
+          setTimeout(() => navigate("/dashboard", { 
+            state: { fromOnboarding: true },
+            search: `?page_id=${pageId}`
+          }), 3000);
         }
       }
     } catch (err) {
       console.error("Exception in UBA upload:", err);
       setError("Failed to upload UBA data, but your page was successfully onboarded.");
       // Still navigate to dashboard even if UBA upload fails
-      setTimeout(() => navigate("/dashboard", { state: { fromOnboarding: true } }), 3000);
+      setTimeout(() => navigate("/dashboard", { 
+        state: { fromOnboarding: true },
+        search: `?page_id=${pageId}`
+      }), 3000);
     } finally {
       setLoading(false);
     }
@@ -388,7 +391,7 @@ const OnboardingPage = () => {
     
     try {
       const formData = new FormData();
-      const token = getAccessToken();
+      const token = getToken();
       formData.append('token', token);
       formData.append('page_id', String(pageId));
       console.log("Page ID being sent:", String(pageId));

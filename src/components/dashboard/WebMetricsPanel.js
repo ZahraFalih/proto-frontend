@@ -3,8 +3,9 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { MetricsCardSkeleton } from '../common/Skeleton';
 import '../../styles/Dashboard.css';
 import '../../styles/WebMetricsPanel.css';
+import { getToken } from '../../utils/auth';
 
-export default function WebMetricsPanel({ pageId }) {
+export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetricsReady, onRoleMetricsReady }) {
   /* ─────────── state ─────────── */
   const [roleMetrics, setRoleMetrics] = useState(null);
   const [businessMetrics, setBusinessMetrics] = useState(null);
@@ -26,6 +27,17 @@ export default function WebMetricsPanel({ pageId }) {
       setRoleMetrics(roleMetrics);
       setBusinessMetrics(businessMetrics);
       setEvaluation(evaluation);
+
+      // Notify parent components of cached data
+      if (typeof onBusinessMetricsReady === 'function') {
+        onBusinessMetricsReady(businessMetrics);
+      }
+      if (typeof onRoleMetricsReady === 'function') {
+        onRoleMetricsReady(roleMetrics);
+      }
+      if (evaluation && typeof onSummaryReady === 'function') {
+        onSummaryReady(evaluation.overall_summary);
+      }
       return true;
     } catch {
       sessionStorage.removeItem(cacheKey); /* corrupted */
@@ -53,7 +65,7 @@ export default function WebMetricsPanel({ pageId }) {
       console.log('[WebMetricsPanel] Data loaded from cache for pageId:', pageId);
       return; // served from cache
     }
-
+  
     const run = async () => {
       console.log('[WebMetricsPanel] Starting data fetch for pageId:', pageId);
       setLoading(true);
@@ -61,115 +73,131 @@ export default function WebMetricsPanel({ pageId }) {
       setRoleMetrics(null);
       setBusinessMetrics(null);
       setEvaluation(null);
-
+  
       try {
         /* 1️⃣ fetch role + business metrics */
-        const token = sessionStorage.getItem('access_token');
-        console.log('[WebMetricsPanel] Auth token retrieved:', token ? 'Token found' : 'Token missing');
-        const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
-        // Add cache busting timestamp
-        const timestamp = Date.now();
-        const roleUrl = `http://127.0.0.1:8000/toolkit/web-metrics/role-model/?page_id=${pageId}&_t=${timestamp}`;
-        const bizUrl = `http://127.0.0.1:8000/toolkit/web-metrics/business/?page_id=${pageId}&_t=${timestamp}`;
+        const token = getToken();
+        console.log('[WebMetricsPanel] Auth token:', token ? 'found' : 'missing');
+        const headers = { 
+          Authorization: `Bearer ${token}`, 
+          'Content-Type': 'application/json' 
+        };
+  
+        const ts = Date.now();
+        const roleUrl = `http://127.0.0.1:8000/toolkit/web-metrics/role-model/?page_id=${pageId}&_t=${ts}`;
+        const bizUrl  = `http://127.0.0.1:8000/toolkit/web-metrics/business/?page_id=${pageId}&_t=${ts}`;
         
-        console.log('[WebMetricsPanel] Fetching role metrics from:', roleUrl);
-        console.log('[WebMetricsPanel] Fetching business metrics from:', bizUrl);
-
+        console.log('[WebMetricsPanel] Fetching:', roleUrl, bizUrl);
         const [roleRes, bizRes] = await Promise.all([
           fetch(roleUrl, { headers }),
-          fetch(bizUrl, { headers }),
+          fetch(bizUrl , { headers }),
         ]);
         
-        console.log('[WebMetricsPanel] Role metrics response status:', roleRes.status);
-        console.log('[WebMetricsPanel] Business metrics response status:', bizRes.status);
-        
-        if (!roleRes.ok || !bizRes.ok)
+        if (!roleRes.ok || !bizRes.ok) {
+          console.error('[WebMetricsPanel] Metrics fetch failed statuses:', roleRes.status, bizRes.status);
           throw new Error('Could not fetch web metrics');
-
+        }
+  
         const [roleData, bizData] = await Promise.all([roleRes.json(), bizRes.json()]);
-        console.log('[WebMetricsPanel] Role metrics data:', roleData);
-        console.log('[WebMetricsPanel] Business metrics data:', bizData);
-        
+        console.log('[WebMetricsPanel] roleData, bizData:', roleData, bizData);
         setRoleMetrics(roleData);
         setBusinessMetrics(bizData);
-
-        /* 2️⃣ evaluate business metrics */
-        const bizKey = Object.keys(bizData)[0];
-        console.log('[WebMetricsPanel] Business metrics key:', bizKey);
-        
+  
+        // Notify parent of metrics
+        if (typeof onBusinessMetricsReady === 'function') {
+          onBusinessMetricsReady(bizData);
+        }
+        if (typeof onRoleMetricsReady === 'function') {
+          onRoleMetricsReady(roleData);
+        }
+  
+        /* 2️⃣ evaluate business metrics with AI */
         try {
-          // Get the business metrics key and value
-          const bizValue = bizData[bizKey];
-          
-          // Log the raw business metrics data
-          console.log('[WebMetricsPanel] Raw business metrics:', {
-            bizKey,
-            bizValue,
-            fullBizData: bizData
-          });
-          
-          // Create the payload with the exact format the backend expects
-          const evalPayload = bizData;  // Send the raw metrics object directly
-          
-          // Make the API call
           const evalRes = await fetch(
             `http://127.0.0.1:8000/ask-ai/evaluate-web-metrics/?page_id=${pageId}`,
             {
               method: 'POST',
               headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                Authorization: `Bearer ${token}`, 
+                'Content-Type': 'application/json' 
               },
-              body: JSON.stringify(evalPayload),
+              body: JSON.stringify(bizData),
             }
           );
-
+  
           if (!evalRes.ok) {
+            console.error('[WebMetricsPanel] Eval API status:', evalRes.status);
             throw new Error(`Evaluation API failed (${evalRes.status})`);
           }
-
+  
           const evalJson = await evalRes.json();
-          
-          if (!evalJson.web_metrics_report) {
+          const report = evalJson.web_metrics_report;
+          if (!report || !report.overall_summary) {
+            console.error('[WebMetricsPanel] Invalid eval response:', evalJson);
             throw new Error('Invalid evaluation response format');
           }
-          
-          setEvaluation(evalJson.web_metrics_report);
-          persistToCache(roleData, bizData, evalJson.web_metrics_report);
+  
+          setEvaluation(report);
+          persistToCache(roleData, bizData, report);
+  
+          // ✔️ Bubble up the summary
+          if (typeof onSummaryReady === 'function') {
+            onSummaryReady(report.overall_summary);
+          }
+  
         } catch (evalErr) {
           console.error('[WebMetricsPanel] Evaluation error:', evalErr);
-          setError('Metrics loaded, but AI evaluation failed. Basic metrics are still available.');
+          setError('Metrics loaded, but AI evaluation failed.');
           
-          // Create a fallback evaluation object
-          setEvaluation({
-            overall_summary: "AI evaluation is currently unavailable. Basic metrics are still displayed.",
+          // Fallback summary & recommendations
+          const fallbackReport = {
+            overall_summary: "AI evaluation is currently unavailable. Showing raw metrics.",
             recommendations: [
               "Optimize image sizes and use modern formats like WebP",
-              "Minimize render-blocking resources (JS and CSS)",
+              "Minimize render-blocking resources",
               "Implement proper caching strategies",
-              "Consider using a Content Delivery Network (CDN)",
+              "Consider using a CDN",
               "Reduce server response times"
             ],
             metric_analysis: []
-          });
-          
-          // Still cache metrics without AI evaluation
+          };
+  
+          setEvaluation(fallbackReport);
           persistToCache(roleData, bizData, null);
+  
+          // Bubble up the fallback summary
+          if (typeof onSummaryReady === 'function') {
+            onSummaryReady(fallbackReport.overall_summary);
+          }
         }
+  
       } catch (err) {
         console.error('[WebMetricsPanel] metrics fetch error →', err);
-        // Only handle the case where metrics fetching failed
-        // Evaluation errors are already handled in the nested try-catch
         setError('Failed to load metrics data.');
       } finally {
         console.log('[WebMetricsPanel] Request completed');
         setLoading(false);
       }
     };
-
+  
     run();
-  }, [pageId]);
+  }, [pageId, onSummaryReady, onBusinessMetricsReady, onRoleMetricsReady]);
+  
+  useEffect(() => {
+    if (evaluation?.overall_summary && typeof onSummaryReady === 'function') {
+      console.log('[WebMetricsPanel] Bubbling summary from evaluation state:', evaluation.overall_summary);
+      onSummaryReady(evaluation.overall_summary);
+    }
+  }, [evaluation, onSummaryReady]);
+
+  useEffect(() => {
+    if (roleMetrics) {
+      console.log('[WebMetricsPanel] roleMetrics:', roleMetrics);
+    }
+    if (businessMetrics) {
+      console.log('[WebMetricsPanel] businessMetrics:', businessMetrics);
+    }
+  }, [roleMetrics, businessMetrics]);
 
   /* ─────────── ideal benchmarks ─────────── */
   const idealBenchmarks = {

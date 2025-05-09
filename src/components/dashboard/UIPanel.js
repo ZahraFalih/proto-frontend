@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { UISkeleton } from '../common/Skeleton';
 import '../../styles/UIPanel.css';
 
-export default function UIPanel({ pageId }) {
+export default function UIPanel({ pageId, onSummaryReady }) {
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -20,6 +20,10 @@ export default function UIPanel({ pageId }) {
         setCategories(parsed || []);
         setError(null);
         setLoading(false);
+        // Notify parent of cached UI evaluation
+        if (typeof onSummaryReady === 'function') {
+          onSummaryReady(parsed);
+        }
         console.log(`[UIPanel] Loaded from cache for pageId=${pageId}`);
         return;
       } catch {
@@ -69,6 +73,10 @@ export default function UIPanel({ pageId }) {
 
         setCategories(categoriesArray);
         sessionStorage.setItem(cacheKey, JSON.stringify(categoriesArray));
+        // Notify parent of fresh UI evaluation
+        if (typeof onSummaryReady === 'function') {
+          onSummaryReady(categoriesArray);
+        }
         console.log(`[UIPanel] Cached response for pageId=${pageId}, categories:`, categoriesArray);
       })
       .catch(err => {
@@ -77,7 +85,7 @@ export default function UIPanel({ pageId }) {
         setCategories([]); // Ensure categories is an empty array on error
       })
       .finally(() => setLoading(false));
-  }, [pageId]);
+  }, [pageId, onSummaryReady]);
 
   const handleCategoryClick = (categoryName) => {
     setActiveCategory(activeCategory === categoryName ? null : categoryName);

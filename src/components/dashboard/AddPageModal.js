@@ -4,6 +4,7 @@ import { CSSTransition } from 'react-transition-group';
 import { useNavigate } from 'react-router-dom';
 import ProgressLoader from '../common/ProgressLoader';
 import '../../styles/AddPageModal.css';
+import { getToken } from '../../utils/auth';
 
 const PAGE_TYPES = ['Landing Page', 'Search Results Page', 'Product Page'];
 
@@ -49,7 +50,7 @@ export default function AddPageModal({
       return;
     }
     setLoading(true);
-    const token = sessionStorage.getItem('access_token');
+    const token = getToken();
     const payload = { page_type: selectedType, url: pageURL, token };
 
     try {
@@ -98,12 +99,16 @@ export default function AddPageModal({
   // STEP 2: upload UBA file
   const uploadUbaFile = async id => {
     if (!selectedUbaFile) {
-      navigate('/dashboard');
+      // If no UBA file, just complete the page addition
+      setShowProgressLoader(true);
+      onPageAdded({ id, type: selectedType, url: pageURL });
+      handleClose();
       return;
     }
+
     setLoading(true);
     const formData = new FormData();
-    const token = sessionStorage.getItem('access_token');
+    const token = getToken();
     formData.append('token', token);
     formData.append('file', selectedUbaFile);
     formData.append('page_id', String(id));
@@ -115,17 +120,17 @@ export default function AddPageModal({
         credentials: 'include',
         body: formData
       });
-      if (res.ok) {
-        onPageAdded({ id, type: selectedType, url: pageURL });
-        handleClose();
-        navigate('/dashboard');
-      } else {
-        setError('UBA upload failed.');
-        setTimeout(() => navigate('/dashboard'), 3000);
+      
+      // Whether UBA upload succeeds or fails, we still want to add the page
+      setShowProgressLoader(true);
+      onPageAdded({ id, type: selectedType, url: pageURL });
+      handleClose();
+
+      if (!res.ok) {
+        console.error('UBA upload failed, but page was added');
       }
-    } catch {
-      setError('UBA upload network error.');
-      setTimeout(() => navigate('/dashboard'), 3000);
+    } catch (err) {
+      console.error('UBA upload error, but page was added:', err);
     } finally {
       setLoading(false);
     }
@@ -141,7 +146,7 @@ export default function AddPageModal({
     }
     setUploadingScreenshot(true);
     const formData = new FormData();
-    const token = sessionStorage.getItem('access_token');
+    const token = getToken();
     formData.append('token', token);
     formData.append('page_id', String(pageId));
     formData.append('screenshot', selectedScreenshot);
@@ -161,9 +166,10 @@ export default function AddPageModal({
         if (selectedUbaFile) {
           await uploadUbaFile(pageId);
         } else {
+          // Show progress loader and close modal after successful upload
+          setShowProgressLoader(true);
           onPageAdded({ id: pageId, type: selectedType, url: pageURL });
           handleClose();
-          navigate('/dashboard');
         }
       }
     } catch {
@@ -191,7 +197,7 @@ export default function AddPageModal({
       });
 
       // First create the page
-      const token = sessionStorage.getItem('access_token');
+      const token = getToken();
       if (!token) {
         throw new Error('Authentication token not found');
       }
@@ -222,6 +228,14 @@ export default function AddPageModal({
       const newPage = await pageResponse.json();
       console.log('[AddPageModal] Successfully created page:', newPage);
 
+      // Check if screenshot is needed
+      if (!newPage.screenshot_path) {
+        setPageId(newPage.id);
+        setShowScreenshotModal(true);
+        setLoading(false);
+        return;
+      }
+
       // If we have a UBA file, upload it
       if (selectedUbaFile && newPage.id) {
         console.log('[AddPageModal] Uploading UBA file');
@@ -245,6 +259,7 @@ export default function AddPageModal({
         console.log('[AddPageModal] Successfully uploaded UBA file');
       }
       
+      // Only show progress loader after screenshot validation and UBA upload
       setShowProgressLoader(true);
       onPageAdded(newPage);
     } catch (err) {
@@ -309,7 +324,10 @@ export default function AddPageModal({
                     <option value="" disabled>
                       Select page type
                     </option>
-                    {PAGE_TYPES.filter(type => !existingPageTypes.includes(type)).map(type => (
+                    {PAGE_TYPES.filter(type => {
+                      // Only filter out if it exists in current pages
+                      return !existingPageTypes.includes(type);
+                    }).map(type => (
                       <option key={type} value={type}>{type}</option>
                     ))}
                   </select>

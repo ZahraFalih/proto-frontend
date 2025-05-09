@@ -3,6 +3,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/icons/logo.png";
 import "../../styles/Dashboard.css";
+import UserPreferencesModal from "../UserPreferencesModal";
+import { getToken, clearToken } from '../../utils/auth';
 
 const slugify = (str = "") =>
   str.toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]/g, "");
@@ -11,12 +13,34 @@ export default function DashboardHeaderPanel({ pages = [], onPageDeleted }) {
   const [userName, setUserName] = useState("Loading…");
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [panelOpen, setPanelOpen] = useState(false);
-  const [panelTab, setPanelTab] = useState("data");
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [localPages, setLocalPages] = useState(pages);
 
   const menuRef = useRef(null);
   const navigate = useNavigate();
-  const token = sessionStorage.getItem("access_token");
+  const token = getToken();
+
+  // Update local pages when props change
+  useEffect(() => {
+    setLocalPages(pages);
+  }, [pages]);
+
+  const refreshPages = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/onboard/pages/", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch pages');
+      
+      const data = await response.json();
+      setLocalPages(data);
+    } catch (error) {
+      console.error('Error refreshing pages:', error);
+    }
+  };
 
   // Fetch user name
   useEffect(() => {
@@ -46,18 +70,22 @@ export default function DashboardHeaderPanel({ pages = [], onPageDeleted }) {
   }, []);
 
   const openPanel = (tab) => {
-    setPanelTab(tab);
-    setPanelOpen(true);
+    setPreferencesOpen(true);
     setMenuOpen(false);
   };
 
   const doLogout = () => {
+    // First clear the token and navigate away
+    clearToken();
+    navigate("/auth?mode=login");
+    
+    // Then try to notify the backend (but don't wait for it)
     fetch("http://127.0.0.1:8000/auth/logout/", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
-    }).finally(() => {
-      sessionStorage.removeItem("access_token");
-      navigate("/auth?mode=login");
+    }).catch(error => {
+      // Ignore any errors since we've already logged out locally
+      console.log('Logout notification to backend failed:', error);
     });
   };
 
@@ -98,13 +126,16 @@ export default function DashboardHeaderPanel({ pages = [], onPageDeleted }) {
 
             {menuOpen && (
               <div className="user-menu anim-dropdown">
-                <button className="menu-btn" onClick={() => openPanel("data")}>
+                <button className="menu-btn" onClick={() => {
+                  setPreferencesOpen(true);
+                  setMenuOpen(false);
+                }}>
                   My Data
                 </button>
-                <button className="menu-btn" onClick={() => openPanel("pref")}>
-                  Preferences
-                </button>
-                <button className="menu-btn" onClick={() => openPanel("sett")}>
+                <button className="menu-btn" onClick={() => {
+                  setPreferencesOpen(true);
+                  setMenuOpen(false);
+                }}>
                   Settings
                 </button>
 
@@ -130,74 +161,27 @@ export default function DashboardHeaderPanel({ pages = [], onPageDeleted }) {
         <div className="modal-overlay anim-fade" onClick={() => setConfirmOpen(false)}>
           <div className="modal-box logout-modal anim-scale" onClick={(e) => e.stopPropagation()}>
             <div className="modal-icon">😞</div>
-            <h3 className="modal-title">Log out</h3>
             <p className="modal-text">Are you sure you want to log out?</p>
             <div className="modal-actions">
               <button className="modal-btn cancel" onClick={() => setConfirmOpen(false)}>
                 Cancel
               </button>
               <button className="modal-btn confirm" onClick={doLogout}>
-                Log out
+                I have to..
               </button>
             </div>
           </div>
         </div>
       )}
-      {/* DATA / PREF / SETT MODAL */}
-      {panelOpen && (
-        <div className="panel-overlay anim-fade" onClick={() => setPanelOpen(false)}>
-          <div className="panel-box anim-scale" onClick={(e) => e.stopPropagation()}>
-            <div className="panel-tabs">
-              <button
-                className={`panel-tab ${panelTab === "data" ? "active" : ""}`}
-                onClick={() => setPanelTab("data")}
-              >
-                My Data
-              </button>
-              <button
-                className={`panel-tab ${panelTab === "pref" ? "active" : ""}`}
-                onClick={() => setPanelTab("pref")}
-              >
-                Preferences
-              </button>
-              <button
-                className={`panel-tab ${panelTab === "sett" ? "active" : ""}`}
-                onClick={() => setPanelTab("sett")}
-              >
-                Settings
-              </button>
-            </div>
-            <div className="panel-content">
-              {panelTab === "data" && (
-                <div className="manage-page-container">
-                  {pages.length ? (
-                    <ul className="manage-page-list">
-                      {pages.map((p) => (
-                        <li key={p.id} className="manage-page-item">
-                          <span className="page-label">{p.type}</span>
-              
-                          <div className="page-actions">
-                            <button
-                              className="delete-page-button"
-                              onClick={() => handleDelete(p.id, p.type)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p>No pages added yet.</p>
-                  )}
-                </div>
-              )}            
-              {panelTab === "pref" && <p className="placeholder">Preferences panel (empty)</p>}
-              {panelTab === "sett" && <p className="placeholder">Settings panel (empty)</p>}
-            </div>
-          </div>
-        </div>
-      )}
+
+      {/* User Preferences Modal */}
+      <UserPreferencesModal 
+        isOpen={preferencesOpen}
+        onClose={() => setPreferencesOpen(false)}
+        pages={localPages}
+        onPageDeleted={onPageDeleted}
+        refreshPages={refreshPages}
+      />
     </>
   );
 }

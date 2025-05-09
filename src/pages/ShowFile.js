@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { getToken, clearToken } from '../utils/auth';
 import logo from "../assets/icons/logo.png";
 import '../styles/global.css'; 
 
@@ -13,11 +14,9 @@ const ShowFile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const getAccessToken = () => sessionStorage.getItem("access_token");
-
   useEffect(() => {
     const fetchFile = async () => {
-      const token = getAccessToken();
+      const token = getToken();
       if (!token) {
         setError("Authentication required. Please log in.");
         setLoading(false);
@@ -35,8 +34,8 @@ const ShowFile = () => {
         if (!response.ok) {
           if (response.status === 401) {
             setError("Session expired. Please log in again.");
-            sessionStorage.removeItem("access_token");
-            navigate("/login");
+            clearToken();
+            navigate("/auth?mode=login");
           }
           throw new Error(`Failed to fetch file. Status: ${response.status}`);
         }
