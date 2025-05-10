@@ -114,12 +114,24 @@ export default function Dashboard() {
         return res.json();
       })
       .then(data => {
-        setPages(data || []);
-        if (data && data.length) {
-          const firstSlug = slugify(data[0].type);
+        // Filter out duplicate page types, keeping only the most recent one
+        const uniquePages = data.reduce((acc, page) => {
+          const existingIndex = acc.findIndex(p => p.type === page.type);
+          if (existingIndex === -1) {
+            acc.push(page);
+          } else {
+            // Replace existing page with newer one
+            acc[existingIndex] = page;
+          }
+          return acc;
+        }, []);
+
+        setPages(uniquePages || []);
+        if (uniquePages && uniquePages.length) {
+          const firstSlug = slugify(uniquePages[0].type);
           setActiveTabSlug(firstSlug);
           const params = new URLSearchParams();
-          params.set('page_id', data[0].id);
+          params.set('page_id', uniquePages[0].id);
           window.history.replaceState({}, '', `?${params}`);
         }
         setLoading(false);
@@ -193,19 +205,13 @@ export default function Dashboard() {
 
   // After adding a page
   const handlePageAdded = newPage => {
-    if (!newPage || !newPage.id || !newPage.type) {
-      console.error('[Dashboard] Invalid page data received:', newPage);
-      return;
-    }
-
     // Check if page already exists to prevent duplication
-    const pageExists = pages.some(p => p.id === newPage.id || p.type === newPage.type);
+    const pageExists = pages.some(p => p.id === newPage.id);
     if (pageExists) {
       // If page exists, just switch to it
-      const existingPage = pages.find(p => p.id === newPage.id || p.type === newPage.type);
-      const newSlug = slugify(existingPage.type);
+      const newSlug = slugify(newPage.type);
       setActiveTabSlug(newSlug);
-      window.history.pushState({}, '', `?page_id=${existingPage.id}`);
+      window.history.pushState({}, '', `?page_id=${newPage.id}`);
       setShowAddModal(false);
       return;
     }

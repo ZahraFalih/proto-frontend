@@ -192,11 +192,6 @@ export default function AddPageModal({
         throw new Error('Please fill in all required fields');
       }
 
-      // Check for duplicate page type
-      if (existingPageTypes.includes(selectedType)) {
-        throw new Error(`A ${selectedType} already exists. Please select a different page type.`);
-      }
-
       console.log('[AddPageModal] Starting page creation with:', {
         type: selectedType,
         url: pageURL,
