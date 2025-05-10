@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { setToken } from '../utils/auth';
+import { buildApiUrl, API_ENDPOINTS } from '../config/api';
 
 import logo from '../assets/icons/logo.png';
 import '../styles/AuthPage.css';
@@ -30,7 +31,7 @@ function AuthPage() {
 
   // tiny helper: try signup, if "username exists" comes back, append rand and retry once
   const attemptSignup = async (username, body, tries = 0) => {
-    const resp = await fetch('http://127.0.0.1:8000/auth/signup/', {
+    const resp = await fetch(buildApiUrl(API_ENDPOINTS.AUTH.SIGNUP), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -72,7 +73,7 @@ function AuthPage() {
       let resp, data;
 
       if (mode === 'login') {
-        resp = await fetch('http://127.0.0.1:8000/auth/login/', {
+        resp = await fetch(buildApiUrl(API_ENDPOINTS.AUTH.LOGIN), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
