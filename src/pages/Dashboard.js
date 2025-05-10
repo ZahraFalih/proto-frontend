@@ -193,13 +193,19 @@ export default function Dashboard() {
 
   // After adding a page
   const handlePageAdded = newPage => {
+    if (!newPage || !newPage.id || !newPage.type) {
+      console.error('[Dashboard] Invalid page data received:', newPage);
+      return;
+    }
+
     // Check if page already exists to prevent duplication
-    const pageExists = pages.some(p => p.id === newPage.id);
+    const pageExists = pages.some(p => p.id === newPage.id || p.type === newPage.type);
     if (pageExists) {
       // If page exists, just switch to it
-      const newSlug = slugify(newPage.type);
+      const existingPage = pages.find(p => p.id === newPage.id || p.type === newPage.type);
+      const newSlug = slugify(existingPage.type);
       setActiveTabSlug(newSlug);
-      window.history.pushState({}, '', `?page_id=${newPage.id}`);
+      window.history.pushState({}, '', `?page_id=${existingPage.id}`);
       setShowAddModal(false);
       return;
     }
