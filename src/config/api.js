@@ -41,6 +41,7 @@ export const API_ENDPOINTS = {
         WEB_METRICS: {
             ROLE_MODEL: (pageId, timestamp) => `/toolkit/web-metrics/role-model/?page_id=${pageId}&_t=${timestamp}`,
             BUSINESS: (pageId, timestamp) => `/toolkit/web-metrics/business/?page_id=${pageId}&_t=${timestamp}`,
+            BUSINESS_HTML: (pageId) => `/toolkit/business-html/?page_id=${pageId}`,
         },
     },
     
