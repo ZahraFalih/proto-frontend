@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import "../styles/MetricsTable.css"; // Optional: Create your own CSS for the table if needed
+import { buildApiUrl, API_ENDPOINTS } from '../config/api';
 
 function MetricsTable({ pageId }) {
   const [businessMetrics, setBusinessMetrics] = useState(null);
@@ -39,8 +40,8 @@ function MetricsTable({ pageId }) {
     const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQzNjg1ODI5LCJpYXQiOjE3NDM1OTk0MjksImp0aSI6IjhjMTU3NjgyZjZiZTQ3YmI4MmZiOTJmMzExYzc0NjBlIiwidXNlcl9pZCI6Nn0.Jwk8ZW-i16IKcnbPu_1K4nFi-EXtw1e5GR0Ayhhng_U"
 
     // Build the endpoint URLs with the pageId query parameter
-    const businessURL = `http://127.0.0.1:8000/toolkit/web-metrics/business/?page_id=${pageId}`;
-    const roleModelURL = `http://127.0.0.1:8000/toolkit/web-metrics/role-model/?page_id=${pageId}`;
+    const businessURL = buildApiUrl(API_ENDPOINTS.TOOLKIT.BUSINESS(pageId));
+    const roleModelURL = buildApiUrl(API_ENDPOINTS.TOOLKIT.ROLE_MODEL(pageId));
 
     // Fetch both endpoints concurrently
     Promise.all([
