@@ -1,3 +1,5 @@
+import CryptoJS from 'crypto-js';
+
 // Cloudinary configuration
 const CLOUDINARY_CONFIG = {
   cloud_name: 'dxglr5zz1',
@@ -6,16 +8,39 @@ const CLOUDINARY_CONFIG = {
 };
 
 // Function to generate signature for Cloudinary upload
-const generateSignature = (timestamp) => {
-  const signature = `folder=Uploads/UBA&timestamp=${timestamp}${CLOUDINARY_CONFIG.api_secret}`;
-  return btoa(signature); // Base64 encode the signature
+const generateSignature = (params) => {
+  // Sort parameters alphabetically
+  const sortedParams = Object.keys(params)
+    .sort()
+    .reduce((acc, key) => {
+      acc[key] = params[key];
+      return acc;
+    }, {});
+
+  // Create string to sign
+  const stringToSign = Object.entries(sortedParams)
+    .map(([key, value]) => `${key}=${value}`)
+    .join('&');
+
+  // Create signature using SHA-1
+  const signature = CryptoJS.SHA1(stringToSign + CLOUDINARY_CONFIG.api_secret).toString();
+  return signature;
 };
 
 // Function to upload file to Cloudinary
 export const uploadToCloudinary = async (file, pageId) => {
   try {
     const timestamp = Math.round((new Date()).getTime() / 1000);
-    const signature = generateSignature(timestamp);
+    
+    // Prepare parameters for signature
+    const params = {
+      timestamp: timestamp,
+      folder: `Uploads/UBA/${pageId}`,
+      resource_type: 'raw'
+    };
+
+    // Generate signature
+    const signature = generateSignature(params);
 
     // Create form data
     const formData = new FormData();
