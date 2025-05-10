@@ -1,7 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
     METHOD: 'https',
-    URL_BASE: 'husseinhh.pythonanywhere.com',
+    URL_BASE: 'proto-api-kg9r.onrender.com',
 };
 
 // Helper function to build API URLs
