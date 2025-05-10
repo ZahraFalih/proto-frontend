@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-    METHOD: 'http',
+    METHOD: 'https',
     URL_BASE: 'husseinhh.pythonanywhere.com',
 };
 
