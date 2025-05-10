@@ -103,7 +103,7 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       setSolutions(problemSolutions);
 
       // ── 3) UBA formulation (must be called last) ─────────────────────────────────────────────
-      const formUrl = buildApiUrl(API_ENDPOINTS.AI.FORMULATE_UBA_ANSWER(pageId, timestamp));
+      const formUrl = buildApiUrl(API_ENDPOINTS.AI.FORMULATE_UBA(pageId, timestamp));
       console.log('[UBAPanel] Fetching UBA formulation:', formUrl);
       
       const formResponse = await fetch(formUrl, { headers });

@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.7457912f.css",
-    "main.js": "/static/js/main.b2f3c0e3.js",
+    "main.js": "/static/js/main.dd5e0695.js",
     "static/media/hussein avatar.png": "/static/media/hussein avatar.29801d04b00f50290c8e.png",
     "static/media/hussein avatar 2.png": "/static/media/hussein avatar 2.42ef1879fa4c080eb13c.png",
     "static/media/zahraa Avatar 2.png": "/static/media/zahraa Avatar 2.e52a7f141cbec96669ac.png",
@@ -13,10 +13,10 @@
     "static/media/logo.png": "/static/media/logo.3a0245e163d291277e71.png",
     "index.html": "/index.html",
     "main.7457912f.css.map": "/static/css/main.7457912f.css.map",
-    "main.b2f3c0e3.js.map": "/static/js/main.b2f3c0e3.js.map"
+    "main.dd5e0695.js.map": "/static/js/main.dd5e0695.js.map"
   },
   "entrypoints": [
     "static/css/main.7457912f.css",
-    "static/js/main.b2f3c0e3.js"
+    "static/js/main.dd5e0695.js"
   ]
 }
