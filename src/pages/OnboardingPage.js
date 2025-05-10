@@ -5,6 +5,7 @@ import "../styles/OnboardingPage.css";
 import "../styles/global.css";
 import LoadingText from '../components/common/LoadingText';
 import { getToken } from '../utils/auth';
+import { buildApiUrl, API_ENDPOINTS } from '../config/api';
 
 const companiesData = [
   { id: 1, name: "Amazon", category: "Online Retail & Marketplace" },
@@ -96,7 +97,7 @@ const OnboardingPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/onboard/user-onboard/", {
+      const response = await fetch(buildApiUrl(API_ENDPOINTS.ONBOARD.USER), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -147,7 +148,7 @@ const OnboardingPage = () => {
     setLoading(true);
   
     try {
-      const response = await fetch("http://127.0.0.1:8000/onboard/business-onboard/", {
+      const response = await fetch(buildApiUrl(API_ENDPOINTS.ONBOARD.BUSINESS), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -210,7 +211,7 @@ const OnboardingPage = () => {
       console.log("Request options:", JSON.stringify(requestOptions, (key, value) => 
         key === 'body' ? JSON.parse(value) : value));
       
-      const response = await fetch("http://127.0.0.1:8000/onboard/page-onboard/", requestOptions);
+      const response = await fetch(buildApiUrl(API_ENDPOINTS.ONBOARD.PAGE), requestOptions);
       
       console.log("Response status:", response.status);
       console.log("Response headers:", Object.fromEntries([...response.headers]));
@@ -310,7 +311,7 @@ const OnboardingPage = () => {
       
       console.log("FormData created with token, file, page_id, and name");
       
-      const response = await fetch("http://127.0.0.1:8000/upload/create/", {
+      const response = await fetch(buildApiUrl(API_ENDPOINTS.UPLOAD.CREATE), {
         method: "POST",
         credentials: "include",
         body: formData,
@@ -403,7 +404,7 @@ const OnboardingPage = () => {
       console.log("Screenshot included:", selectedScreenshot ? "Yes" : "No");
       console.log("Sending request to /onboard/upload-screenshot/");
       
-      const response = await fetch("http://127.0.0.1:8000/onboard/upload-screenshot/", {
+      const response = await fetch(buildApiUrl(API_ENDPOINTS.ONBOARD.UPLOAD_SCREENSHOT), {
         method: "POST",
         credentials: "include",
         body: formData,
