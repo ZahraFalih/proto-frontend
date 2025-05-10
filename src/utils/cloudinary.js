@@ -3,8 +3,7 @@ import CryptoJS from 'crypto-js';
 // Cloudinary configuration
 const CLOUDINARY_CONFIG = {
   cloud_name: 'dxglr5zz1',
-  api_key: '744576776911953',
-  api_secret: 'HtVzMp5VJC3j4BvXBupWeq_HddE'
+  upload_preset: 'uba_upload' // The preset you created in Cloudinary dashboard
 };
 
 // Function to generate signature for Cloudinary upload
@@ -30,27 +29,12 @@ const generateSignature = (params) => {
 // Function to upload file to Cloudinary
 export const uploadToCloudinary = async (file, pageId) => {
   try {
-    const timestamp = Math.round((new Date()).getTime() / 1000);
-    
-    // Prepare parameters for signature
-    const params = {
-      timestamp: timestamp,
-      folder: `Uploads/UBA/${pageId}`,
-      resource_type: 'raw'
-    };
-
-    // Generate signature
-    const signature = generateSignature(params);
-
     // Create form data
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('cloud_name', CLOUDINARY_CONFIG.cloud_name);
-    formData.append('api_key', CLOUDINARY_CONFIG.api_key);
-    formData.append('timestamp', timestamp);
-    formData.append('signature', signature);
+    formData.append('upload_preset', CLOUDINARY_CONFIG.upload_preset);
     formData.append('folder', `Uploads/UBA/${pageId}`);
-    formData.append('resource_type', 'raw');
+    formData.append('cloud_name', CLOUDINARY_CONFIG.cloud_name);
 
     // Upload to Cloudinary
     const response = await fetch(
