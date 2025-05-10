@@ -2,8 +2,7 @@
 const CLOUDINARY_CONFIG = {
   cloud_name: 'dxglr5zz1',
   api_key: '744576776911953',
-  api_secret: 'HtVzMp5VJC3j4BvXBupWeq_HddE',
-  upload_preset: 'ml_default' // You may want to create a specific preset for UBA files
+  api_secret: 'HtVzMp5VJC3j4BvXBupWeq_HddE'
 };
 
 // Function to upload file to Cloudinary
@@ -12,15 +11,13 @@ export const uploadToCloudinary = async (file, pageId) => {
     // Create form data
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', CLOUDINARY_CONFIG.upload_preset);
-    formData.append('folder', `Uploads/UBA/${pageId}`);
     formData.append('cloud_name', CLOUDINARY_CONFIG.cloud_name);
-    formData.append('api_key', CLOUDINARY_CONFIG.api_key);
-    formData.append('timestamp', Math.round((new Date()).getTime() / 1000));
+    formData.append('folder', `Uploads/UBA/${pageId}`);
+    formData.append('resource_type', 'raw'); // Specify that we're uploading a raw file
 
     // Upload to Cloudinary
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloud_name}/auto/upload`,
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloud_name}/raw/upload`,
       {
         method: 'POST',
         body: formData
