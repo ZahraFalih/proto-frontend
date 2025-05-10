@@ -71,7 +71,7 @@ const WelcomePage = () => {
             </p>
 
             <div className="button-container">
-              <Link to="/auth?mode=signup"><button className="btn-primary">Get Started</button></Link>
+              <Link to="/auth?mode=signup"><button className="btn-primary">Join Us!</button></Link>
               <Link to="/auth?mode=login"><button className="btn-secondary">Sign In</button></Link>
             </div>
           </div>

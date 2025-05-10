@@ -1,14 +1,22 @@
 {
   "files": {
-    "main.css": "/static/css/main.fd57992a.css",
-    "main.js": "/static/js/main.225aa141.js",
+    "main.css": "/static/css/main.7457912f.css",
+    "main.js": "/static/js/main.b2f3c0e3.js",
+    "static/media/hussein avatar.png": "/static/media/hussein avatar.29801d04b00f50290c8e.png",
+    "static/media/hussein avatar 2.png": "/static/media/hussein avatar 2.42ef1879fa4c080eb13c.png",
+    "static/media/zahraa Avatar 2.png": "/static/media/zahraa Avatar 2.e52a7f141cbec96669ac.png",
+    "static/media/berrak avatar 2.png": "/static/media/berrak avatar 2.4b2425fb66823e4b6255.png",
+    "static/media/baran avatar 2.png": "/static/media/baran avatar 2.26c6a097007904d49114.png",
+    "static/media/zahra avatar.png": "/static/media/zahra avatar.4b9adb5607b08d2054b0.png",
+    "static/media/berrak avatar.png": "/static/media/berrak avatar.4359e36f3ca3f228c2f0.png",
+    "static/media/baran avatar.png": "/static/media/baran avatar.97750981cb043b49a53c.png",
     "static/media/logo.png": "/static/media/logo.3a0245e163d291277e71.png",
     "index.html": "/index.html",
-    "main.fd57992a.css.map": "/static/css/main.fd57992a.css.map",
-    "main.225aa141.js.map": "/static/js/main.225aa141.js.map"
+    "main.7457912f.css.map": "/static/css/main.7457912f.css.map",
+    "main.b2f3c0e3.js.map": "/static/js/main.b2f3c0e3.js.map"
   },
   "entrypoints": [
-    "static/css/main.fd57992a.css",
-    "static/js/main.225aa141.js"
+    "static/css/main.7457912f.css",
+    "static/js/main.b2f3c0e3.js"
   ]
 }
