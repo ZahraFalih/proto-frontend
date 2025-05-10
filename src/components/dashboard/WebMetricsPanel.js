@@ -85,8 +85,8 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         };
   
         const ts = Date.now();
-        const roleUrl = buildApiUrl(API_ENDPOINTS.TOOLKIT.ROLE_MODEL(pageId, ts));
-        const bizUrl = buildApiUrl(API_ENDPOINTS.TOOLKIT.BUSINESS(pageId, ts));
+        const roleUrl = buildApiUrl(API_ENDPOINTS.TOOLKIT.WEB_METRICS.ROLE_MODEL(pageId, ts));
+        const bizUrl = buildApiUrl(API_ENDPOINTS.TOOLKIT.WEB_METRICS.BUSINESS(pageId, ts));
         
         console.log('[WebMetricsPanel] Fetching:', roleUrl, bizUrl);
         const [roleRes, bizRes] = await Promise.all([

@@ -64,10 +64,10 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       const timestamp = Date.now();
       
       // ── 1) Evaluate UBA (must be called first) ─────────────────────────────────────
-      const evaluateUrl = buildApiUrl(API_ENDPOINTS.AI.EVALUATE_UBA(pageId, timestamp));
-      console.log('[UBAPanel] Starting UBA evaluation:', evaluateUrl);
+      const evalUrl = buildApiUrl(API_ENDPOINTS.AI.EVALUATE.UBA(pageId, timestamp));
+      console.log('[UBAPanel] Starting UBA evaluation:', evalUrl);
       
-      const evaluateResponse = await fetch(evaluateUrl, { headers });
+      const evaluateResponse = await fetch(evalUrl, { headers });
       console.log('[UBAPanel] UBA evaluation response status:', evaluateResponse.status);
       
       if (!evaluateResponse.ok) {

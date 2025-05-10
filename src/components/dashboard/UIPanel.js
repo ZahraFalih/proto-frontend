@@ -34,14 +34,14 @@ export default function UIPanel({ pageId, onSummaryReady }) {
 
     // Add timestamp to prevent caching
     const timestamp = Date.now();
-    const url = buildApiUrl(API_ENDPOINTS.AI.EVALUATE_UI(pageId, timestamp));
-    console.log(`[UIPanel] Fetching: ${url}`);
+    const evalUrl = buildApiUrl(API_ENDPOINTS.AI.EVALUATE.UI(pageId, timestamp));
+    console.log(`[UIPanel] Fetching: ${evalUrl}`);
 
     setLoading(true);
     setError(null);
     setCategories([]);
 
-    fetch(url, { headers: { Accept: 'application/json' } })
+    fetch(evalUrl, { headers: { Accept: 'application/json' } })
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
