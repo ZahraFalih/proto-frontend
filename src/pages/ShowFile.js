@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getToken, clearToken } from '../utils/auth';
 import logo from "../assets/icons/logo.png";
 import '../styles/global.css'; 
+import { buildApiUrl, API_ENDPOINTS } from '../config/api';
 
 const ShowFile = () => {
   const { fileId } = useParams();
@@ -24,7 +25,7 @@ const ShowFile = () => {
       }
 
       try {
-        const response = await fetch(`http://127.0.0.1:8000/upload/show/${fileId}/`, {
+        const response = await fetch(buildApiUrl(API_ENDPOINTS.UPLOAD.SHOW(fileId)), {
           method: "GET",
           headers: {
             "Authorization": token,

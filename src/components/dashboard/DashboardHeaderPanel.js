@@ -5,6 +5,7 @@ import logo from "../../assets/icons/logo.png";
 import "../../styles/Dashboard.css";
 import UserPreferencesModal from "../UserPreferencesModal";
 import { getToken, clearToken } from '../../utils/auth';
+import { buildApiUrl, API_ENDPOINTS } from '../../config/api';
 
 const slugify = (str = "") =>
   str.toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]/g, "");
@@ -27,7 +28,7 @@ export default function DashboardHeaderPanel({ pages = [], onPageDeleted }) {
 
   const refreshPages = async () => {
     try {
-      const response = await fetch("http://localhost:8000/onboard/pages/", {
+      const response = await fetch(buildApiUrl(API_ENDPOINTS.ONBOARD.PAGES), {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -48,7 +49,7 @@ export default function DashboardHeaderPanel({ pages = [], onPageDeleted }) {
       navigate("/auth?mode=login");
       return;
     }
-    fetch("http://localhost:8000/toolkit/user-name/", {
+    fetch(buildApiUrl(API_ENDPOINTS.TOOLKIT.USER_NAME), {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -80,7 +81,7 @@ export default function DashboardHeaderPanel({ pages = [], onPageDeleted }) {
     navigate("/auth?mode=login");
     
     // Then try to notify the backend (but don't wait for it)
-    fetch("http://127.0.0.1:8000/auth/logout/", {
+    fetch(buildApiUrl(API_ENDPOINTS.AUTH.LOGOUT), {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
     }).catch(error => {
@@ -91,21 +92,19 @@ export default function DashboardHeaderPanel({ pages = [], onPageDeleted }) {
 
   const handleDelete = async (id, type) => {
     try {                                
-        const url = `http://127.0.0.1:8000/onboard/pages/${id}/${encodeURIComponent(
-            type
-          )}/`;
+      const url = buildApiUrl(API_ENDPOINTS.ONBOARD.DELETE_PAGE(id, type));
       
-          const res = await fetch(url, {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          });
-        if (!res.ok) throw new Error(`Status ${res.status}`);
-        onPageDeleted?.(id); 
-      } catch (err) {
-        console.error("[Header] Failed to delete page:", err);
+      const res = await fetch(url, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      onPageDeleted?.(id); 
+    } catch (err) {
+      console.error("[Header] Failed to delete page:", err);
     }
   };
 

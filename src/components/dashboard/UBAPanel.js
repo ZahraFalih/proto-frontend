@@ -5,6 +5,7 @@ import { UBASkeleton } from '../common/Skeleton';
 import '../../styles/UBAPanel.css';
 import '../../styles/Dashboard.css';
 import { getToken } from '../../utils/auth';
+import { buildApiUrl, API_ENDPOINTS } from '../../config/api';
 
 export default function UBAPanel({ pageId, onSummaryReady }) {
   const [formulation, setFormulation] = useState('');
@@ -63,7 +64,7 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       const timestamp = Date.now();
       
       // ── 1) Evaluate UBA (must be called first) ─────────────────────────────────────
-      const evaluateUrl = `http://127.0.0.1:8000/ask-ai/evaluate-uba/?page_id=${pageId}&_t=${timestamp}`;
+      const evaluateUrl = buildApiUrl(API_ENDPOINTS.AI.EVALUATE_UBA(pageId, timestamp));
       console.log('[UBAPanel] Starting UBA evaluation:', evaluateUrl);
       
       const evaluateResponse = await fetch(evaluateUrl, { headers });
@@ -79,7 +80,7 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       console.log('[UBAPanel] UBA evaluation completed');
 
       // ── 2) Web Search (must be called after evaluation) ─────────────────────────────────────
-      const searchUrl = `http://127.0.0.1:8000/ask-ai/web-search/?page_id=${pageId}&_t=${timestamp}`;
+      const searchUrl = buildApiUrl(API_ENDPOINTS.AI.WEB_SEARCH(pageId, timestamp));
       console.log('[UBAPanel] Fetching web search results:', searchUrl);
       
       const searchResponse = await fetch(searchUrl, { headers });
@@ -102,7 +103,7 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       setSolutions(problemSolutions);
 
       // ── 3) UBA formulation (must be called last) ─────────────────────────────────────────────
-      const formUrl = `http://127.0.0.1:8000/ask-ai/formulate-uba-answer/?page_id=${pageId}&_t=${timestamp}`;
+      const formUrl = buildApiUrl(API_ENDPOINTS.AI.FORMULATE_UBA_ANSWER(pageId, timestamp));
       console.log('[UBAPanel] Fetching UBA formulation:', formUrl);
       
       const formResponse = await fetch(formUrl, { headers });

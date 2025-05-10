@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import '../styles/UserPreferencesModal.css';
 import { getToken } from '../utils/auth';
+import { buildApiUrl, API_ENDPOINTS } from '../config/api';
 
 const UserPreferencesModal = ({ isOpen, onClose, pages = [], onPageDeleted, refreshPages }) => {
   const [activeTab, setActiveTab] = useState('data');
@@ -33,7 +34,7 @@ const UserPreferencesModal = ({ isOpen, onClose, pages = [], onPageDeleted, refr
 
     try {
       const token = getToken();
-      const response = await fetch('http://127.0.0.1:8000/auth/change-email/', {
+      const response = await fetch(buildApiUrl(API_ENDPOINTS.AUTH.CHANGE_EMAIL), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,7 +76,7 @@ const UserPreferencesModal = ({ isOpen, onClose, pages = [], onPageDeleted, refr
 
     try {
       const token = getToken();
-      const response = await fetch('http://127.0.0.1:8000/auth/change-password/', {
+      const response = await fetch(buildApiUrl(API_ENDPOINTS.AUTH.CHANGE_PASSWORD), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,7 +112,7 @@ const UserPreferencesModal = ({ isOpen, onClose, pages = [], onPageDeleted, refr
     console.log('Using token:', token);
     
     try {
-      const url = `http://localhost:8000/onboard/pages/${pageId}/${encodeURIComponent(pageType)}/`;
+      const url = buildApiUrl(API_ENDPOINTS.ONBOARD.DELETE_PAGE(pageId, pageType));
       console.log('Delete request URL:', url);
 
       const response = await fetch(url, {

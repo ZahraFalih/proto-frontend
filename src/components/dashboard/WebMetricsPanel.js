@@ -4,6 +4,7 @@ import { MetricsCardSkeleton } from '../common/Skeleton';
 import '../../styles/Dashboard.css';
 import '../../styles/WebMetricsPanel.css';
 import { getToken } from '../../utils/auth';
+import { buildApiUrl, API_ENDPOINTS } from '../../config/api';
 
 export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetricsReady, onRoleMetricsReady }) {
   /* ─────────── state ─────────── */
@@ -84,8 +85,8 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         };
   
         const ts = Date.now();
-        const roleUrl = `http://127.0.0.1:8000/toolkit/web-metrics/role-model/?page_id=${pageId}&_t=${ts}`;
-        const bizUrl  = `http://127.0.0.1:8000/toolkit/web-metrics/business/?page_id=${pageId}&_t=${ts}`;
+        const roleUrl = buildApiUrl(API_ENDPOINTS.TOOLKIT.ROLE_MODEL(pageId, ts));
+        const bizUrl = buildApiUrl(API_ENDPOINTS.TOOLKIT.BUSINESS(pageId, ts));
         
         console.log('[WebMetricsPanel] Fetching:', roleUrl, bizUrl);
         const [roleRes, bizRes] = await Promise.all([
@@ -114,7 +115,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         /* 2️⃣ evaluate business metrics with AI */
         try {
           const evalRes = await fetch(
-            `http://127.0.0.1:8000/ask-ai/evaluate-web-metrics/?page_id=${pageId}`,
+            buildApiUrl(API_ENDPOINTS.AI.EVALUATE_WEB_METRICS(pageId)),
             {
               method: 'POST',
               headers: { 

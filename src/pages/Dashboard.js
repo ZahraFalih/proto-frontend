@@ -12,6 +12,7 @@ import LoadingText from '../components/common/LoadingText';
 import ScrollToTop from '../components/common/ScrollToTop';
 import '../styles/Dashboard.css';
 import { getToken } from '../utils/auth';
+import { buildApiUrl, API_ENDPOINTS } from '../config/api';
 
 export default function Dashboard() {
   const [pages, setPages] = useState([]);
@@ -102,7 +103,7 @@ export default function Dashboard() {
     if (!token) return;
 
     setLoading(true);
-    fetch('http://127.0.0.1:8000/toolkit/user-pages/', {
+    fetch(buildApiUrl(API_ENDPOINTS.TOOLKIT.USER_PAGES), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),

@@ -11,6 +11,7 @@ import berrakAvatar2 from '../../styles/Avatars/berrak avatar 2.png';
 import baranAvatar from '../../styles/Avatars/baran avatar.png';
 import baranAvatar2 from '../../styles/Avatars/baran avatar 2.png';
 import '../../styles/AIChatPanel.css';
+import { buildApiUrl, API_ENDPOINTS } from '../../config/api';
 
 // Randomly select assistant on component mount
 const getRandomPersona = () => {
@@ -207,7 +208,7 @@ const AIChatPanel = ({ context = {} }) => {
     });
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/ask-ai/chat/', {
+      const res = await fetch(buildApiUrl(API_ENDPOINTS.AI.CHAT), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

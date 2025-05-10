@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { UISkeleton } from '../common/Skeleton';
 import '../../styles/UIPanel.css';
+import { buildApiUrl, API_ENDPOINTS } from '../../config/api';
 
 export default function UIPanel({ pageId, onSummaryReady }) {
   const [categories, setCategories] = useState([]);
@@ -33,7 +34,7 @@ export default function UIPanel({ pageId, onSummaryReady }) {
 
     // Add timestamp to prevent caching
     const timestamp = Date.now();
-    const url = `http://127.0.0.1:8000/ask-ai/evaluate-ui/?page_id=${pageId}&_t=${timestamp}`;
+    const url = buildApiUrl(API_ENDPOINTS.AI.EVALUATE_UI(pageId, timestamp));
     console.log(`[UIPanel] Fetching: ${url}`);
 
     setLoading(true);

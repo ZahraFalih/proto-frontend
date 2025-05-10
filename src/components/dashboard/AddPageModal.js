@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import ProgressLoader from '../common/ProgressLoader';
 import '../../styles/AddPageModal.css';
 import { getToken } from '../../utils/auth';
+import { buildApiUrl, API_ENDPOINTS } from '../../config/api';
 
 const PAGE_TYPES = ['Landing Page', 'Search Results Page', 'Product Page'];
 
@@ -54,7 +55,7 @@ export default function AddPageModal({
     const payload = { page_type: selectedType, url: pageURL, token };
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/onboard/page-onboard/', {
+      const res = await fetch(buildApiUrl(API_ENDPOINTS.ONBOARD.PAGE_ONBOARD), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -115,7 +116,7 @@ export default function AddPageModal({
     formData.append('name', selectedType);
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/upload/create/', {
+      const res = await fetch(buildApiUrl(API_ENDPOINTS.UPLOAD.CREATE), {
         method: 'POST',
         credentials: 'include',
         body: formData
@@ -152,10 +153,11 @@ export default function AddPageModal({
     formData.append('screenshot', selectedScreenshot);
 
     try {
-      const res = await fetch(
-        'http://127.0.0.1:8000/onboard/upload-screenshot/',
-        { method: 'POST', credentials: 'include', body: formData }
-      );
+      const res = await fetch(buildApiUrl(API_ENDPOINTS.ONBOARD.UPLOAD_SCREENSHOT), {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
 
       if (!res.ok) {
         setError('Screenshot upload failed.');
@@ -204,7 +206,7 @@ export default function AddPageModal({
 
       console.log('[AddPageModal] Making request to page-onboard endpoint');
       
-      const pageResponse = await fetch('http://127.0.0.1:8000/onboard/page-onboard/', {
+      const pageResponse = await fetch(buildApiUrl(API_ENDPOINTS.ONBOARD.PAGE_ONBOARD), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -245,7 +247,7 @@ export default function AddPageModal({
         formData.append('page_id', String(newPage.id));
         formData.append('name', selectedType);
 
-        const ubaResponse = await fetch('http://127.0.0.1:8000/upload/create/', {
+        const ubaResponse = await fetch(buildApiUrl(API_ENDPOINTS.UPLOAD.CREATE), {
           method: 'POST',
           credentials: 'include',
           body: formData

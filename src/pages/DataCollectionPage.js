@@ -5,6 +5,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import logo from "../assets/icons/logo.png";
 import '../styles/global.css'; 
+import { buildApiUrl, API_ENDPOINTS } from '../config/api';
 
 const DataCollectionPage = () => {
   const [files, setFiles] = useState([]);
@@ -69,7 +70,7 @@ const DataCollectionPage = () => {
     formData.append("token", getAccessToken()); // Token input
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/upload/create/", {
+      const response = await fetch(buildApiUrl(API_ENDPOINTS.UPLOAD.CREATE), {
         method: "POST",
         credentials: "include",
         body: formData, // No headers included
