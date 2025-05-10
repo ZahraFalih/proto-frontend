@@ -6,6 +6,7 @@ import "../styles/global.css";
 import LoadingText from '../components/common/LoadingText';
 import { getToken } from '../utils/auth';
 import { buildApiUrl, API_ENDPOINTS } from '../config/api';
+import { uploadToCloudinary } from '../utils/cloudinary';
 
 const companiesData = [
   { id: 1, name: "Amazon", category: "Online Retail & Marketplace" },
@@ -190,6 +191,41 @@ const OnboardingPage = () => {
     }
   };
   
+  const handleUbaUpload = async (ubaFile, pageId) => {
+    try {
+      console.log('[OnboardingPage] Starting UBA file upload to Cloudinary');
+      
+      // Upload to Cloudinary
+      const cloudinaryResult = await uploadToCloudinary(ubaFile, pageId);
+      console.log('[OnboardingPage] UBA file uploaded to Cloudinary:', cloudinaryResult);
+
+      // Now send the Cloudinary URL to your backend
+      const token = getToken();
+      const response = await fetch(buildApiUrl(API_ENDPOINTS.UPLOAD.CREATE), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          page_id: pageId,
+          uba_file_url: cloudinaryResult.url,
+          uba_file_id: cloudinaryResult.public_id
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to register UBA file with backend');
+      }
+
+      console.log('[OnboardingPage] UBA file registration successful');
+      return true;
+    } catch (error) {
+      console.error('[OnboardingPage] UBA upload error:', error);
+      throw error;
+    }
+  };
+  
   const handlePageOnboard = async (e) => {
     e.preventDefault();
     setError(null);
@@ -253,7 +289,7 @@ const OnboardingPage = () => {
               console.log("Screenshot path exists, proceeding with UBA upload if needed");
               // If UBA file was provided, upload it
               if (selectedUbaFile) {
-                await uploadUbaFile(data.id, pageType);
+                await handleUbaUpload(selectedUbaFile, data.id);
               } else {
                 navigate("/dashboard", { state: { fromOnboarding: true } });
               }
@@ -284,89 +320,6 @@ const OnboardingPage = () => {
       setError("Failed to connect to the server. Please check your network connection.");
     } finally {
       console.log("Page onboarding process completed");
-      setLoading(false);
-    }
-  };
-
-  const uploadUbaFile = async (pageId, pageTypeName) => {
-    if (!selectedUbaFile) {
-      console.log("No UBA file selected, skipping UBA upload");
-      navigate("/dashboard", { state: { fromOnboarding: true } });
-      return;
-    }
-    
-    setLoading(true);
-    console.log("Starting UBA data upload...");
-    console.log("UBA file:", selectedUbaFile.name, "Type:", selectedUbaFile.type, "Size:", selectedUbaFile.size, "bytes");
-    console.log("Page ID:", pageId);
-    console.log("Page Type:", pageTypeName);
-    
-    try {
-      const formData = new FormData();
-      const token = getToken();
-      formData.append('token', token);
-      formData.append('file', selectedUbaFile);
-      formData.append('page_id', String(pageId));
-      formData.append('name', pageTypeName);
-      
-      console.log("FormData created with token, file, page_id, and name");
-      
-      const response = await fetch(buildApiUrl(API_ENDPOINTS.UPLOAD.CREATE), {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      });
-      
-      console.log("Response status:", response.status);
-      
-      let data;
-      try {
-        const textResponse = await response.text();
-        console.log("Raw response text:", textResponse);
-        
-        try {
-          data = JSON.parse(textResponse);
-          console.log("Parsed response data:", data);
-        } catch (parseError) {
-          console.error("Error parsing JSON response:", parseError);
-          console.log("Invalid JSON received");
-          data = { error: "Server returned invalid data" };
-        }
-      } catch (textError) {
-        console.error("Error reading response text:", textError);
-        data = { error: "Couldn't read server response" };
-      }
-      
-      if (response.ok) {
-        console.log("UBA data upload successful, navigating to dashboard");
-        navigate("/dashboard", { 
-          state: { fromOnboarding: true },
-          search: `?page_id=${pageId}`  // Add page_id to URL
-        });
-      } else {
-        if (response.status === 401) {
-          console.log("Unauthorized token for UBA upload");
-          setError("Session expired. Please log in again.");
-          navigate("/login");
-        } else {
-          console.log("UBA upload failed:", response.status, data.error || "Unknown error");
-          setError("Failed to upload UBA data. " + (data.error || "Please try again."));
-          // Still navigate to dashboard even if UBA upload fails
-          setTimeout(() => navigate("/dashboard", { 
-            state: { fromOnboarding: true },
-            search: `?page_id=${pageId}`
-          }), 3000);
-        }
-      }
-    } catch (err) {
-      console.error("Exception in UBA upload:", err);
-      setError("Failed to upload UBA data, but your page was successfully onboarded.");
-      // Still navigate to dashboard even if UBA upload fails
-      setTimeout(() => navigate("/dashboard", { 
-        state: { fromOnboarding: true },
-        search: `?page_id=${pageId}`
-      }), 3000);
-    } finally {
       setLoading(false);
     }
   };
@@ -437,7 +390,7 @@ const OnboardingPage = () => {
         // If we have a UBA file, upload it using the existing pageId
         if (selectedUbaFile) {
           console.log("UBA file exists, proceeding with upload");
-          await uploadUbaFile(pageId, pageType);
+          await handleUbaUpload(selectedUbaFile, pageId);
         } else {
           console.log("No UBA file to upload, navigating to dashboard");
           navigate("/dashboard", { state: { fromOnboarding: true } });
