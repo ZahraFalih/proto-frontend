@@ -94,22 +94,29 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           fetch(bizUrl , { headers }),
         ]);
         
-        if (!roleRes.ok || !bizRes.ok) {
-          console.error('[WebMetricsPanel] Metrics fetch failed statuses:', roleRes.status, bizRes.status);
-          throw new Error('Could not fetch web metrics');
+        // Handle business metrics first
+        if (!bizRes.ok) {
+          console.error('[WebMetricsPanel] Business metrics fetch failed:', bizRes.status);
+          throw new Error('Could not fetch business metrics');
         }
-  
-        const [roleData, bizData] = await Promise.all([roleRes.json(), bizRes.json()]);
-        console.log('[WebMetricsPanel] roleData, bizData:', roleData, bizData);
-        setRoleMetrics(roleData);
+
+        const bizData = await bizRes.json();
         setBusinessMetrics(bizData);
-  
-        // Notify parent of metrics
         if (typeof onBusinessMetricsReady === 'function') {
           onBusinessMetricsReady(bizData);
         }
-        if (typeof onRoleMetricsReady === 'function') {
-          onRoleMetricsReady(roleData);
+
+        // Handle role metrics separately
+        let roleData = null;
+        if (roleRes.ok) {
+          roleData = await roleRes.json();
+          setRoleMetrics(roleData);
+          if (typeof onRoleMetricsReady === 'function') {
+            onRoleMetricsReady(roleData);
+          }
+        } else {
+          console.warn('[WebMetricsPanel] Role metrics not available:', roleRes.status);
+          // Continue without role metrics
         }
   
         /* 2️⃣ evaluate business metrics with AI */
@@ -230,19 +237,20 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
 
   /* ─────────── metric processing ─────────── */
   const processedMetrics = useMemo(() => {
-    if (!roleMetrics || !businessMetrics) return [];
-    const roleObj = roleMetrics[Object.keys(roleMetrics)[0]];
+    if (!businessMetrics) return [];
     const bizObj = businessMetrics[Object.keys(businessMetrics)[0]];
     
     // Get role name and truncate before specific words, then add possessive form
-    const fullName = Object.keys(roleMetrics)[0];
-    const truncatedName = fullName.split(/\s+(Landing|Search|Product)/)[0];
-    const roleName = `${truncatedName}'s`;
+    const roleName = roleMetrics ? (() => {
+      const fullName = Object.keys(roleMetrics)[0];
+      const truncatedName = fullName.split(/\s+(Landing|Search|Product)/)[0];
+      return `${truncatedName}'s`;
+    })() : 'Role Model';
     
     return Object.entries(idealBenchmarks).map(([metric, { value, desc }]) => {
       // Convert metric values to numbers for comparison
       const yourValue = bizObj?.[metric] || '0';
-      const roleValue = roleObj?.[metric] || '0';
+      const roleValue = roleMetrics ? roleMetrics[Object.keys(roleMetrics)[0]]?.[metric] || '0' : '0';
       const idealValue = value;
       
       // Extract numerical value for comparison
