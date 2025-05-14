@@ -153,11 +153,10 @@ const OnboardingPage = () => {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          category: businessType,
-          url: businessURL,
-          name: businessName,
-          rolemodel: selectedCompanyId,
           token: getToken(),
+          name: businessName,
+          category: businessType,
+          role_model: selectedCompanyId
         }),
       });
       const data = await response.json();
