@@ -100,10 +100,27 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         // Handle business metrics first - required
         if (bizResult.status === 'fulfilled') {
           const businessMetricsRes = bizResult.value;
-          const businessMetrics = await parseJsonResponse(businessMetricsRes);
-          setBusinessMetrics(businessMetrics);
-          if (typeof onBusinessMetricsReady === 'function') {
-            onBusinessMetricsReady(businessMetrics);
+          try {
+            const businessMetricsData = await parseJsonResponse(businessMetricsRes);
+            console.log('[WebMetricsPanel] Business metrics data:', businessMetricsData);
+            
+            // Validate the data structure
+            if (typeof businessMetricsData !== 'object' || !Object.keys(businessMetricsData).length) {
+              console.error('[WebMetricsPanel] Invalid business metrics format:', businessMetricsData);
+              setError('Invalid metrics data received from server. Please try again later.');
+              setLoading(false);
+              return;
+            }
+            
+            setBusinessMetrics(businessMetricsData);
+            if (typeof onBusinessMetricsReady === 'function') {
+              onBusinessMetricsReady(businessMetricsData);
+            }
+          } catch (parseError) {
+            console.error('[WebMetricsPanel] Failed to parse business metrics response:', parseError);
+            setError('Failed to process metrics data. Please try again later.');
+            setLoading(false);
+            return;
           }
         } else {
           console.error('[WebMetricsPanel] Business metrics fetch failed after retries:', bizResult.reason);
@@ -117,10 +134,22 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         let roleData = null;
         if (roleResult.status === 'fulfilled') {
           const roleRes = roleResult.value;
-          roleData = await parseJsonResponse(roleRes);
-          setRoleMetrics(roleData);
-          if (typeof onRoleMetricsReady === 'function') {
-            onRoleMetricsReady(roleData);
+          try {
+            roleData = await parseJsonResponse(roleRes);
+            console.log('[WebMetricsPanel] Role metrics data:', roleData);
+            
+            // Validate structure but continue even if invalid
+            if (typeof roleData !== 'object' || !Object.keys(roleData).length) {
+              console.warn('[WebMetricsPanel] Invalid role metrics format, continuing without role data');
+            } else {
+              setRoleMetrics(roleData);
+              if (typeof onRoleMetricsReady === 'function') {
+                onRoleMetricsReady(roleData);
+              }
+            }
+          } catch (parseError) {
+            console.warn('[WebMetricsPanel] Failed to parse role metrics response:', parseError);
+            // Continue without role metrics
           }
         } else {
           console.warn('[WebMetricsPanel] Role metrics not available after retries:', roleResult.reason);
@@ -244,57 +273,85 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
   /* ─────────── metric processing ─────────── */
   const processedMetrics = useMemo(() => {
     if (!businessMetrics) return [];
-    const bizObj = businessMetrics[Object.keys(businessMetrics)[0]];
     
-    // Get role name and truncate before specific words, then add possessive form
-    const roleName = roleMetrics ? (() => {
-      const fullName = Object.keys(roleMetrics)[0];
-      const truncatedName = fullName.split(/\s+(Landing|Search|Product)/)[0];
-      return `${truncatedName}'s`;
-    })() : 'Role Model';
-    
-    return Object.entries(idealBenchmarks).map(([metric, { value, desc }]) => {
-      // Convert metric values to numbers for comparison
-      const yourValue = bizObj?.[metric] || '0';
-      const roleValue = roleMetrics ? roleMetrics[Object.keys(roleMetrics)[0]]?.[metric] || '0' : '0';
-      const idealValue = value;
-      
-      // Extract numerical value for comparison
-      const extractNumber = (val) => parseFloat(String(val).match(/[\d.]+/)?.[0] || 0);
-      const yourNum = extractNumber(yourValue);
-      const roleNum = extractNumber(roleValue);
-      const idealNum = extractNumber(idealValue);
-      
-      // Determine status (good, warn, bad)
-      let status = 'good';
-      const isCLS = metric.includes('CLS'); // Special handling for CLS (lower is better)
-      
-      if (isCLS) {
-        if (yourNum > idealNum * 2) status = 'bad';
-        else if (yourNum > idealNum) status = 'warn';
-      } else {
-        if (yourNum > idealNum * 2) status = 'bad';
-        else if (yourNum > idealNum) status = 'warn';
+    try {
+      // Check if businessMetrics is an object with at least one key
+      if (typeof businessMetrics !== 'object' || !Object.keys(businessMetrics).length) {
+        console.error('[WebMetricsPanel] Invalid business metrics format:', businessMetrics);
+        setError('Invalid metrics data format. Please refresh the page.');
+        return [];
       }
       
-      // Calculate percentages for gauge visualization
-      let percent = isCLS 
-        ? Math.min(100, (yourNum / (idealNum * 3)) * 100)
-        : Math.min(100, (yourNum / (idealNum * 2)) * 100);
+      const bizObj = businessMetrics[Object.keys(businessMetrics)[0]];
       
-      return {
-        metric,
-        description: desc,
-        your: yourValue,
-        role: roleValue,
-        ideal: idealValue,
-        roleName,
-        status,
-        percent,
-        isCLS
-      };
-    });
-  }, [roleMetrics, businessMetrics]);
+      // Verify bizObj is not null or undefined
+      if (!bizObj) {
+        console.error('[WebMetricsPanel] Business metrics object is null or empty');
+        setError('Invalid metrics data structure. Please refresh the page.');
+        return [];
+      }
+      
+      // Get role name and truncate before specific words, then add possessive form
+      const roleName = roleMetrics ? (() => {
+        try {
+          const fullName = Object.keys(roleMetrics)[0];
+          const truncatedName = fullName.split(/\s+(Landing|Search|Product)/)[0];
+          return `${truncatedName}'s`;
+        } catch (e) {
+          console.warn('[WebMetricsPanel] Error processing role name:', e);
+          return 'Role Model';
+        }
+      })() : 'Role Model';
+      
+      return Object.entries(idealBenchmarks).map(([metric, { value, desc }]) => {
+        // Convert metric values to numbers for comparison
+        const yourValue = bizObj?.[metric] || '0';
+        const roleValue = roleMetrics && Object.keys(roleMetrics).length 
+          ? roleMetrics[Object.keys(roleMetrics)[0]]?.[metric] || '0' 
+          : '0';
+        const idealValue = value;
+        
+        // Extract numerical value for comparison
+        const extractNumber = (val) => parseFloat(String(val).match(/[\d.]+/)?.[0] || 0);
+        const yourNum = extractNumber(yourValue);
+        const roleNum = extractNumber(roleValue);
+        const idealNum = extractNumber(idealValue);
+        
+        // Determine status (good, warn, bad)
+        let status = 'good';
+        const isCLS = metric.includes('CLS'); // Special handling for CLS (lower is better)
+        
+        if (isCLS) {
+          if (yourNum > idealNum * 2) status = 'bad';
+          else if (yourNum > idealNum) status = 'warn';
+        } else {
+          if (yourNum > idealNum * 2) status = 'bad';
+          else if (yourNum > idealNum) status = 'warn';
+        }
+        
+        // Calculate percentages for gauge visualization
+        let percent = isCLS 
+          ? Math.min(100, (yourNum / (idealNum * 3)) * 100)
+          : Math.min(100, (yourNum / (idealNum * 2)) * 100);
+        
+        return {
+          metric,
+          description: desc,
+          your: yourValue,
+          role: roleValue,
+          ideal: idealValue,
+          roleName,
+          status,
+          percent,
+          isCLS
+        };
+      });
+    } catch (error) {
+      console.error('[WebMetricsPanel] Error processing metrics:', error);
+      setError('Error processing metrics data. Please refresh the page.');
+      return [];
+    }
+  }, [roleMetrics, businessMetrics, idealBenchmarks, setError]);
 
   /* ─────────── event handlers ─────────── */
   const handleMetricClick = (metric) => {

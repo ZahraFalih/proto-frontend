@@ -71,7 +71,9 @@ export default function DashboardHeaderPanel({ pages = [], onPageDeleted }) {
         }
         
         const data = await response.json();
+        console.log('[DashboardHeader] User data response:', data);
         
+        // Check different possible response formats
         if (data && data.first_name && data.last_name) {
           const fullName = `${data.first_name} ${data.last_name}`;
           console.log('[DashboardHeader] User name loaded:', fullName);
@@ -79,6 +81,16 @@ export default function DashboardHeaderPanel({ pages = [], onPageDeleted }) {
           
           // Also cache the user name in session storage
           sessionStorage.setItem('user_name', fullName);
+        } else if (data && data.name) {
+          // Alternative format where name is a single field
+          console.log('[DashboardHeader] User name loaded from name field:', data.name);
+          setUserName(data.name);
+          sessionStorage.setItem('user_name', data.name);
+        } else if (data && typeof data === 'string') {
+          // Handle case where API might return just the name as a string
+          console.log('[DashboardHeader] User name loaded from string response:', data);
+          setUserName(data);
+          sessionStorage.setItem('user_name', data);
         } else {
           throw new Error('Invalid user data format');
         }

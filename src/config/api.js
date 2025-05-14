@@ -38,6 +38,7 @@ export const API_ENDPOINTS = {
     // Toolkit endpoints
     TOOLKIT: {
         USER_PAGES: '/toolkit/user-pages/',
+        USER_NAME: '/toolkit/user-name/',
         WEB_METRICS: {
             ROLE_MODEL: (pageId, timestamp) => `/toolkit/web-metrics/role-model/?page_id=${pageId}&_t=${timestamp}`,
             BUSINESS: (pageId, timestamp) => `/toolkit/web-metrics/business/?page_id=${pageId}&_t=${timestamp}`,
