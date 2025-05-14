@@ -12,6 +12,7 @@ import baranAvatar from '../../styles/Avatars/baran avatar.png';
 import baranAvatar2 from '../../styles/Avatars/baran avatar 2.png';
 import '../../styles/AIChatPanel.css';
 import { buildApiUrl, API_ENDPOINTS } from '../../config/api';
+import { fetchWithRetry, parseJsonResponse } from '../../utils/api';
 
 // Randomly select assistant on component mount
 const getRandomPersona = () => {
@@ -208,19 +209,13 @@ const AIChatPanel = ({ context = {} }) => {
     });
 
     try {
-      const res = await fetch(buildApiUrl(API_ENDPOINTS.AI.CHAT), {
+      const res = await fetchWithRetry(buildApiUrl(API_ENDPOINTS.AI.CHAT), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error('[Chat] Error response:', errorText);
-        throw new Error(`Status ${res.status}: ${errorText}`);
-      }
       
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       console.log('[Chat] AI replies:', data);
 
       await simulateTypingDelay();
@@ -229,11 +224,11 @@ const AIChatPanel = ({ context = {} }) => {
       inputRef.current?.focus();
 
     } catch (err) {
-      console.error('[Chat] Error:', err);
+      console.error('[Chat] Error after retries:', err);
       setMessages(prev => [...prev, { 
         id: messages.length + 1, 
         sender: 'ai', 
-        text: `Error occurred: ${err.message}. Please try again.`, 
+        text: `I'm having trouble connecting right now. Please try again in a moment.`, 
         isError: true 
       }]);
     } finally {

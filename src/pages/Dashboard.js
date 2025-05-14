@@ -13,6 +13,7 @@ import ScrollToTop from '../components/common/ScrollToTop';
 import '../styles/Dashboard.css';
 import { getToken } from '../utils/auth';
 import { buildApiUrl, API_ENDPOINTS } from '../config/api';
+import { fetchWithRetry, parseJsonResponse } from '../utils/api';
 
 export default function Dashboard() {
   const [pages, setPages] = useState([]);
@@ -103,17 +104,21 @@ export default function Dashboard() {
     if (!token) return;
 
     setLoading(true);
-    fetch(buildApiUrl(API_ENDPOINTS.TOOLKIT.USER_PAGES), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
-      credentials: 'include',
-    })
-      .then(res => {
-        if (!res.ok) throw new Error(`Status ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
+    
+    const loadPages = async () => {
+      try {
+        const response = await fetchWithRetry(
+          buildApiUrl(API_ENDPOINTS.TOOLKIT.USER_PAGES), 
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token }),
+            credentials: 'include',
+          }
+        );
+        
+        const data = await parseJsonResponse(response);
+        
         // Filter out duplicate page types, keeping only the most recent one
         const uniquePages = data.reduce((acc, page) => {
           const existingIndex = acc.findIndex(p => p.type === page.type);
@@ -127,6 +132,7 @@ export default function Dashboard() {
         }, []);
 
         setPages(uniquePages || []);
+        
         if (uniquePages && uniquePages.length) {
           const firstSlug = slugify(uniquePages[0].type);
           setActiveTabSlug(firstSlug);
@@ -134,12 +140,15 @@ export default function Dashboard() {
           params.set('page_id', uniquePages[0].id);
           window.history.replaceState({}, '', `?${params}`);
         }
+      } catch (error) {
+        console.error('Failed to load pages after retries:', error);
+        // Show error message to user here if needed
+      } finally {
         setLoading(false);
-      })
-      .catch(error => {
-        console.error(error);
-        setLoading(false);
-      });
+      }
+    };
+    
+    loadPages();
   }, []);
 
   // Handle progress loader completion

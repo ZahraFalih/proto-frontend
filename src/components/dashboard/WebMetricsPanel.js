@@ -5,6 +5,7 @@ import '../../styles/Dashboard.css';
 import '../../styles/WebMetricsPanel.css';
 import { getToken } from '../../utils/auth';
 import { buildApiUrl, API_ENDPOINTS } from '../../config/api';
+import { fetchWithRetry, parseJsonResponse } from '../../utils/api';
 
 export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetricsReady, onRoleMetricsReady }) {
   /* ─────────── state ─────────── */
@@ -89,40 +90,47 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         const bizUrl = buildApiUrl(API_ENDPOINTS.TOOLKIT.WEB_METRICS.BUSINESS(pageId, ts));
         
         console.log('[WebMetricsPanel] Fetching:', roleUrl, bizUrl);
-        const [roleRes, bizRes] = await Promise.all([
-          fetch(roleUrl, { headers }),
-          fetch(bizUrl , { headers }),
+        
+        // Using Promise.allSettled to handle partial success
+        const [roleResult, bizResult] = await Promise.allSettled([
+          fetchWithRetry(roleUrl, { headers }),
+          fetchWithRetry(bizUrl, { headers }),
         ]);
         
-        // Handle business metrics first
-        if (!bizRes.ok) {
-          console.error('[WebMetricsPanel] Business metrics fetch failed:', bizRes.status);
+        // Handle business metrics first - required
+        if (bizResult.status === 'fulfilled') {
+          const bizRes = bizResult.value;
+          const bizData = await parseJsonResponse(bizRes);
+          setBusinessMetrics(bizData);
+          if (typeof onBusinessMetricsReady === 'function') {
+            onBusinessMetricsReady(bizData);
+          }
+        } else {
+          console.error('[WebMetricsPanel] Business metrics fetch failed after retries:', bizResult.reason);
           throw new Error('Could not fetch business metrics');
         }
 
-        const bizData = await bizRes.json();
-        setBusinessMetrics(bizData);
-        if (typeof onBusinessMetricsReady === 'function') {
-          onBusinessMetricsReady(bizData);
-        }
-
-        // Handle role metrics separately
+        // Handle role metrics separately - optional
         let roleData = null;
-        if (roleRes.ok) {
-          roleData = await roleRes.json();
+        if (roleResult.status === 'fulfilled') {
+          const roleRes = roleResult.value;
+          roleData = await parseJsonResponse(roleRes);
           setRoleMetrics(roleData);
           if (typeof onRoleMetricsReady === 'function') {
             onRoleMetricsReady(roleData);
           }
         } else {
-          console.warn('[WebMetricsPanel] Role metrics not available:', roleRes.status);
+          console.warn('[WebMetricsPanel] Role metrics not available after retries:', roleResult.reason);
           // Continue without role metrics
         }
   
         /* 2️⃣ evaluate business metrics with AI */
         try {
-          const evalRes = await fetch(
-            buildApiUrl(API_ENDPOINTS.AI.EVALUATE_WEB_METRICS(pageId)),
+          const evalUrl = buildApiUrl(API_ENDPOINTS.AI.EVALUATE.WEB_METRICS(pageId));
+          console.log('[WebMetricsPanel] Evaluating metrics:', evalUrl);
+          
+          const evalRes = await fetchWithRetry(
+            evalUrl,
             {
               method: 'POST',
               headers: { 
@@ -133,12 +141,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
             }
           );
   
-          if (!evalRes.ok) {
-            console.error('[WebMetricsPanel] Eval API status:', evalRes.status);
-            throw new Error(`Evaluation API failed (${evalRes.status})`);
-          }
-  
-          const evalJson = await evalRes.json();
+          const evalJson = await parseJsonResponse(evalRes);
           const report = evalJson.web_metrics_report;
           if (!report || !report.overall_summary) {
             console.error('[WebMetricsPanel] Invalid eval response:', evalJson);
@@ -154,7 +157,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           }
   
         } catch (evalErr) {
-          console.error('[WebMetricsPanel] Evaluation error:', evalErr);
+          console.error('[WebMetricsPanel] Evaluation error after retries:', evalErr);
           setError('Metrics loaded, but AI evaluation failed.');
           
           // Fallback summary & recommendations
