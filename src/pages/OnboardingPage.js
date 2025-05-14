@@ -156,7 +156,7 @@ const OnboardingPage = () => {
           category: businessType,
           url: businessURL,
           name: businessName,
-          rolemodel: parseInt(selectedCompanyId),
+          rolemodel: selectedCompanyId,
           token: getToken(),
         }),
       });
