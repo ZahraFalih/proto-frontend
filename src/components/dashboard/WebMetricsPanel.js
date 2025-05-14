@@ -47,11 +47,11 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
     }
   };
 
-  const persistToCache = (roleM, bizM, evalObj) => {
+  const persistToCache = (roleM, businessMetricsM, evalObj) => {
     if (!cacheKey) return;
     sessionStorage.setItem(
       cacheKey,
-      JSON.stringify({ roleMetrics: roleM, businessMetrics: bizM, evaluation: evalObj })
+      JSON.stringify({ roleMetrics: roleM, businessMetrics: businessMetricsM, evaluation: evalObj })
     );
   };
 
@@ -99,11 +99,11 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         
         // Handle business metrics first - required
         if (bizResult.status === 'fulfilled') {
-          const bizRes = bizResult.value;
-          const bizData = await parseJsonResponse(bizRes);
-          setBusinessMetrics(bizData);
+          const businessMetricsRes = bizResult.value;
+          const businessMetrics = await parseJsonResponse(businessMetricsRes);
+          setBusinessMetrics(businessMetrics);
           if (typeof onBusinessMetricsReady === 'function') {
-            onBusinessMetricsReady(bizData);
+            onBusinessMetricsReady(businessMetrics);
           }
         } else {
           console.error('[WebMetricsPanel] Business metrics fetch failed after retries:', bizResult.reason);
@@ -149,7 +149,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           }
   
           setEvaluation(report);
-          persistToCache(roleData, bizData, report);
+          persistToCache(roleData, businessMetrics, report);
   
           // ✔️ Bubble up the summary
           if (typeof onSummaryReady === 'function') {
@@ -174,7 +174,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           };
   
           setEvaluation(fallbackReport);
-          persistToCache(roleData, bizData, null);
+          persistToCache(roleData, businessMetrics, null);
   
           // Bubble up the fallback summary
           if (typeof onSummaryReady === 'function') {
