@@ -107,7 +107,10 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           }
         } else {
           console.error('[WebMetricsPanel] Business metrics fetch failed after retries:', bizResult.reason);
-          throw new Error('Could not fetch business metrics');
+          // Show error instead of infinite loading
+          setError('Failed to load business metrics. Please try refreshing the page.');
+          setLoading(false);
+          return; // Exit early to prevent further processing
         }
 
         // Handle role metrics separately - optional

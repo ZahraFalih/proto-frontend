@@ -6,6 +6,7 @@ import "../../styles/Dashboard.css";
 import UserPreferencesModal from "../UserPreferencesModal";
 import { getToken, clearToken } from '../../utils/auth';
 import { buildApiUrl, API_ENDPOINTS } from '../../config/api';
+import { fetchWithRetry } from '../../utils/api';
 
 const slugify = (str = "") =>
   str.toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]/g, "");
@@ -43,20 +44,59 @@ export default function DashboardHeaderPanel({ pages = [], onPageDeleted }) {
     }
   };
 
-  // Fetch user name
+  // Fetch user name with retries
   useEffect(() => {
     if (!token) {
       navigate("/auth?mode=login");
       return;
     }
-    fetch(buildApiUrl(API_ENDPOINTS.TOOLKIT.USER_NAME), {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then(({ first_name, last_name }) =>
-        setUserName(`${first_name} ${last_name}`)
-      )
-      .catch(() => setUserName("Error"));
+
+    const fetchUserName = async () => {
+      try {
+        console.log('[DashboardHeader] Fetching user name...');
+        const url = buildApiUrl(API_ENDPOINTS.TOOLKIT.USER_NAME);
+        
+        // Use fetchWithRetry with 3 attempts
+        const response = await fetchWithRetry(
+          url, 
+          { 
+            headers: { Authorization: `Bearer ${token}` } 
+          },
+          3,  // max retries
+          500 // delay between retries
+        );
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch user name: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data && data.first_name && data.last_name) {
+          const fullName = `${data.first_name} ${data.last_name}`;
+          console.log('[DashboardHeader] User name loaded:', fullName);
+          setUserName(fullName);
+          
+          // Also cache the user name in session storage
+          sessionStorage.setItem('user_name', fullName);
+        } else {
+          throw new Error('Invalid user data format');
+        }
+      } catch (error) {
+        console.error('[DashboardHeader] Error fetching user name:', error);
+        
+        // Try to use cached name if available
+        const cachedName = sessionStorage.getItem('user_name');
+        if (cachedName) {
+          console.log('[DashboardHeader] Using cached user name');
+          setUserName(cachedName);
+        } else {
+          setUserName("User");
+        }
+      }
+    };
+    
+    fetchUserName();
   }, [token, navigate]);
 
   // Close menu on outside click
