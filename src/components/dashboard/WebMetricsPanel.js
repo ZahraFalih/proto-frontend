@@ -169,7 +169,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
                 Authorization: `Bearer ${token}`, 
                 'Content-Type': 'application/json' 
               },
-              body: JSON.stringify(businessMetrics),
+              body: JSON.stringify({ metrics: businessMetrics }),
             }
           );
   
