@@ -1,11 +1,14 @@
 // components/dashboard/UBAPanel.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
+import ErrorBoundary from '../common/ErrorBoundary';
+import PanelErrorState from '../common/PanelErrorState';
 import { UBASkeleton } from '../common/Skeleton';
 import '../../styles/UBAPanel.css';
 import '../../styles/Dashboard.css';
 import { getToken } from '../../utils/auth';
 import { buildApiUrl, API_ENDPOINTS } from '../../config/api';
+import { panelStatusStore, PANEL_STATUS, PANEL_TYPES } from '../../utils/panelStatus';
 
 export default function UBAPanel({ pageId, onSummaryReady }) {
   const [formulation, setFormulation] = useState('');
@@ -16,6 +19,7 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
   const [activeObservation, setActiveObservation] = useState(null);
   const [expandedSolution, setExpandedSolution] = useState(null);
   const [pinnedObservation, setPinnedObservation] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   /* ─── Cache Helpers ───────────────────────────────────────────────── */
   const cacheKey = pageId ? `uba_cache_${pageId}` : null;
@@ -30,10 +34,15 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       setFormulation(formulation);
       setObservationSections(observationSections);
       setSolutions(solutions);
+      
       // Notify parent of cached UBA analysis
       if (typeof onSummaryReady === 'function') {
         onSummaryReady(formulation);
       }
+      
+      // Update panel status
+      panelStatusStore.setPanelStatus(pageId, PANEL_TYPES.UBA, PANEL_STATUS.SUCCESS);
+      
       return true;
     } catch {
       sessionStorage.removeItem(cacheKey); // corrupted cache
@@ -49,8 +58,13 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
     );
   };
 
-  const fetchData = async (pageId) => {
+  /* ─── Data Fetch Function ───────────────────────────────────────────────── */
+  const fetchData = useCallback(async () => {
     console.log('[UBAPanel] Starting fresh data fetch for pageId:', pageId);
+    
+    // Update status to loading
+    panelStatusStore.setPanelStatus(pageId, PANEL_TYPES.UBA, PANEL_STATUS.LOADING);
+    
     setLoading(true);
     setError(null);
 
@@ -67,36 +81,50 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       const evalUrl = buildApiUrl(API_ENDPOINTS.AI.EVALUATE.UBA(pageId, timestamp));
       console.log('[UBAPanel] Starting UBA evaluation:', evalUrl);
       
-      const evaluateResponse = await fetch(evalUrl, { headers });
-      console.log('[UBAPanel] UBA evaluation response status:', evaluateResponse.status);
-      
-      if (!evaluateResponse.ok) {
-        const errorText = await evaluateResponse.text();
-        console.error('[UBAPanel] UBA evaluation error response:', errorText);
-        throw new Error(`UBA evaluation failed: ${evaluateResponse.status} - ${errorText}`);
+      try {
+        const evaluateResponse = await fetch(evalUrl, { headers });
+        console.log('[UBAPanel] UBA evaluation response status:', evaluateResponse.status);
+        
+        if (!evaluateResponse.ok) {
+          const errorText = await evaluateResponse.text();
+          console.error('[UBAPanel] UBA evaluation error response:', errorText);
+          throw new Error(`UBA evaluation failed: ${evaluateResponse.status} - ${errorText}`);
+        }
+        
+        await evaluateResponse.json();
+        console.log('[UBAPanel] UBA evaluation completed');
+      } catch (evalError) {
+        console.error('[UBAPanel] UBA evaluation error:', evalError);
+        const errorMsg = 'Failed to evaluate UBA data.';
+        setError(errorMsg);
+        panelStatusStore.setPanelStatus(pageId, PANEL_TYPES.UBA, PANEL_STATUS.ERROR, errorMsg);
+        setLoading(false);
+        return;
       }
-      
-      const evaluateData = await evaluateResponse.json();
-      console.log('[UBAPanel] UBA evaluation completed');
 
       // ── 2) Web Search (must be called after evaluation) ─────────────────────────────────────
       const searchUrl = buildApiUrl(API_ENDPOINTS.AI.WEB_SEARCH(pageId, timestamp));
       console.log('[UBAPanel] Fetching web search results:', searchUrl);
       
-      const searchResponse = await fetch(searchUrl, { headers });
-      console.log('[UBAPanel] Web search response status:', searchResponse.status);
-      
-      if (!searchResponse.ok) {
-        const errorText = await searchResponse.text();
-        console.error('[UBAPanel] Web search error response:', errorText);
-        throw new Error(`Web search failed: ${searchResponse.status} - ${errorText}`);
+      let searchData = { results: [] };
+      try {
+        const searchResponse = await fetch(searchUrl, { headers });
+        console.log('[UBAPanel] Web search response status:', searchResponse.status);
+        
+        if (!searchResponse.ok) {
+          const errorText = await searchResponse.text();
+          console.error('[UBAPanel] Web search error response:', errorText);
+          console.warn('[UBAPanel] Continuing with empty search results');
+        } else {
+          searchData = await searchResponse.json();
+          console.log('[UBAPanel] Received web search data:', {
+            hasResults: !!searchData.results,
+            resultCount: searchData.results?.length
+          });
+        }
+      } catch (searchError) {
+        console.warn('[UBAPanel] Web search error, continuing with empty results:', searchError);
       }
-      
-      const searchData = await searchResponse.json();
-      console.log('[UBAPanel] Received web search data:', {
-        hasResults: !!searchData.results,
-        resultCount: searchData.results?.length
-      });
 
       // Process solutions with their associated problem
       const problemSolutions = searchData.results || [];
@@ -106,76 +134,118 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       const formUrl = buildApiUrl(API_ENDPOINTS.AI.FORMULATE_UBA(pageId, timestamp));
       console.log('[UBAPanel] Fetching UBA formulation:', formUrl);
       
-      const formResponse = await fetch(formUrl, { headers });
-      console.log('[UBAPanel] Formulation response status:', formResponse.status);
-      
-      if (!formResponse.ok) {
-        const errorText = await formResponse.text();
-        console.error('[UBAPanel] Formulation error response:', errorText);
-        throw new Error(`UBA formulation fetch failed: ${formResponse.status} - ${errorText}`);
-      }
-      
-      const data = await formResponse.json();
-      console.log('[UBAPanel] Received formulation data:', {
-        hasFormulation: !!data.uba_formulation,
-        observationCount: data.uba_formulation ? Object.keys(data.uba_formulation).length : 0
-      });
-      
-      if (!data.uba_formulation) {
-        throw new Error('No UBA formulation data received');
-      }
-      
-      // Process observations
-      const observations = data.uba_formulation;
-      let combinedText = '';
-      let sectionData = [];
-      
-      Object.entries(observations).forEach(([key, text], index) => {
-        if (!text) {
-          console.log(`[UBAPanel] Skipping empty observation ${index + 1}`);
-          return;
+      try {
+        const formResponse = await fetch(formUrl, { headers });
+        console.log('[UBAPanel] Formulation response status:', formResponse.status);
+        
+        if (!formResponse.ok) {
+          const errorText = await formResponse.text();
+          console.error('[UBAPanel] Formulation error response:', errorText);
+          throw new Error(`UBA formulation fetch failed: ${formResponse.status} - ${errorText}`);
         }
         
-        const startPos = combinedText.length;
-        combinedText += text + ' ';
-        const endPos = combinedText.length - 1;
-        
-        sectionData.push({
-          observationNumber: index + 1,
-          startPos,
-          endPos,
-          text
+        const data = await formResponse.json();
+        console.log('[UBAPanel] Received formulation data:', {
+          hasFormulation: !!data.uba_formulation,
+          observationCount: data.uba_formulation ? Object.keys(data.uba_formulation).length : 0
         });
-      });
-      
-      const formText = combinedText.trim();
-      
-      // Update state
-      setFormulation(formText);
-      setObservationSections(sectionData);
-      
-      // Cache the results
-      persistToCache(formText, sectionData, problemSolutions);
+        
+        if (!data.uba_formulation) {
+          throw new Error('No UBA formulation data received');
+        }
+        
+        // Process observations
+        const observations = data.uba_formulation;
+        let combinedText = '';
+        let sectionData = [];
+        
+        Object.entries(observations).forEach(([key, text], index) => {
+          if (!text) {
+            console.log(`[UBAPanel] Skipping empty observation ${index + 1}`);
+            return;
+          }
+          
+          const startPos = combinedText.length;
+          combinedText += text + ' ';
+          const endPos = combinedText.length - 1;
+          
+          sectionData.push({
+            observationNumber: index + 1,
+            startPos,
+            endPos,
+            text
+          });
+        });
+        
+        const formText = combinedText.trim();
+        
+        // Update state
+        setFormulation(formText);
+        setObservationSections(sectionData);
+        
+        // Cache the results
+        persistToCache(formText, sectionData, problemSolutions);
 
-      // Notify parent of UBA analysis
-      if (typeof onSummaryReady === 'function') {
-        onSummaryReady(formText);
+        // Update panel status
+        panelStatusStore.setPanelStatus(pageId, PANEL_TYPES.UBA, PANEL_STATUS.SUCCESS);
+
+        // Notify parent of UBA analysis
+        if (typeof onSummaryReady === 'function') {
+          onSummaryReady(formText);
+        }
+        
+        console.log('[UBAPanel] Successfully completed all requests and updated state:', {
+          formulationLength: formText.length,
+          sectionsCount: sectionData.length,
+          solutionsCount: problemSolutions.length
+        });
+      } catch (formError) {
+        console.error('[UBAPanel] Error fetching formulation:', formError);
+        const errorMsg = 'Failed to generate UBA insights.';
+        setError(errorMsg);
+        panelStatusStore.setPanelStatus(pageId, PANEL_TYPES.UBA, PANEL_STATUS.ERROR, errorMsg);
+        setLoading(false);
+        return;
       }
-      
-      console.log('[UBAPanel] Successfully completed all requests and updated state:', {
-        formulationLength: formText.length,
-        sectionsCount: sectionData.length,
-        solutionsCount: problemSolutions.length
-      });
     } catch (err) {
       console.error('[UBAPanel] Error in data fetch:', err);
-      setError(err.message);
+      const errorMsg = err.message || 'Failed to analyze user behavior data.';
+      setError(errorMsg);
+      panelStatusStore.setPanelStatus(pageId, PANEL_TYPES.UBA, PANEL_STATUS.ERROR, errorMsg);
     } finally {
       console.log('[UBAPanel] Request chain completed');
       setLoading(false);
     }
-  };
+  }, [pageId, onSummaryReady]);
 
+  /* ─── Retry handler ───────────────────────────────────────────────── */
+  const handleRetry = useCallback(() => {
+    console.log('[UBAPanel] Manual retry triggered');
+    setRetryCount(prev => prev + 1);
+    panelStatusStore.resetPanelErrorCount(pageId, PANEL_TYPES.UBA);
+    fetchData();
+  }, [pageId, fetchData]);
+
+  /* ─── Auto retry effect ───────────────────────────────────────────── */
+  useEffect(() => {
+    // Check if we should auto-retry
+    if (error && panelStatusStore.shouldAutoRetry(pageId, PANEL_TYPES.UBA)) {
+      const errorCount = panelStatusStore.getPanelErrorCount(pageId, PANEL_TYPES.UBA);
+      console.log(`[UBAPanel] Auto-retry attempt ${errorCount}/3`);
+      
+      // Auto-retry with exponential backoff
+      const retryDelay = Math.min(2000 * Math.pow(2, errorCount - 1), 10000);
+      
+      const retryTimer = setTimeout(() => {
+        console.log(`[UBAPanel] Executing auto-retry after ${retryDelay}ms`);
+        fetchData();
+      }, retryDelay);
+      
+      return () => clearTimeout(retryTimer);
+    }
+  }, [error, pageId, fetchData]);
+
+  /* ─── Initial data load ───────────────────────────────────────────── */
   useEffect(() => {
     console.log('[UBAPanel] Component mounted/updated with pageId:', pageId);
     
@@ -191,13 +261,13 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
     }
     
     // Fetch fresh data if cache miss
-    fetchData(pageId);
+    fetchData();
     
     // Cleanup function
     return () => {
       console.log('[UBAPanel] Cleaning up component');
     };
-  }, [pageId]);
+  }, [pageId, fetchData]);
 
   const handleObservationHover = (observationNumber) => {
     console.log('[UBAPanel] Observation hover:', observationNumber);
@@ -358,55 +428,76 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
     );
   };
 
+  /* ─────────── error fallback ─────────── */
+  const renderErrorFallback = (error, reset) => (
+    <PanelErrorState 
+      message={error?.message || 'Failed to load user behavior data.'}
+      retryFunction={handleRetry}
+      errorType="server"
+    />
+  );
+
   console.log('[UBAPanel] Rendering component. Loading:', loading, 'Error:', error, 
     'Has formulation:', !!formulation, 'Has solutions:', solutions?.length > 0);
   
   return (
-    <div className="panel-container">
-      <div className="panel-header">User Behaviour Analytics</div>
-      <div className="panel-subtitle">We analyzed how users interact with your website and identified key behavior patterns.</div>
+    <ErrorBoundary fallback={renderErrorFallback}>
+      <div className="panel-container">
+        <div className="panel-header">User Behaviour Analytics</div>
+        <div className="panel-subtitle">We analyzed how users interact with your website and identified key behavior patterns.</div>
 
-      <div className="uba-content-container">
-        <div className="uba-formulation-container">
-          <div className="uba-formulation-wrapper">
-            <div className="uba-formulation-header">
-              <h4>Analysis</h4>
-              {pinnedObservation && (
-                <button 
-                  className="uba-pin-clear-button" 
-                  onClick={() => {
-                    setPinnedObservation(null);
-                    setActiveObservation(null);
-                  }}
-                >
-                  Clear Selection
-                </button>
-              )}
-            </div>
-            
-            {loading && <UBASkeleton />}
-            {error && <p className="uba-error-text">Error: {error}</p>}
-            {!loading && !error && !formulation && (
-              <p className="uba-loading-placeholder">Analyzing user behavior patterns...</p>
-            )}
-            {!loading && !error && formulation && (
-              <div className="uba-formulation-content">
-                {renderFormulation()}
-                <div className="uba-interaction-hint">
-                  <div className="uba-hint-icon">💡</div>
-                  <span>Hover over text to see relevant resources. Click to pin your selection.</span>
+        {loading && <UBASkeleton />}
+        
+        {error && !loading && (
+          <PanelErrorState
+            message={error}
+            retryFunction={handleRetry}
+            errorType="server"
+          />
+        )}
+
+        {!loading && !error && (
+          <div className="uba-content-container">
+            <div className="uba-formulation-container">
+              <div className="uba-formulation-wrapper">
+                <div className="uba-formulation-header">
+                  <h4>Analysis</h4>
+                  {pinnedObservation && (
+                    <button 
+                      className="uba-pin-clear-button" 
+                      onClick={() => {
+                        setPinnedObservation(null);
+                        setActiveObservation(null);
+                      }}
+                    >
+                      Clear Selection
+                    </button>
+                  )}
                 </div>
+                
+                {!formulation && (
+                  <p className="uba-loading-placeholder">Analyzing user behavior patterns...</p>
+                )}
+                
+                {formulation && (
+                  <div className="uba-formulation-content">
+                    {renderFormulation()}
+                    <div className="uba-interaction-hint">
+                      <div className="uba-hint-icon">💡</div>
+                      <span>Hover over text to see relevant resources. Click to pin your selection.</span>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        <div className="uba-links-container">
-          <h4>Related Resources</h4>
-          {loading && <UBASkeleton />}
-          {!loading && !error && renderSolutions()}
-        </div>
+            <div className="uba-links-container">
+              <h4>Related Resources</h4>
+              {!loading && !error && renderSolutions()}
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }

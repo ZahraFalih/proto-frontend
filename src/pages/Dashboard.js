@@ -14,6 +14,7 @@ import '../styles/Dashboard.css';
 import { getToken } from '../utils/auth';
 import { buildApiUrl, API_ENDPOINTS } from '../config/api';
 import { fetchWithRetry, parseJsonResponse } from '../utils/api';
+import { panelStatusStore, PANEL_STATUS, PANEL_TYPES } from '../utils/panelStatus';
 
 export default function Dashboard() {
   const [pages, setPages] = useState([]);
@@ -22,6 +23,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showProgressLoader, setShowProgressLoader] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [panelStatuses, setPanelStatuses] = useState({});
 
   // Cache object to store tab content
   const [tabCache, setTabCache] = useState({});
@@ -98,6 +100,53 @@ export default function Dashboard() {
     return !(hasWebMetricsCache || hasUiCache || hasUbaCache || hasStateCache);
   };
 
+  // Subscribe to panel status changes
+  useEffect(() => {
+    // Subscribe to panel status changes
+    const unsubscribe = panelStatusStore.subscribe((statusMap) => {
+      const activePageId = new URLSearchParams(location.search).get('page_id');
+      if (!activePageId) return;
+      
+      // Get all panel statuses for the current page
+      const pageStatuses = panelStatusStore.getPageStatuses(activePageId);
+      setPanelStatuses(pageStatuses);
+      
+      // Log status changes for debugging
+      console.log('[Dashboard] Panel statuses updated:', pageStatuses);
+      
+      // Check if any panels are in error state
+      const hasErrors = Object.values(pageStatuses).some(
+        status => status.status === PANEL_STATUS.ERROR
+      );
+      
+      if (hasErrors) {
+        console.log('[Dashboard] Some panels have errors and may need retry');
+      }
+    });
+    
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [location.search]);
+
+  // Clear panel statuses when switching pages
+  useEffect(() => {
+    const currentPageId = new URLSearchParams(location.search).get('page_id');
+    if (currentPageId) {
+      // Clear any previous page statuses when switching tabs
+      const activePage = pages.find(p => p.id === currentPageId);
+      if (activePage) {
+        console.log('[Dashboard] New page selected, clearing previous panel statuses');
+        
+        // We don't immediately clear status when switching pages
+        // This allows us to keep error states between tab switches
+        // Only clear when we have cached data
+        if (checkNeedsFreshData(currentPageId) === false) {
+          panelStatusStore.clearPageStatuses(currentPageId);
+        }
+      }
+    }
+  }, [location.search, pages]);
+
   // Load pages on mount
   useEffect(() => {
     const token = getToken();
@@ -139,6 +188,9 @@ export default function Dashboard() {
           const params = new URLSearchParams();
           params.set('page_id', uniquePages[0].id);
           window.history.replaceState({}, '', `?${params}`);
+          
+          // Initialize panel status store with the selected page
+          panelStatusStore.clearPageStatuses(uniquePages[0].id);
         }
       } catch (error) {
         console.error('Failed to load pages after retries:', error);
@@ -241,6 +293,9 @@ export default function Dashboard() {
     setWebBusinessMetrics(null);
     setUbaSummary('');
     setUiEvalSummary('');
+    
+    // Clear panel statuses for the new page
+    panelStatusStore.clearPageStatuses(newPage.id);
   };
 
   // Delete a page
@@ -278,11 +333,18 @@ export default function Dashboard() {
 
       return filtered;
     });
+    
+    // Clear panel statuses for the deleted page
+    panelStatusStore.clearPageStatuses(id);
   };
 
   // Determine active page
   const activePage = pages.find(p => slugify(p.type) === activeTabSlug);
   const activePageId = activePage?.id || null;
+
+  // Check if any panel is currently loading
+  const isPanelLoading = 
+    Object.values(panelStatuses).some(status => status.status === PANEL_STATUS.LOADING);
 
   return (
     <>
