@@ -1,14 +1,11 @@
 // pages/WebMetricsPanel.js
 import React, { useEffect, useState, useMemo } from 'react';
-import ErrorBoundary from '../common/ErrorBoundary';
-import PanelErrorState from '../common/PanelErrorState';
 import { MetricsCardSkeleton } from '../common/Skeleton';
 import '../../styles/Dashboard.css';
 import '../../styles/WebMetricsPanel.css';
 import { getToken } from '../../utils/auth';
 import { buildApiUrl, API_ENDPOINTS } from '../../config/api';
 import { fetchWithRetry, parseJsonResponse } from '../../utils/api';
-import { panelStatusStore, PANEL_STATUS, PANEL_TYPES } from '../../utils/panelStatus';
 
 export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetricsReady, onRoleMetricsReady }) {
   /* ─────────── state ─────────── */
@@ -18,7 +15,6 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
   const [activeMetric, setActiveMetric] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
 
   /* ─────────── cache helpers ─────────── */
   const cacheKey = pageId ? `wm_cache_${pageId}` : null;
@@ -44,10 +40,6 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
       if (evaluation && typeof onSummaryReady === 'function') {
         onSummaryReady(evaluation.overall_summary);
       }
-
-      // Update panel status
-      panelStatusStore.setPanelStatus(pageId, PANEL_TYPES.WEB_METRICS, PANEL_STATUS.SUCCESS);
-      
       return true;
     } catch {
       sessionStorage.removeItem(cacheKey); /* corrupted */
@@ -63,208 +55,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
     );
   };
 
-  /* ─────────── fetch data function ─────────── */
-  const fetchMetricsData = async () => {
-    console.log('[WebMetricsPanel] Starting data fetch for pageId:', pageId);
-    
-    // Update status to loading
-    panelStatusStore.setPanelStatus(pageId, PANEL_TYPES.WEB_METRICS, PANEL_STATUS.LOADING);
-    
-    setLoading(true);
-    setError('');
-    setRoleMetrics(null);
-    setBusinessMetrics(null);
-    setEvaluation(null);
-
-    try {
-      /* 1️⃣ fetch role + business metrics */
-      const token = getToken();
-      console.log('[WebMetricsPanel] Auth token:', token ? 'found' : 'missing');
-      const headers = { 
-        Authorization: `Bearer ${token}`, 
-        'Content-Type': 'application/json' 
-      };
-
-      const ts = Date.now();
-      const roleUrl = buildApiUrl(API_ENDPOINTS.TOOLKIT.WEB_METRICS.ROLE_MODEL(pageId, ts));
-      const bizUrl = buildApiUrl(API_ENDPOINTS.TOOLKIT.WEB_METRICS.BUSINESS(pageId, ts));
-      
-      console.log('[WebMetricsPanel] Fetching:', roleUrl, bizUrl);
-      
-      // Using Promise.allSettled to handle partial success
-      const [roleResult, bizResult] = await Promise.allSettled([
-        fetchWithRetry(roleUrl, { headers }),
-        fetchWithRetry(bizUrl, { headers }),
-      ]);
-      
-      // Handle business metrics first - required
-      if (bizResult.status === 'fulfilled') {
-        const businessMetricsRes = bizResult.value;
-        try {
-          const businessMetricsData = await parseJsonResponse(businessMetricsRes);
-          console.log('[WebMetricsPanel] Business metrics data:', businessMetricsData);
-          
-          // Validate the data structure
-          if (typeof businessMetricsData !== 'object' || !Object.keys(businessMetricsData).length) {
-            console.error('[WebMetricsPanel] Invalid business metrics format:', businessMetricsData);
-            const errorMsg = 'Invalid metrics data received from server. Please try again later.';
-            setError(errorMsg);
-            panelStatusStore.setPanelStatus(pageId, PANEL_TYPES.WEB_METRICS, PANEL_STATUS.ERROR, errorMsg);
-            setLoading(false);
-            return;
-          }
-          
-          setBusinessMetrics(businessMetricsData);
-          if (typeof onBusinessMetricsReady === 'function') {
-            onBusinessMetricsReady(businessMetricsData);
-          }
-        } catch (parseError) {
-          console.error('[WebMetricsPanel] Failed to parse business metrics response:', parseError);
-          const errorMsg = 'Failed to process metrics data. Please try again later.';
-          setError(errorMsg);
-          panelStatusStore.setPanelStatus(pageId, PANEL_TYPES.WEB_METRICS, PANEL_STATUS.ERROR, errorMsg);
-          setLoading(false);
-          return;
-        }
-      } else {
-        console.error('[WebMetricsPanel] Business metrics fetch failed after retries:', bizResult.reason);
-        // Show error instead of infinite loading
-        const errorMsg = 'Failed to load business metrics. Please try refreshing the page.';
-        setError(errorMsg);
-        panelStatusStore.setPanelStatus(pageId, PANEL_TYPES.WEB_METRICS, PANEL_STATUS.ERROR, errorMsg);
-        setLoading(false);
-        return; // Exit early to prevent further processing
-      }
-
-      // Handle role metrics separately - optional
-      let roleData = null;
-      if (roleResult.status === 'fulfilled') {
-        const roleRes = roleResult.value;
-        try {
-          roleData = await parseJsonResponse(roleRes);
-          console.log('[WebMetricsPanel] Role metrics data:', roleData);
-          
-          // Validate structure but continue even if invalid
-          if (typeof roleData !== 'object' || !Object.keys(roleData).length) {
-            console.warn('[WebMetricsPanel] Invalid role metrics format, continuing without role data');
-          } else {
-            setRoleMetrics(roleData);
-            if (typeof onRoleMetricsReady === 'function') {
-              onRoleMetricsReady(roleData);
-            }
-          }
-        } catch (parseError) {
-          console.warn('[WebMetricsPanel] Failed to parse role metrics response:', parseError);
-          // Continue without role metrics
-        }
-      } else {
-        console.warn('[WebMetricsPanel] Role metrics not available after retries:', roleResult.reason);
-        // Continue without role metrics
-      }
-
-      /* 2️⃣ evaluate business metrics with AI */
-      try {
-        const evalUrl = buildApiUrl(API_ENDPOINTS.AI.EVALUATE.WEB_METRICS(pageId));
-        console.log('[WebMetricsPanel] Evaluating metrics:', evalUrl);
-        
-        const evalRes = await fetchWithRetry(
-          evalUrl,
-          {
-            method: 'POST',
-            headers: { 
-              Authorization: `Bearer ${token}`, 
-              'Content-Type': 'application/json' 
-            },
-            body: JSON.stringify({ metrics: businessMetrics }),
-          }
-        );
-
-        const evalJson = await parseJsonResponse(evalRes);
-        const report = evalJson.web_metrics_report;
-        if (!report || !report.overall_summary) {
-          console.error('[WebMetricsPanel] Invalid eval response:', evalJson);
-          throw new Error('Invalid evaluation response format');
-        }
-
-        setEvaluation(report);
-        persistToCache(roleData, businessMetrics, report);
-
-        // Update panel status to success
-        panelStatusStore.setPanelStatus(pageId, PANEL_TYPES.WEB_METRICS, PANEL_STATUS.SUCCESS);
-
-        // ✔️ Bubble up the summary
-        if (typeof onSummaryReady === 'function') {
-          onSummaryReady(report.overall_summary);
-        }
-
-      } catch (evalErr) {
-        console.error('[WebMetricsPanel] Evaluation error after retries:', evalErr);
-        setError('Metrics loaded, but AI evaluation failed.');
-        
-        // Fallback summary & recommendations
-        const fallbackReport = {
-          overall_summary: "AI evaluation is currently unavailable. Showing raw metrics.",
-          recommendations: [
-            "Optimize image sizes and use modern formats like WebP",
-            "Minimize render-blocking resources",
-            "Implement proper caching strategies",
-            "Consider using a CDN",
-            "Reduce server response times"
-          ],
-          metric_analysis: []
-        };
-
-        setEvaluation(fallbackReport);
-        persistToCache(roleData, businessMetrics, null);
-
-        // Update panel status - partial success
-        panelStatusStore.setPanelStatus(pageId, PANEL_TYPES.WEB_METRICS, PANEL_STATUS.SUCCESS);
-
-        // Bubble up the fallback summary
-        if (typeof onSummaryReady === 'function') {
-          onSummaryReady(fallbackReport.overall_summary);
-        }
-      }
-
-    } catch (err) {
-      console.error('[WebMetricsPanel] metrics fetch error →', err);
-      const errorMsg = 'Failed to load metrics data.';
-      setError(errorMsg);
-      panelStatusStore.setPanelStatus(pageId, PANEL_TYPES.WEB_METRICS, PANEL_STATUS.ERROR, errorMsg);
-    } finally {
-      console.log('[WebMetricsPanel] Request completed');
-      setLoading(false);
-    }
-  };
-
-  /* ─────────── retry handler ─────────── */
-  const handleRetry = () => {
-    console.log('[WebMetricsPanel] Manual retry triggered');
-    setRetryCount(prev => prev + 1);
-    panelStatusStore.resetPanelErrorCount(pageId, PANEL_TYPES.WEB_METRICS);
-    fetchMetricsData();
-  };
-
-  /* ─────────── auto retry effect ─────────── */
-  useEffect(() => {
-    // Check if we should auto-retry
-    if (error && panelStatusStore.shouldAutoRetry(pageId, PANEL_TYPES.WEB_METRICS)) {
-      const errorCount = panelStatusStore.getPanelErrorCount(pageId, PANEL_TYPES.WEB_METRICS);
-      console.log(`[WebMetricsPanel] Auto-retry attempt ${errorCount}/3`);
-      
-      // Auto-retry with exponential backoff
-      const retryDelay = Math.min(2000 * Math.pow(2, errorCount - 1), 10000);
-      
-      const retryTimer = setTimeout(() => {
-        console.log(`[WebMetricsPanel] Executing auto-retry after ${retryDelay}ms`);
-        fetchMetricsData();
-      }, retryDelay);
-      
-      return () => clearTimeout(retryTimer);
-    }
-  }, [error, pageId]);
-
-  /* ─────────── initial fetch effect ─────────── */
+  /* ─────────── fetch block ─────────── */
   useEffect(() => {
     console.log('[WebMetricsPanel] Component mounted or pageId changed:', pageId);
     if (!pageId) {
@@ -277,8 +68,163 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
       return; // served from cache
     }
   
-    fetchMetricsData();
-  }, [pageId]);
+    const run = async () => {
+      console.log('[WebMetricsPanel] Starting data fetch for pageId:', pageId);
+      setLoading(true);
+      setError('');
+      setRoleMetrics(null);
+      setBusinessMetrics(null);
+      setEvaluation(null);
+  
+      try {
+        /* 1️⃣ fetch role + business metrics */
+        const token = getToken();
+        console.log('[WebMetricsPanel] Auth token:', token ? 'found' : 'missing');
+        const headers = { 
+          Authorization: `Bearer ${token}`, 
+          'Content-Type': 'application/json' 
+        };
+  
+        const ts = Date.now();
+        const roleUrl = buildApiUrl(API_ENDPOINTS.TOOLKIT.WEB_METRICS.ROLE_MODEL(pageId, ts));
+        const bizUrl = buildApiUrl(API_ENDPOINTS.TOOLKIT.WEB_METRICS.BUSINESS(pageId, ts));
+        
+        console.log('[WebMetricsPanel] Fetching:', roleUrl, bizUrl);
+        
+        // Using Promise.allSettled to handle partial success
+        const [roleResult, bizResult] = await Promise.allSettled([
+          fetchWithRetry(roleUrl, { headers }),
+          fetchWithRetry(bizUrl, { headers }),
+        ]);
+        
+        // Handle business metrics first - required
+        if (bizResult.status === 'fulfilled') {
+          const businessMetricsRes = bizResult.value;
+          try {
+            const businessMetricsData = await parseJsonResponse(businessMetricsRes);
+            console.log('[WebMetricsPanel] Business metrics data:', businessMetricsData);
+            
+            // Validate the data structure
+            if (typeof businessMetricsData !== 'object' || !Object.keys(businessMetricsData).length) {
+              console.error('[WebMetricsPanel] Invalid business metrics format:', businessMetricsData);
+              setError('Invalid metrics data received from server. Please try again later.');
+              setLoading(false);
+              return;
+            }
+            
+            setBusinessMetrics(businessMetricsData);
+            if (typeof onBusinessMetricsReady === 'function') {
+              onBusinessMetricsReady(businessMetricsData);
+            }
+          } catch (parseError) {
+            console.error('[WebMetricsPanel] Failed to parse business metrics response:', parseError);
+            setError('Failed to process metrics data. Please try again later.');
+            setLoading(false);
+            return;
+          }
+        } else {
+          console.error('[WebMetricsPanel] Business metrics fetch failed after retries:', bizResult.reason);
+          // Show error instead of infinite loading
+          setError('Failed to load business metrics. Please try refreshing the page.');
+          setLoading(false);
+          return; // Exit early to prevent further processing
+        }
+
+        // Handle role metrics separately - optional
+        let roleData = null;
+        if (roleResult.status === 'fulfilled') {
+          const roleRes = roleResult.value;
+          try {
+            roleData = await parseJsonResponse(roleRes);
+            console.log('[WebMetricsPanel] Role metrics data:', roleData);
+            
+            // Validate structure but continue even if invalid
+            if (typeof roleData !== 'object' || !Object.keys(roleData).length) {
+              console.warn('[WebMetricsPanel] Invalid role metrics format, continuing without role data');
+            } else {
+              setRoleMetrics(roleData);
+              if (typeof onRoleMetricsReady === 'function') {
+                onRoleMetricsReady(roleData);
+              }
+            }
+          } catch (parseError) {
+            console.warn('[WebMetricsPanel] Failed to parse role metrics response:', parseError);
+            // Continue without role metrics
+          }
+        } else {
+          console.warn('[WebMetricsPanel] Role metrics not available after retries:', roleResult.reason);
+          // Continue without role metrics
+        }
+  
+        /* 2️⃣ evaluate business metrics with AI */
+        try {
+          const evalUrl = buildApiUrl(API_ENDPOINTS.AI.EVALUATE.WEB_METRICS(pageId));
+          console.log('[WebMetricsPanel] Evaluating metrics:', evalUrl);
+          
+          const evalRes = await fetchWithRetry(
+            evalUrl,
+            {
+              method: 'POST',
+              headers: { 
+                Authorization: `Bearer ${token}`, 
+                'Content-Type': 'application/json' 
+              },
+              body: JSON.stringify({ metrics: businessMetrics }),
+            }
+          );
+  
+          const evalJson = await parseJsonResponse(evalRes);
+          const report = evalJson.web_metrics_report;
+          if (!report || !report.overall_summary) {
+            console.error('[WebMetricsPanel] Invalid eval response:', evalJson);
+            throw new Error('Invalid evaluation response format');
+          }
+  
+          setEvaluation(report);
+          persistToCache(roleData, businessMetrics, report);
+  
+          // ✔️ Bubble up the summary
+          if (typeof onSummaryReady === 'function') {
+            onSummaryReady(report.overall_summary);
+          }
+  
+        } catch (evalErr) {
+          console.error('[WebMetricsPanel] Evaluation error after retries:', evalErr);
+          setError('Metrics loaded, but AI evaluation failed.');
+          
+          // Fallback summary & recommendations
+          const fallbackReport = {
+            overall_summary: "AI evaluation is currently unavailable. Showing raw metrics.",
+            recommendations: [
+              "Optimize image sizes and use modern formats like WebP",
+              "Minimize render-blocking resources",
+              "Implement proper caching strategies",
+              "Consider using a CDN",
+              "Reduce server response times"
+            ],
+            metric_analysis: []
+          };
+  
+          setEvaluation(fallbackReport);
+          persistToCache(roleData, businessMetrics, null);
+  
+          // Bubble up the fallback summary
+          if (typeof onSummaryReady === 'function') {
+            onSummaryReady(fallbackReport.overall_summary);
+          }
+        }
+  
+      } catch (err) {
+        console.error('[WebMetricsPanel] metrics fetch error →', err);
+        setError('Failed to load metrics data.');
+      } finally {
+        console.log('[WebMetricsPanel] Request completed');
+        setLoading(false);
+      }
+    };
+  
+    run();
+  }, [pageId, onSummaryReady, onBusinessMetricsReady, onRoleMetricsReady]);
   
   useEffect(() => {
     if (evaluation?.overall_summary && typeof onSummaryReady === 'function') {
@@ -425,136 +371,119 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
     return relevantAnalysis || "No specific analysis available for this metric.";
   };
 
-  /* ─────────── error fallback ─────────── */
-  const renderErrorFallback = (error, reset) => (
-    <PanelErrorState 
-      message={error?.message || 'Failed to load web metrics data.'}
-      retryFunction={handleRetry}
-      errorType="server"
-    />
-  );
-
   /* ─────────── render ─────────── */
   return (
-    <ErrorBoundary fallback={renderErrorFallback}>
-      <div className="panel-container">
-        <div className="panel-header">Web Performance Metrics</div>
-        <div className="panel-subtitle">When we accessed your website, these are the metrics we recorded..</div>
-        
-        {loading && (
-          <div className="wm-container">
-            <div className="wm-metrics-grid">
-              {[1, 2, 3, 4].map(i => (
-                <MetricsCardSkeleton key={i} />
-              ))}
-            </div>
-            <div className="wm-details-panel">
-              <div className="skeleton skeleton-metrics-header" style={{ margin: '1.25rem' }} />
-              <div className="skeleton" style={{ height: '200px', margin: '1.25rem' }} />
-            </div>
+    <div className="panel-container">
+      <div className="panel-header">Web Performance Metrics</div>
+      <div className="panel-subtitle">When we accessed your website, these are the metrics we recorded..</div>
+      
+      {loading && (
+        <div className="wm-container">
+          <div className="wm-metrics-grid">
+            {[1, 2, 3, 4].map(i => (
+              <MetricsCardSkeleton key={i} />
+            ))}
           </div>
-        )}
-        
-        {error && !loading && (
-          <PanelErrorState 
-            message={error}
-            retryFunction={handleRetry}
-            errorType="server"
-          />
-        )}
-        
-        {!loading && !error && processedMetrics.length > 0 && (
-          <div className="wm-container">
-            <div className="wm-metrics-grid">
-              {processedMetrics.map((item) => (
-                <div 
-                  key={item.metric} 
-                  className={`wm-metric-card ${item.status} ${activeMetric === item.metric ? 'active' : ''}`}
-                  onClick={() => handleMetricClick(item.metric)}
-                >
-                  <div className="wm-metric-header">
-                    <h3 className="wm-metric-name">{item.metric}</h3>
-                    <div className={`wm-status-indicator ${item.status}`}></div>
+          <div className="wm-details-panel">
+            <div className="skeleton skeleton-metrics-header" style={{ margin: '1.25rem' }} />
+            <div className="skeleton" style={{ height: '200px', margin: '1.25rem' }} />
+          </div>
+        </div>
+      )}
+      
+      {error && <div className="wm-error">{error}</div>}
+      
+      {!loading && processedMetrics.length > 0 && (
+        <div className="wm-container">
+          <div className="wm-metrics-grid">
+            {processedMetrics.map((item) => (
+              <div 
+                key={item.metric} 
+                className={`wm-metric-card ${item.status} ${activeMetric === item.metric ? 'active' : ''}`}
+                onClick={() => handleMetricClick(item.metric)}
+              >
+                <div className="wm-metric-header">
+                  <h3 className="wm-metric-name">{item.metric}</h3>
+                  <div className={`wm-status-indicator ${item.status}`}></div>
+                </div>
+                
+                <div className="wm-metric-gauge">
+                  <div className="wm-gauge-track">
+                    <div 
+                      className="wm-gauge-fill" 
+                      style={{ width: `${item.percent}%` }}
+                    ></div>
                   </div>
-                  
-                  <div className="wm-metric-gauge">
-                    <div className="wm-gauge-track">
-                      <div 
-                        className="wm-gauge-fill" 
-                        style={{ width: `${item.percent}%` }}
-                      ></div>
-                    </div>
-                    <div className="wm-gauge-marker" style={{ left: '50%' }}></div>
+                  <div className="wm-gauge-marker" style={{ left: '50%' }}></div>
+                </div>
+                
+                <div className="wm-metric-values">
+                  <div className="wm-value-item">
+                    <span className="wm-value-label">Your</span>
+                    <span className="wm-value-data">{item.your}</span>
                   </div>
-                  
-                  <div className="wm-metric-values">
-                    <div className="wm-value-item">
-                      <span className="wm-value-label">Your</span>
-                      <span className="wm-value-data">{item.your}</span>
-                    </div>
-                    <div className="wm-value-item">
-                      <span className="wm-value-label">Ideal</span>
-                      <span className="wm-value-data ideal">{item.ideal}</span>
-                    </div>
-                    <div className="wm-value-item">
-                      <span className="wm-value-label">{item.roleName}</span>
-                      <span className="wm-value-data role">{item.role}</span>
-                    </div>
+                  <div className="wm-value-item">
+                    <span className="wm-value-label">Ideal</span>
+                    <span className="wm-value-data ideal">{item.ideal}</span>
+                  </div>
+                  <div className="wm-value-item">
+                    <span className="wm-value-label">{item.roleName}</span>
+                    <span className="wm-value-data role">{item.role}</span>
                   </div>
                 </div>
-              ))}
+              </div>
+            ))}
+          </div>
+          
+          <div className="wm-details-panel">
+            <div className={`wm-metric-details ${activeMetric ? 'active' : ''}`}>
+              {activeMetric && (
+                <>
+                  <h3>{activeMetric}</h3>
+                  <p className="wm-metric-description">
+                    {processedMetrics.find(m => m.metric === activeMetric)?.description}
+                  </p>
+                </>
+              )}
             </div>
             
-            <div className="wm-details-panel">
-              <div className={`wm-metric-details ${activeMetric ? 'active' : ''}`}>
-                {activeMetric && (
-                  <>
-                    <h3>{activeMetric}</h3>
-                    <p className="wm-metric-description">
-                      {processedMetrics.find(m => m.metric === activeMetric)?.description}
-                    </p>
-                  </>
-                )}
-              </div>
-              
-              <div className={`wm-summary ${!activeMetric ? 'active' : ''}`}>
-                <h3>Performance Summary</h3>
-                {evaluation ? (
-                  <>
-                    <p className="wm-summary-text">{evaluation.overall_summary}</p>
-                    <h4>Recommendations</h4>
-                    <ul className="wm-recommendations">
-                      {evaluation.recommendations.map((tip, i) => (
-                        <li key={i}>{tip}</li>
-                      ))}
-                    </ul>
-                  </>
-                ) : (
-                  <>
-                    <p className="wm-summary-text">
-                      {error ? 
-                        "AI evaluation is currently unavailable. Here are the basic metrics for your website." : 
-                        "Click on a metric card to see detailed information."}
-                    </p>
-                    {error && (
-                      <>
-                        <h4>General Recommendations</h4>
-                        <ul className="wm-recommendations">
-                          <li>Optimize image sizes and use modern formats like WebP</li>
-                          <li>Minimize render-blocking resources (JS and CSS)</li>
-                          <li>Implement proper caching strategies</li>
-                          <li>Consider using a Content Delivery Network (CDN)</li>
-                          <li>Reduce server response times</li>
-                        </ul>
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
+            <div className={`wm-summary ${!activeMetric ? 'active' : ''}`}>
+              <h3>Performance Summary</h3>
+              {evaluation ? (
+                <>
+                  <p className="wm-summary-text">{evaluation.overall_summary}</p>
+                  <h4>Recommendations</h4>
+                  <ul className="wm-recommendations">
+                    {evaluation.recommendations.map((tip, i) => (
+                      <li key={i}>{tip}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <>
+                  <p className="wm-summary-text">
+                    {error ? 
+                      "AI evaluation is currently unavailable. Here are the basic metrics for your website." : 
+                      "Click on a metric card to see detailed information."}
+                  </p>
+                  {error && (
+                    <>
+                      <h4>General Recommendations</h4>
+                      <ul className="wm-recommendations">
+                        <li>Optimize image sizes and use modern formats like WebP</li>
+                        <li>Minimize render-blocking resources (JS and CSS)</li>
+                        <li>Implement proper caching strategies</li>
+                        <li>Consider using a Content Delivery Network (CDN)</li>
+                        <li>Reduce server response times</li>
+                      </ul>
+                    </>
+                  )}
+                </>
+              )}
             </div>
           </div>
-        )}
-      </div>
-    </ErrorBoundary>
+        </div>
+      )}
+    </div>
   );
 }
