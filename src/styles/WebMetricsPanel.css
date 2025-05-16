@@ -34,10 +34,8 @@
   background-color: #f8f9fc;
   min-height: 200px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
 }
 
 .wm-loading {
@@ -50,103 +48,10 @@
   background-color: rgba(229, 57, 53, 0.05);
 }
 
-/* Loading overlay for background refreshes */
-.wm-loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.7);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  pointer-events: none;
-}
-
-.wm-loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(7, 86, 164, 0.1);
-  border-radius: 50%;
-  border-top-color: #0756A4;
-  animation: spinner 1s linear infinite;
-}
-
-@keyframes spinner {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Retry button and container */
-.wm-retry-container {
-  margin-top: 1rem;
-}
-
-.wm-retry-button,
-.wm-refresh-button {
-  background-color: #0756A4;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.6rem 1.25rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-  box-shadow: 0 2px 6px rgba(7, 86, 164, 0.2);
-}
-
-.wm-refresh-button {
-  font-size: 0.85rem;
-  padding: 0.4rem 1rem;
-  margin-top: 0.5rem;
-  background-color: #0756A4;
-}
-
-.wm-retry-button:hover,
-.wm-refresh-button:hover {
-  background-color: #0645a0;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(7, 86, 164, 0.3);
-}
-
-.wm-refresh-note {
-  margin-top: 1.5rem;
-  background-color: rgba(7, 86, 164, 0.05);
-  padding: 0.75rem;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.wm-retry-status {
-  font-size: 0.9rem;
-  color: #666;
-  padding: 0.5rem 1rem;
-  background-color: rgba(7, 86, 164, 0.08);
-  border-radius: 6px;
-  animation: pulse 1.5s infinite ease-in-out;
-}
-
-@keyframes pulse {
-  0% {
-    opacity: 0.7;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0.7;
-  }
-}
-
 /* Main container */
 .wm-container {
   display: flex;
   gap: 2.5rem;
-  position: relative;
 }
 
 /* Metrics grid layout */
