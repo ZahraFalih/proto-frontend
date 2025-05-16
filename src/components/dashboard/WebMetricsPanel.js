@@ -17,6 +17,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
   const [error, setError] = useState('');
   const [retryCount, setRetryCount] = useState(0);
   const [autoRetryTimer, setAutoRetryTimer] = useState(null);
+  const [firstLoad, setFirstLoad] = useState(true);
 
   /* ─────────── cache helpers ─────────── */
   const cacheKey = pageId ? `wm_cache_${pageId}` : null;
@@ -28,6 +29,14 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
 
     try {
       const { roleMetrics, businessMetrics, evaluation } = JSON.parse(cached);
+      
+      // Validate cached data to prevent rendering with corrupted cache
+      if (!businessMetrics || typeof businessMetrics !== 'object' || !Object.keys(businessMetrics).length) {
+        console.warn('[WebMetricsPanel] Invalid cache data structure, clearing cache');
+        sessionStorage.removeItem(cacheKey);
+        return false;
+      }
+      
       setRoleMetrics(roleMetrics);
       setBusinessMetrics(businessMetrics);
       setEvaluation(evaluation);
@@ -36,14 +45,15 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
       if (typeof onBusinessMetricsReady === 'function') {
         onBusinessMetricsReady(businessMetrics);
       }
-      if (typeof onRoleMetricsReady === 'function') {
+      if (typeof onRoleMetricsReady === 'function' && roleMetrics) {
         onRoleMetricsReady(roleMetrics);
       }
       if (evaluation && typeof onSummaryReady === 'function') {
         onSummaryReady(evaluation.overall_summary);
       }
       return true;
-    } catch {
+    } catch (err) {
+      console.error('[WebMetricsPanel] Cache hydration error:', err);
       sessionStorage.removeItem(cacheKey); /* corrupted */
       return false;
     }
@@ -51,10 +61,20 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
 
   const persistToCache = (roleM, businessMetricsM, evalObj) => {
     if (!cacheKey) return;
-    sessionStorage.setItem(
-      cacheKey,
-      JSON.stringify({ roleMetrics: roleM, businessMetrics: businessMetricsM, evaluation: evalObj })
-    );
+    try {
+      if (!businessMetricsM || typeof businessMetricsM !== 'object') {
+        console.warn('[WebMetricsPanel] Not caching invalid business metrics');
+        return;
+      }
+      
+      sessionStorage.setItem(
+        cacheKey,
+        JSON.stringify({ roleMetrics: roleM, businessMetrics: businessMetricsM, evaluation: evalObj })
+      );
+      console.log('[WebMetricsPanel] Data cached successfully for pageId:', pageId);
+    } catch (err) {
+      console.error('[WebMetricsPanel] Failed to cache data:', err);
+    }
   };
 
   /* ─────────── data fetching function ─────────── */
@@ -74,15 +94,21 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
       /* 1️⃣ fetch role + business metrics */
       const token = getToken();
       console.log('[WebMetricsPanel] Auth token:', token ? 'found' : 'missing');
+      
+      // Add more headers to handle Render Cloud and potential CORS issues
       const headers = { 
         Authorization: `Bearer ${token}`, 
         'Content-Type': 'application/json',
         // Add cache-busting headers to prevent CORS caching issues
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
-        'Expires': '0'
+        'Expires': '0',
+        // Add Origin and referer headers if needed for Render Cloud
+        'Origin': window.location.origin,
+        'Referer': window.location.href
       };
 
+      // Add timestamp to prevent caching issues on Render Cloud
       const ts = Date.now();
       const roleUrl = buildApiUrl(API_ENDPOINTS.TOOLKIT.WEB_METRICS.ROLE_MODEL(pageId, ts));
       const bizUrl = buildApiUrl(API_ENDPOINTS.TOOLKIT.WEB_METRICS.BUSINESS(pageId, ts));
@@ -91,8 +117,16 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
       
       // Using Promise.allSettled to handle partial success
       const [roleResult, bizResult] = await Promise.allSettled([
-        fetchWithRetry(roleUrl, { headers }, 3, 800), // Increase retry attempts and delay
-        fetchWithRetry(bizUrl, { headers }, 3, 800),  // Increase retry attempts and delay
+        fetchWithRetry(roleUrl, { 
+          headers,
+          credentials: 'include',  // Include credentials for cross-origin requests
+          mode: 'cors'             // Explicitly set CORS mode
+        }, 3, 800),
+        fetchWithRetry(bizUrl, { 
+          headers,
+          credentials: 'include',  // Include credentials for cross-origin requests
+          mode: 'cors'             // Explicitly set CORS mode
+        }, 3, 800),
       ]);
       
       // Handle business metrics first - required
@@ -155,19 +189,24 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         const evalUrl = buildApiUrl(API_ENDPOINTS.AI.EVALUATE.WEB_METRICS(pageId));
         console.log('[WebMetricsPanel] Evaluating metrics:', evalUrl);
         
+        // Ensure we format the data correctly - API expects a single top-level key with a metrics dict
+        // Fix the format to avoid the "Invalid format: send one top-level key with a metrics dict" error
+        const metricsPayload = { 
+          page_metrics: businessMetrics 
+        };
+        
         const evalRes = await fetchWithRetry(
           evalUrl,
           {
             method: 'POST',
             headers: { 
-              Authorization: `Bearer ${token}`, 
-              'Content-Type': 'application/json',
-              // Add cache-busting headers
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache',
-              'Expires': '0'
+              ...headers,
+              // Make sure content type is correct
+              'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ metrics: businessMetrics }),
+            body: JSON.stringify(metricsPayload),
+            credentials: 'include',
+            mode: 'cors'
           },
           3, // More retry attempts
           800 // Larger delay between retries
@@ -205,7 +244,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         };
 
         setEvaluation(fallbackReport);
-        persistToCache(roleData, businessMetrics, null);
+        persistToCache(roleData, businessMetrics, fallbackReport);
 
         // Bubble up the fallback summary
         if (typeof onSummaryReady === 'function') {
@@ -215,7 +254,16 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
 
     } catch (err) {
       console.error('[WebMetricsPanel] metrics fetch error →', err);
-      setError(err.message || 'Failed to load metrics data');
+      
+      // Format user-friendly error message
+      let userErrorMsg = err.message || 'Failed to load metrics data';
+      if (err.message?.includes('400')) {
+        userErrorMsg = 'Server rejected the request. Metrics data may be in an incorrect format.';
+      } else if (err.message?.includes('fetch')) {
+        userErrorMsg = 'Connection issue. Please check your internet connection.';
+      }
+      
+      setError(userErrorMsg);
       
       // Only try automatic reload if we haven't exceeded max retries
       if (retryCount < 3) {
@@ -243,6 +291,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
     } finally {
       console.log('[WebMetricsPanel] Request completed');
       setLoading(false);
+      setFirstLoad(false);
     }
   }, [pageId, onSummaryReady, onBusinessMetricsReady, onRoleMetricsReady, autoRetryTimer, retryCount]);
 
@@ -263,11 +312,23 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
     // Reset retry count when pageId changes
     setRetryCount(0);
     
+    // Try to load from cache first
     if (hydrateFromCache()) {
       console.log('[WebMetricsPanel] Data loaded from cache for pageId:', pageId);
+      setFirstLoad(false);
+      
+      // Even on cache hit, trigger a background refresh if this is a page reload
+      if (document.readyState === 'complete' && performance.navigation.type === 1) {
+        console.log('[WebMetricsPanel] Page was reloaded, updating data in background');
+        setTimeout(() => {
+          fetchMetricsData();
+        }, 500); // Small delay to let UI render first
+      }
+      
       return; // served from cache
     }
   
+    // If no cache or invalid cache, fetch fresh data
     fetchMetricsData();
     
     // Cleanup function to clear any pending retry timers
@@ -276,7 +337,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         clearTimeout(autoRetryTimer);
       }
     };
-  }, [pageId, fetchMetricsData, autoRetryTimer]);
+  }, [pageId, fetchMetricsData, autoRetryTimer, hydrateFromCache]);
   
   /* ─────────── update summary effect ─────────── */
   useEffect(() => {
@@ -418,7 +479,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
       setError('Error processing metrics data. Please refresh the page.');
       return [];
     }
-  }, [roleMetrics, businessMetrics, idealBenchmarks, setError]);
+  }, [roleMetrics, businessMetrics, idealBenchmarks]);
 
   /* ─────────── event handlers ─────────── */
   const handleMetricClick = (metric) => {
@@ -444,7 +505,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
       <div className="panel-header">Web Performance Metrics</div>
       <div className="panel-subtitle">When we accessed your website, these are the metrics we recorded..</div>
       
-      {loading && (
+      {loading && firstLoad && (
         <div className="wm-container">
           <div className="wm-metrics-grid">
             {[1, 2, 3, 4].map(i => (
@@ -458,7 +519,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         </div>
       )}
       
-      {error && (
+      {error && !processedMetrics.length && (
         <div className="wm-error">
           {error}
           <div className="wm-retry-container">
@@ -475,8 +536,14 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         </div>
       )}
       
-      {!loading && processedMetrics.length > 0 && (
+      {processedMetrics.length > 0 && (
         <div className="wm-container">
+          {loading && !firstLoad && (
+            <div className="wm-loading-overlay">
+              <div className="wm-loading-spinner"></div>
+            </div>
+          )}
+          
           <div className="wm-metrics-grid">
             {processedMetrics.map((item) => (
               <div 
@@ -561,6 +628,16 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
                     </>
                   )}
                 </>
+              )}
+              
+              {error && (
+                <div className="wm-refresh-note">
+                  <p>
+                    <button onClick={handleRetry} className="wm-refresh-button">
+                      Refresh Data
+                    </button>
+                  </p>
+                </div>
               )}
             </div>
           </div>
