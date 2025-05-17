@@ -111,7 +111,10 @@ export default function AddPageModal({
     const formData = new FormData();
     const token = getToken();
     formData.append('token', token);
-    formData.append('file', selectedUbaFile);
+    // Create a new file with the original name without timestamp
+    const originalFileName = selectedUbaFile.name.replace(/^\d+_/, '');
+    const newFile = new File([selectedUbaFile], originalFileName, { type: selectedUbaFile.type });
+    formData.append('file', newFile);
     formData.append('page_id', String(id));
     formData.append('name', selectedType);
 
