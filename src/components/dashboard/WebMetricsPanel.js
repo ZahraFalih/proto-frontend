@@ -227,11 +227,14 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           }
           
           const evalRes = await fetchWithRetry(
-            evalUrl,
+            'ask-ai/evaluate-web-metrics/',
             {
               method: 'POST',
-              headers,
-              body: JSON.stringify({ metrics: metricsPayload }),
+              headers: {
+                ...headers,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(metricsPayload),
             }
           );
   
