@@ -73,6 +73,16 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       if (!evaluateResponse.ok) {
         const errorText = await evaluateResponse.text();
         console.error('[UBAPanel] UBA evaluation error response:', errorText);
+        
+        // Check if it's a file not found error
+        if (errorText.includes('No such file or directory')) {
+          // Clear any cached data for this page
+          sessionStorage.removeItem(cacheKey);
+          
+          // Show a more user-friendly error message
+          throw new Error('The UBA data file is no longer available. Please try re-uploading your UBA data.');
+        }
+        
         throw new Error(`UBA evaluation failed: ${evaluateResponse.status} - ${errorText}`);
       }
       
@@ -170,6 +180,11 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
     } catch (err) {
       console.error('[UBAPanel] Error in data fetch:', err);
       setError(err.message);
+      
+      // Clear cache if there was an error
+      if (err.message.includes('file') || err.message.includes('UBA')) {
+        sessionStorage.removeItem(cacheKey);
+      }
     } finally {
       console.log('[UBAPanel] Request chain completed');
       setLoading(false);

@@ -1405,45 +1405,4 @@ html, body {
   overflow-x: hidden;
   scroll-behavior: smooth;
 }
-
-.demo-notice {
-  background-color: #fff3cd;
-  border: 1px solid #ffeeba;
-  color: #856404;
-  padding: 12px 20px;
-  margin: 0 20px 20px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 14px;
-}
-
-.refresh-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  color: #666;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.2s ease;
-}
-
-.refresh-button:hover {
-  background-color: #f8f9fa;
-  border-color: #ccc;
-  color: #333;
-}
-
-.refresh-button svg {
-  transition: transform 0.3s ease;
-}
-
-.refresh-button:hover svg {
-  transform: rotate(180deg);
-}
   

@@ -111,19 +111,30 @@ export default function AddPageModal({
     const formData = new FormData();
     const token = getToken();
     formData.append('token', token);
-    // Create a new file with the original name without timestamp
-    const originalFileName = selectedUbaFile.name.replace(/^\d+_/, '');
-    const newFile = new File([selectedUbaFile], originalFileName, { type: selectedUbaFile.type });
-    formData.append('file', newFile);
+    formData.append('file', selectedUbaFile);
     formData.append('page_id', String(id));
     formData.append('name', selectedType);
 
     try {
+      // Clear any existing UBA cache for this page
+      sessionStorage.removeItem(`uba_cache_${id}`);
+      
       const res = await fetch(buildApiUrl(API_ENDPOINTS.UPLOAD.CREATE), {
         method: 'POST',
         credentials: 'include',
         body: formData
       });
+      
+      let errorMessage = '';
+      if (!res.ok) {
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || 'UBA upload failed';
+        } catch {
+          errorMessage = 'UBA upload failed';
+        }
+        console.error('UBA upload failed:', errorMessage);
+      }
       
       // Whether UBA upload succeeds or fails, we still want to add the page
       setShowProgressLoader(true);
@@ -131,10 +142,12 @@ export default function AddPageModal({
       handleClose();
 
       if (!res.ok) {
-        console.error('UBA upload failed, but page was added');
+        throw new Error(errorMessage);
       }
     } catch (err) {
-      console.error('UBA upload error, but page was added:', err);
+      console.error('UBA upload error:', err);
+      // Show error toast or notification to user
+      // But don't prevent page addition
     } finally {
       setLoading(false);
     }
