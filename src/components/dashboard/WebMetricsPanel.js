@@ -7,6 +7,11 @@ import { getToken } from '../../utils/auth';
 import { buildApiUrl, API_ENDPOINTS } from '../../config/api';
 import { fetchWithRetry, parseJsonResponse } from '../../utils/api';
 
+// Constants for retry mechanism
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 2000; // 2 seconds
+const MAX_RETRY_DELAY = 10000; // 10 seconds
+
 export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetricsReady, onRoleMetricsReady }) {
   /* ─────────── state ─────────── */
   const [roleMetrics, setRoleMetrics] = useState(null);
@@ -15,9 +20,23 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
   const [activeMetric, setActiveMetric] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+  const [retryTimeout, setRetryTimeout] = useState(null);
 
   /* ─────────── cache helpers ─────────── */
   const cacheKey = pageId ? `wm_cache_${pageId}` : null;
+
+  const isHealthyMetrics = (metrics) => {
+    if (!metrics || typeof metrics !== 'object') return false;
+    
+    // Check if any metric has a zero value
+    const hasZeroValues = Object.values(metrics).some(value => {
+      const numValue = parseFloat(String(value).match(/[\d.]+/)?.[0] || '0');
+      return numValue === 0;
+    });
+    
+    return !hasZeroValues;
+  };
 
   const hydrateFromCache = () => {
     if (!cacheKey) return false;
@@ -25,10 +44,19 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
     if (!cached) return false;
 
     try {
-      const { roleMetrics, businessMetrics, evaluation } = JSON.parse(cached);
+      const { roleMetrics, businessMetrics, evaluation, timestamp } = JSON.parse(cached);
       
-      // Only hydrate if we have valid business metrics
-      if (!businessMetrics || typeof businessMetrics !== 'object' || !Object.keys(businessMetrics).length) {
+      // Check cache freshness (24 hours)
+      const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+      if (Date.now() - timestamp > CACHE_TTL) {
+        console.log('[WebMetricsPanel] Cache expired, removing');
+        sessionStorage.removeItem(cacheKey);
+        return false;
+      }
+      
+      // Only hydrate if we have valid and healthy business metrics
+      if (!businessMetrics || !isHealthyMetrics(businessMetrics)) {
+        console.log('[WebMetricsPanel] Unhealthy metrics in cache, removing');
         sessionStorage.removeItem(cacheKey);
         return false;
       }
@@ -36,7 +64,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
       setRoleMetrics(roleMetrics);
       setBusinessMetrics(businessMetrics);
       setEvaluation(evaluation);
-      setLoading(false); // Important: Set loading to false when hydrating from cache
+      setLoading(false);
 
       // Notify parent components of cached data
       if (typeof onBusinessMetricsReady === 'function') {
@@ -51,24 +79,32 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
       return true;
     } catch (error) {
       console.error('[WebMetricsPanel] Cache hydration error:', error);
-      sessionStorage.removeItem(cacheKey); /* corrupted */
+      sessionStorage.removeItem(cacheKey);
       return false;
     }
   };
 
   const persistToCache = (roleM, businessMetricsM, evalObj) => {
-    if (!cacheKey) return;
+    if (!cacheKey || !isHealthyMetrics(businessMetricsM)) return;
     
-    console.log('[WebMetricsPanel] Persisting to cache:', {
-      hasRoleMetrics: !!roleM,
-      hasBusinessMetrics: !!businessMetricsM,
-      hasEvaluation: !!evalObj
-    });
+    console.log('[WebMetricsPanel] Persisting healthy metrics to cache');
     
     sessionStorage.setItem(
       cacheKey,
-      JSON.stringify({ roleMetrics: roleM, businessMetrics: businessMetricsM, evaluation: evalObj })
+      JSON.stringify({
+        roleMetrics: roleM,
+        businessMetrics: businessMetricsM,
+        evaluation: evalObj,
+        timestamp: Date.now()
+      })
     );
+  };
+
+  const clearRetryTimeout = () => {
+    if (retryTimeout) {
+      clearTimeout(retryTimeout);
+      setRetryTimeout(null);
+    }
   };
 
   /* ─────────── fetch block ─────────── */
@@ -80,22 +116,17 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
     }
     
     if (hydrateFromCache()) {
-      console.log('[WebMetricsPanel] Data loaded from cache for pageId:', pageId);
-      return; // served from cache
+      console.log('[WebMetricsPanel] Healthy data loaded from cache for pageId:', pageId);
+      return;
     }
   
-    const run = async () => {
-      console.log('[WebMetricsPanel] Starting data fetch for pageId:', pageId);
+    const fetchData = async (attempt = 0) => {
+      console.log(`[WebMetricsPanel] Attempt ${attempt + 1} of ${MAX_RETRIES}`);
       setLoading(true);
       setError('');
-      setRoleMetrics(null);
-      setBusinessMetrics(null);
-      setEvaluation(null);
-  
+      
       try {
-        /* 1️⃣ fetch role + business metrics */
         const token = getToken();
-        console.log('[WebMetricsPanel] Auth token:', token ? 'found' : 'missing');
         const headers = { 
           Authorization: `Bearer ${token}`, 
           'Content-Type': 'application/json' 
@@ -105,214 +136,125 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         const roleUrl = buildApiUrl(API_ENDPOINTS.TOOLKIT.WEB_METRICS.ROLE_MODEL(pageId, ts));
         const bizUrl = buildApiUrl(API_ENDPOINTS.TOOLKIT.WEB_METRICS.BUSINESS(pageId, ts));
         
-        console.log('[WebMetricsPanel] Fetching:', roleUrl, bizUrl);
-        
         // Using Promise.allSettled to handle partial success
         const [roleResult, bizResult] = await Promise.allSettled([
           fetchWithRetry(roleUrl, { headers }),
           fetchWithRetry(bizUrl, { headers })
         ]);
         
-        // Handle business metrics first - required
+        let shouldRetry = false;
+        let businessMetricsData = null;
+        
+        // Handle business metrics
         if (bizResult.status === 'fulfilled') {
           const businessMetricsRes = bizResult.value;
-          try {
-            const businessMetricsData = await parseJsonResponse(businessMetricsRes);
-            console.log('[WebMetricsPanel] Business metrics data:', businessMetricsData);
-            
-            // Add detailed debug logging
-            console.log('[WebMetricsPanel] Business metrics structure:', {
-              type: typeof businessMetricsData,
-              isObject: typeof businessMetricsData === 'object',
-              hasKeys: Object.keys(businessMetricsData).length,
-              keys: Object.keys(businessMetricsData)
-            });
-            
-            // Handle the specific structure from the API where metrics are in businessMetrics
-            let processedBusinessMetrics = businessMetricsData;
-            
-            // If the API sends data in the { businessName, businessMetrics } format, restructure it
-            if (businessMetricsData.businessName && businessMetricsData.businessMetrics) {
-              console.log('[WebMetricsPanel] Found businessName/businessMetrics structure, restructuring...');
-              processedBusinessMetrics = {
-                [businessMetricsData.businessName]: businessMetricsData.businessMetrics
-              };
-              console.log('[WebMetricsPanel] Restructured business metrics:', processedBusinessMetrics);
-            }
-            
-            // Validate the data structure
-            if (typeof processedBusinessMetrics !== 'object' || !Object.keys(processedBusinessMetrics).length) {
-              console.error('[WebMetricsPanel] Invalid business metrics format:', processedBusinessMetrics);
-              setError('Invalid metrics data received from server. Please try again later.');
-              setLoading(false);
-              return;
-            }
-            
+          businessMetricsData = await parseJsonResponse(businessMetricsRes);
+          
+          // Process business metrics
+          let processedBusinessMetrics = businessMetricsData;
+          if (businessMetricsData.businessName && businessMetricsData.businessMetrics) {
+            processedBusinessMetrics = {
+              [businessMetricsData.businessName]: businessMetricsData.businessMetrics
+            };
+          }
+          
+          // Check if we got valid metrics or need to retry
+          if (!isHealthyMetrics(processedBusinessMetrics)) {
+            console.log('[WebMetricsPanel] Unhealthy metrics received, will retry');
+            shouldRetry = true;
+          } else {
             setBusinessMetrics(processedBusinessMetrics);
             if (typeof onBusinessMetricsReady === 'function') {
               onBusinessMetricsReady(processedBusinessMetrics);
             }
-          } catch (parseError) {
-            console.error('[WebMetricsPanel] Failed to parse business metrics response:', parseError);
-            setError('Failed to process metrics data. Please try again later.');
-            setLoading(false);
-            return;
           }
         } else {
-          console.error('[WebMetricsPanel] Business metrics fetch failed after retries:', bizResult.reason);
-          setError('Failed to load business metrics. Please try refreshing the page.');
-          setLoading(false);
-          return; // Exit early to prevent further processing
+          shouldRetry = true;
         }
 
-        // Handle role metrics separately - optional
+        // Handle role metrics
         let roleData = null;
         if (roleResult.status === 'fulfilled') {
           const roleRes = roleResult.value;
+          roleData = await parseJsonResponse(roleRes);
+          if (roleData && typeof roleData === 'object' && Object.keys(roleData).length) {
+            setRoleMetrics(roleData);
+            if (typeof onRoleMetricsReady === 'function') {
+              onRoleMetricsReady(roleData);
+            }
+          }
+        }
+  
+        // Only proceed with evaluation if we have healthy business metrics
+        if (!shouldRetry && businessMetricsData) {
           try {
-            roleData = await parseJsonResponse(roleRes);
-            console.log('[WebMetricsPanel] Role metrics data:', roleData);
+            const evalUrl = buildApiUrl(API_ENDPOINTS.AI.EVALUATE.WEB_METRICS(pageId));
             
-            // Validate structure but continue even if invalid
-            if (typeof roleData === 'object' && Object.keys(roleData).length) {
-              setRoleMetrics(roleData);
-              if (typeof onRoleMetricsReady === 'function') {
-                onRoleMetricsReady(roleData);
+            // Format metrics for evaluation
+            let metricsPayload = businessMetricsData.businessName && businessMetricsData.businessMetrics
+              ? { [businessMetricsData.businessName]: businessMetricsData.businessMetrics }
+              : { [Object.keys(businessMetricsData)[0]]: businessMetricsData[Object.keys(businessMetricsData)[0]] };
+            
+            const evalRes = await fetchWithRetry(
+              evalUrl,
+              {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ metrics: metricsPayload }),
               }
+            );
+  
+            const evalJson = await parseJsonResponse(evalRes);
+            
+            if (evalJson.web_metrics_report?.overall_summary) {
+              setEvaluation(evalJson.web_metrics_report);
+              if (typeof onSummaryReady === 'function') {
+                onSummaryReady(evalJson.web_metrics_report.overall_summary);
+              }
+              
+              // Cache the successful results
+              persistToCache(roleData, businessMetricsData, evalJson.web_metrics_report);
             } else {
-              console.warn('[WebMetricsPanel] Invalid role metrics format, continuing without role data');
+              shouldRetry = true;
             }
-          } catch (parseError) {
-            console.warn('[WebMetricsPanel] Failed to parse role metrics response:', parseError);
-            // Continue without role metrics
-          }
-        } else {
-          console.warn('[WebMetricsPanel] Role metrics not available after retries:', roleResult.reason);
-          // Continue without role metrics
-        }
-  
-        /* 2️⃣ evaluate business metrics with AI */
-        try {
-          const evalUrl = buildApiUrl(API_ENDPOINTS.AI.EVALUATE.WEB_METRICS(pageId));
-          console.log('[WebMetricsPanel] Evaluating metrics:', evalUrl);
-          
-          // Format metrics exactly as the API expects: one top-level key with a metrics dict
-          let metricsPayload = null;
-          
-          // Check if we have valid business metrics first
-          if (!businessMetrics || typeof businessMetrics !== 'object' || !Object.keys(businessMetrics).length) {
-            console.error('[WebMetricsPanel] No valid business metrics available for evaluation');
-            throw new Error('No valid metrics data available');
-          }
-          
-          // If businessMetrics has businessName/businessMetrics structure, use businessMetrics directly
-          if (businessMetrics.businessName && businessMetrics.businessMetrics) {
-            // For evaluation API, we need the { metrics: { business_name: metrics_obj } } format
-            const businessName = businessMetrics.businessName;
-            metricsPayload = {};
-            metricsPayload[businessName] = businessMetrics.businessMetrics;
-            console.log('[WebMetricsPanel] Using restructured metrics for evaluation');
-          } else {
-            // Otherwise use the first key as before
-            const bizKey = Object.keys(businessMetrics)[0];
-            metricsPayload = {};
-            metricsPayload[bizKey] = businessMetrics[bizKey];
-          }
-          
-          console.log('[WebMetricsPanel] Sending metrics in expected format:', {
-            hasMetrics: !!metricsPayload,
-            keys: Object.keys(metricsPayload),
-            sample: JSON.stringify(metricsPayload).substring(0, 50) + '...'
-          });
-          
-          const evalRes = await fetchWithRetry(
-            evalUrl,
-            {
-              method: 'POST',
-              headers: { 
-                Authorization: `Bearer ${token}`, 
-                'Content-Type': 'application/json' 
-              },
-              body: JSON.stringify({ metrics: metricsPayload }),
-            }
-          );
-  
-          console.log('[WebMetricsPanel] Evaluation response status:', evalRes.status);
-          const evalText = await evalRes.text();
-          
-          let evalJson;
-          try {
-            evalJson = JSON.parse(evalText);
-            console.log('[WebMetricsPanel] Evaluation response parsed successfully');
-          } catch (parseErr) {
-            console.error('[WebMetricsPanel] Failed to parse evaluation response:', parseErr, evalText);
-            throw new Error('Invalid response format from evaluation endpoint');
-          }
-          
-          console.log('[WebMetricsPanel] Evaluation response data:', {
-            hasReport: !!evalJson.web_metrics_report,
-            hasSummary: !!evalJson.web_metrics_report?.overall_summary
-          });
-  
-          const report = evalJson.web_metrics_report;
-          if (!report || !report.overall_summary) {
-            console.error('[WebMetricsPanel] Invalid eval response:', evalJson);
-            throw new Error('Invalid evaluation response format');
-          }
-  
-          setEvaluation(report);
-          persistToCache(roleData, businessMetrics, report);
-  
-          // ✔️ Bubble up the summary
-          if (typeof onSummaryReady === 'function') {
-            onSummaryReady(report.overall_summary);
-          }
-  
-        } catch (evalErr) {
-          console.error('[WebMetricsPanel] Evaluation error after retries:', evalErr);
-          setError('Metrics loaded, but AI evaluation failed.');
-          
-          // Log the error details
-          console.error('[WebMetricsPanel] Error details:', {
-            message: evalErr.message,
-            stack: evalErr.stack,
-            businessMetrics: businessMetrics ? JSON.stringify(businessMetrics).substring(0, 200) + '...' : 'null' // Log a snippet
-          });
-          
-          // Fallback summary & recommendations
-          const fallbackReport = {
-            overall_summary: "Performance metrics have been loaded, but detailed analysis is currently unavailable.",
-            recommendations: [
-              "Optimize image sizes and use modern formats like WebP",
-              "Minimize render-blocking resources",
-              "Implement proper caching strategies",
-              "Consider using a CDN",
-              "Reduce server response times"
-            ],
-            metric_analysis: []
-          };
-  
-          setEvaluation(fallbackReport);
-          persistToCache(roleData, businessMetrics, null);
-  
-          // Bubble up the fallback summary
-          if (typeof onSummaryReady === 'function') {
-            onSummaryReady(fallbackReport.overall_summary);
+          } catch (evalErr) {
+            console.error('[WebMetricsPanel] Evaluation error:', evalErr);
+            shouldRetry = true;
           }
         }
-  
+        
+        if (shouldRetry && attempt < MAX_RETRIES - 1) {
+          const delay = Math.min(INITIAL_RETRY_DELAY * Math.pow(2, attempt), MAX_RETRY_DELAY);
+          console.log(`[WebMetricsPanel] Scheduling retry in ${delay}ms`);
+          const timeout = setTimeout(() => fetchData(attempt + 1), delay);
+          setRetryTimeout(timeout);
+        } else if (shouldRetry) {
+          setError('Failed to load complete metrics data after multiple attempts.');
+        }
+        
       } catch (err) {
-        console.error('[WebMetricsPanel] metrics fetch error →', err);
-        setError('Failed to load metrics data.');
+        console.error('[WebMetricsPanel] Fetch error:', err);
+        if (attempt < MAX_RETRIES - 1) {
+          const delay = Math.min(INITIAL_RETRY_DELAY * Math.pow(2, attempt), MAX_RETRY_DELAY);
+          const timeout = setTimeout(() => fetchData(attempt + 1), delay);
+          setRetryTimeout(timeout);
+        } else {
+          setError('Failed to load metrics data after multiple attempts.');
+        }
       } finally {
-        console.log('[WebMetricsPanel] Request completed');
-        setLoading(false);
+        if (attempt === MAX_RETRIES - 1) {
+          setLoading(false);
+        }
       }
     };
   
-    run();
+    fetchData(0);
+    
+    return () => {
+      clearRetryTimeout();
+    };
   }, [pageId, onSummaryReady, onBusinessMetricsReady, onRoleMetricsReady]);
-  
+
   useEffect(() => {
     if (evaluation?.overall_summary && typeof onSummaryReady === 'function') {
       console.log('[WebMetricsPanel] Bubbling summary from evaluation state:', evaluation.overall_summary);
@@ -542,7 +484,11 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
   return (
     <div className="panel-container">
       <div className="panel-header">Web Performance Metrics</div>
-      <div className="panel-subtitle">When we accessed your website, these are the metrics we recorded..</div>
+      <div className="panel-subtitle">
+        {loading && retryCount > 0 ? 
+          `Retrying to load metrics (Attempt ${retryCount + 1}/${MAX_RETRIES})...` :
+          'When we accessed your website, these are the metrics we recorded..'}
+      </div>
       
       {loading && (
         <div className="wm-container">
