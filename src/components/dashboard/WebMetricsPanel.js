@@ -80,7 +80,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         const token = getToken();
         console.log('[WebMetricsPanel] Auth token:', token ? 'found' : 'missing');
         const headers = { 
-          Authorization: `Bearer ${token}`, 
+          Authorization: token, 
           'Content-Type': 'application/json' 
         };
   
@@ -92,8 +92,8 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         
         // Using Promise.allSettled to handle partial success
         const [roleResult, bizResult] = await Promise.allSettled([
-          fetchWithRetry(roleUrl, { headers }),
-          fetchWithRetry(bizUrl, { headers }),
+          fetchWithRetry(roleUrl, { headers, credentials: 'include' }),
+          fetchWithRetry(bizUrl, { headers, credentials: 'include' }),
         ]);
         
         // Handle business metrics first - required
@@ -172,9 +172,10 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
             {
               method: 'POST',
               headers: { 
-                Authorization: `Bearer ${token}`, 
+                Authorization: token, 
                 'Content-Type': 'application/json' 
               },
+              credentials: 'include',
               body: JSON.stringify({ metrics: businessMetrics }),
             }
           );
