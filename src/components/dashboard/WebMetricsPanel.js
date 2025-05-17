@@ -10,6 +10,8 @@ import { fetchWithRetry, parseJsonResponse } from '../../utils/api';
 // Maximum retries for zero values
 const MAX_ZERO_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
+const MAX_ERROR_RETRIES = 10; // Maximum number of retries for errors
+const ERROR_RETRY_DELAY = 2000; // 2 seconds between error retries
 
 export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetricsReady, onRoleMetricsReady }) {
   /* ─────────── state ─────────── */
@@ -19,6 +21,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
   const [activeMetric, setActiveMetric] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
 
   /* ─────────── cache helpers ─────────── */
   const cacheKey = pageId ? `wm_cache_${pageId}` : null;
@@ -134,6 +137,27 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
     return data;
   };
 
+  /* ─────────── retry helper ─────────── */
+  const retryOperation = async (operation, maxRetries = MAX_ERROR_RETRIES) => {
+    let lastError;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const result = await operation();
+        setRetryCount(0); // Reset retry count on success
+        return result;
+      } catch (err) {
+        lastError = err;
+        console.warn(`Operation failed (attempt ${attempt + 1}/${maxRetries}):`, err);
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, ERROR_RETRY_DELAY));
+        }
+      }
+    }
+    
+    throw lastError;
+  };
+
   /* ─────────── fetch block ─────────── */
   useEffect(() => {
     console.log('[WebMetricsPanel] Component mounted or pageId changed:', pageId);
@@ -168,11 +192,20 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         
         console.log('[WebMetricsPanel] Fetching:', roleUrl, bizUrl);
         
-        // Using Promise.allSettled with retry for zero values
-        const [roleResult, bizResult] = await Promise.allSettled([
-          fetchMetricsWithRetry(roleUrl, headers),
-          fetchMetricsWithRetry(bizUrl, headers)
-        ]);
+        // Using Promise.allSettled with retry for zero values and errors
+        const [roleResult, bizResult] = await retryOperation(async () => {
+          const results = await Promise.allSettled([
+            fetchMetricsWithRetry(roleUrl, headers),
+            fetchMetricsWithRetry(bizUrl, headers)
+          ]);
+          
+          // If both promises are rejected, throw an error
+          if (results[0].status === 'rejected' && results[1].status === 'rejected') {
+            throw new Error('Both role and business metrics fetches failed');
+          }
+          
+          return results;
+        });
         
         // Handle business metrics
         if (bizResult.status === 'fulfilled' && hasValidMetrics(bizResult.value)) {
@@ -203,7 +236,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         }
   
         /* Evaluate business metrics with AI */
-        try {
+        await retryOperation(async () => {
           let metricsPayload = null;
           if (bizResult.status === 'fulfilled' && bizResult.value) {
             const businessMetricsData = bizResult.value;
@@ -254,39 +287,26 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           if (typeof onSummaryReady === 'function') {
             onSummaryReady(evalJson.web_metrics_report.overall_summary);
           }
-  
-        } catch (evalErr) {
-          console.error('[WebMetricsPanel] Evaluation error:', evalErr);
-          setError('Metrics loaded, but AI evaluation failed.');
-          
-          const fallbackReport = {
-            overall_summary: "Performance metrics have been loaded, but detailed analysis is currently unavailable.",
-            recommendations: [
-              "Optimize image sizes and use modern formats like WebP",
-              "Minimize render-blocking resources",
-              "Implement proper caching strategies",
-              "Consider using a CDN",
-              "Reduce server response times"
-            ],
-            metric_analysis: []
-          };
-  
-          setEvaluation(fallbackReport);
-          if (typeof onSummaryReady === 'function') {
-            onSummaryReady(fallbackReport.overall_summary);
-          }
-        }
+        });
   
       } catch (err) {
         console.error('[WebMetricsPanel] metrics fetch error →', err);
         setError('Failed to load metrics data. Please try again.');
+        setRetryCount(prev => prev + 1);
+        
+        // If we haven't exceeded max retries, try again
+        if (retryCount < MAX_ERROR_RETRIES) {
+          console.log(`[WebMetricsPanel] Retrying... (${retryCount + 1}/${MAX_ERROR_RETRIES})`);
+          setTimeout(run, ERROR_RETRY_DELAY);
+          return;
+        }
       } finally {
         setLoading(false);
       }
     };
   
     run();
-  }, [pageId, onSummaryReady, onBusinessMetricsReady, onRoleMetricsReady]);
+  }, [pageId, onSummaryReady, onBusinessMetricsReady, onRoleMetricsReady, retryCount]);
 
   useEffect(() => {
     if (evaluation?.overall_summary && typeof onSummaryReady === 'function') {
@@ -516,6 +536,9 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
   /* ─────────── render ─────────── */
   return (
     <div className="panel-container">
+      <div className="warning-strip">
+        This demo is hosted on the cheapest cloud option that the web has to provide. Some errors may occur that will require you to refresh the page to be resolved.
+      </div>
       <div className="panel-header">Web Performance Metrics</div>
       <div className="panel-subtitle">When we accessed your website, these are the metrics we recorded..</div>
       

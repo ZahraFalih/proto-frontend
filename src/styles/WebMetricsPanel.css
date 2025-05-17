@@ -7,6 +7,18 @@
   scroll-margin-top: 20px;
 }
 
+.warning-strip {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 12px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  border: 1px solid #ffeeba;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
 .panel-header {
   font-size: 1.25rem;
   font-weight: 600;
