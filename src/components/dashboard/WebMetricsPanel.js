@@ -112,6 +112,22 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           try {
             const businessMetricsData = await parseJsonResponse(businessMetricsRes);
             console.log('[WebMetricsPanel] Business metrics data:', businessMetricsData);
+            // Add detailed debug logging
+            console.log('[WebMetricsPanel] Business metrics structure:', {
+              type: typeof businessMetricsData,
+              isObject: typeof businessMetricsData === 'object',
+              hasKeys: Object.keys(businessMetricsData).length,
+              keys: Object.keys(businessMetricsData)
+            });
+            
+            if (typeof businessMetricsData === 'object' && Object.keys(businessMetricsData).length) {
+              const firstKey = Object.keys(businessMetricsData)[0];
+              console.log(`[WebMetricsPanel] First key: "${firstKey}", value type:`, typeof businessMetricsData[firstKey]);
+              
+              if (businessMetricsData[firstKey] && typeof businessMetricsData[firstKey] === 'object') {
+                console.log('[WebMetricsPanel] Sample metrics:', Object.keys(businessMetricsData[firstKey]).slice(0, 5));
+              }
+            }
             
             // Validate the data structure
             if (typeof businessMetricsData !== 'object' || !Object.keys(businessMetricsData).length) {
@@ -335,13 +351,33 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         return [];
       }
       
-      const bizObj = businessMetrics[Object.keys(businessMetrics)[0]];
+      // Add debug logging for processed metrics
+      console.log('[WebMetricsPanel] Processing metrics from:', {
+        businessMetricsKeys: Object.keys(businessMetrics),
+      });
+      
+      const bizKey = Object.keys(businessMetrics)[0];
+      const bizObj = businessMetrics[bizKey];
+      
+      // Extended logging for debugging
+      console.log('[WebMetricsPanel] Business metrics found:', {
+        bizKey,
+        bizObjType: typeof bizObj,
+        bizObjKeys: bizObj ? Object.keys(bizObj) : 'null',
+        sampleData: bizObj ? JSON.stringify(bizObj).substring(0, 100) + '...' : 'null'
+      });
       
       // Verify bizObj is not null or undefined
       if (!bizObj) {
         console.error('[WebMetricsPanel] Business metrics object is null or empty');
         setError('Invalid metrics data structure. Please refresh the page.');
         return [];
+      }
+      
+      // Check for missing metric keys that we expect
+      const missingMetrics = Object.keys(idealBenchmarks).filter(metric => !bizObj[metric]);
+      if (missingMetrics.length > 0) {
+        console.warn('[WebMetricsPanel] Missing metrics in bizObj:', missingMetrics);
       }
       
       // Get role name and truncate before specific words, then add possessive form
@@ -358,14 +394,66 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
       
       return Object.entries(idealBenchmarks).map(([metric, { value, desc }]) => {
         // Convert metric values to numbers for comparison
-        const yourValue = bizObj?.[metric] || '0';
-        const roleValue = roleMetrics && Object.keys(roleMetrics).length 
-          ? roleMetrics[Object.keys(roleMetrics)[0]]?.[metric] || '0' 
-          : '0';
+        // Add debug logging for metric values
+        console.log(`[WebMetricsPanel] Processing metric "${metric}":`);
+        
+        // For bizObj, look for the metric by case insensitive matching if exact match fails
+        let yourValue = bizObj[metric];
+        if (yourValue === undefined) {
+          // Try case-insensitive search or different casing
+          const metricLower = metric.toLowerCase();
+          const matchingKey = Object.keys(bizObj).find(
+            k => k.toLowerCase() === metricLower || 
+                k.toLowerCase().replace(/\s+/g, '') === metricLower.replace(/\s+/g, '')
+          );
+          
+          if (matchingKey) {
+            console.log(`[WebMetricsPanel] Found case-insensitive metric match: "${matchingKey}" for "${metric}"`);
+            yourValue = bizObj[matchingKey];
+          }
+        }
+        
+        // If still no value, use default
+        yourValue = yourValue || '0';
+        console.log(`[WebMetricsPanel] Your value for "${metric}": ${yourValue}`);
+        
+        // Similar case-insensitive handling for role metrics
+        let roleValue = '0';
+        if (roleMetrics && Object.keys(roleMetrics).length) {
+          const roleKey = Object.keys(roleMetrics)[0];
+          roleValue = roleMetrics[roleKey][metric];
+          
+          // Try case-insensitive search if exact match fails
+          if (roleValue === undefined && roleMetrics[roleKey]) {
+            const metricLower = metric.toLowerCase();
+            const matchingKey = Object.keys(roleMetrics[roleKey]).find(
+              k => k.toLowerCase() === metricLower || 
+                  k.toLowerCase().replace(/\s+/g, '') === metricLower.replace(/\s+/g, '')
+            );
+            
+            if (matchingKey) {
+              console.log(`[WebMetricsPanel] Found case-insensitive role metric match: "${matchingKey}" for "${metric}"`);
+              roleValue = roleMetrics[roleKey][matchingKey];
+            } else {
+              roleValue = '0';
+            }
+          }
+        }
+        
+        console.log(`[WebMetricsPanel] Role value for "${metric}": ${roleValue}`);
+        
         const idealValue = value;
         
         // Extract numerical value for comparison
-        const extractNumber = (val) => parseFloat(String(val).match(/[\d.]+/)?.[0] || 0);
+        const extractNumber = (val) => {
+          if (!val) return 0;
+          // Handle various formats of metric values
+          const match = String(val).match(/[\d.]+/);
+          const num = match ? parseFloat(match[0]) : 0;
+          console.log(`[WebMetricsPanel] Extracted number from "${val}": ${num}`);
+          return num;
+        };
+        
         const yourNum = extractNumber(yourValue);
         const roleNum = extractNumber(roleValue);
         const idealNum = extractNumber(idealValue);
