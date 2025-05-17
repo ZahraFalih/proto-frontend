@@ -58,6 +58,13 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
 
   const persistToCache = (roleM, businessMetricsM, evalObj) => {
     if (!cacheKey) return;
+    
+    console.log('[WebMetricsPanel] Persisting to cache:', {
+      hasRoleMetrics: !!roleM,
+      hasBusinessMetrics: !!businessMetricsM,
+      hasEvaluation: !!evalObj
+    });
+    
     sessionStorage.setItem(
       cacheKey,
       JSON.stringify({ roleMetrics: roleM, businessMetrics: businessMetricsM, evaluation: evalObj })
@@ -112,6 +119,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           try {
             const businessMetricsData = await parseJsonResponse(businessMetricsRes);
             console.log('[WebMetricsPanel] Business metrics data:', businessMetricsData);
+            
             // Add detailed debug logging
             console.log('[WebMetricsPanel] Business metrics structure:', {
               type: typeof businessMetricsData,
@@ -120,26 +128,29 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
               keys: Object.keys(businessMetricsData)
             });
             
-            if (typeof businessMetricsData === 'object' && Object.keys(businessMetricsData).length) {
-              const firstKey = Object.keys(businessMetricsData)[0];
-              console.log(`[WebMetricsPanel] First key: "${firstKey}", value type:`, typeof businessMetricsData[firstKey]);
-              
-              if (businessMetricsData[firstKey] && typeof businessMetricsData[firstKey] === 'object') {
-                console.log('[WebMetricsPanel] Sample metrics:', Object.keys(businessMetricsData[firstKey]).slice(0, 5));
-              }
+            // Handle the specific structure from the API where metrics are in businessMetrics
+            let processedBusinessMetrics = businessMetricsData;
+            
+            // If the API sends data in the { businessName, businessMetrics } format, restructure it
+            if (businessMetricsData.businessName && businessMetricsData.businessMetrics) {
+              console.log('[WebMetricsPanel] Found businessName/businessMetrics structure, restructuring...');
+              processedBusinessMetrics = {
+                [businessMetricsData.businessName]: businessMetricsData.businessMetrics
+              };
+              console.log('[WebMetricsPanel] Restructured business metrics:', processedBusinessMetrics);
             }
             
             // Validate the data structure
-            if (typeof businessMetricsData !== 'object' || !Object.keys(businessMetricsData).length) {
-              console.error('[WebMetricsPanel] Invalid business metrics format:', businessMetricsData);
+            if (typeof processedBusinessMetrics !== 'object' || !Object.keys(processedBusinessMetrics).length) {
+              console.error('[WebMetricsPanel] Invalid business metrics format:', processedBusinessMetrics);
               setError('Invalid metrics data received from server. Please try again later.');
               setLoading(false);
               return;
             }
             
-            setBusinessMetrics(businessMetricsData);
+            setBusinessMetrics(processedBusinessMetrics);
             if (typeof onBusinessMetricsReady === 'function') {
-              onBusinessMetricsReady(businessMetricsData);
+              onBusinessMetricsReady(processedBusinessMetrics);
             }
           } catch (parseError) {
             console.error('[WebMetricsPanel] Failed to parse business metrics response:', parseError);
@@ -194,16 +205,23 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
             throw new Error('No valid metrics data available');
           }
           
-          // Get the business name (first key) from the metrics
-          const bizKey = Object.keys(businessMetrics)[0];
-          
-          // Create the payload in the exact format the API expects
-          metricsPayload = {};
-          metricsPayload[bizKey] = businessMetrics[bizKey];
+          // If businessMetrics has businessName/businessMetrics structure, use businessMetrics directly
+          if (businessMetrics.businessName && businessMetrics.businessMetrics) {
+            // For evaluation API, we need the { metrics: { business_name: metrics_obj } } format
+            const businessName = businessMetrics.businessName;
+            metricsPayload = {};
+            metricsPayload[businessName] = businessMetrics.businessMetrics;
+            console.log('[WebMetricsPanel] Using restructured metrics for evaluation');
+          } else {
+            // Otherwise use the first key as before
+            const bizKey = Object.keys(businessMetrics)[0];
+            metricsPayload = {};
+            metricsPayload[bizKey] = businessMetrics[bizKey];
+          }
           
           console.log('[WebMetricsPanel] Sending metrics in expected format:', {
             hasMetrics: !!metricsPayload,
-            bizKey,
+            keys: Object.keys(metricsPayload),
             sample: JSON.stringify(metricsPayload).substring(0, 50) + '...'
           });
           
@@ -352,16 +370,23 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
       }
       
       // Add debug logging for processed metrics
-      console.log('[WebMetricsPanel] Processing metrics from:', {
-        businessMetricsKeys: Object.keys(businessMetrics),
-      });
+      console.log('[WebMetricsPanel] Processing metrics from:', businessMetrics);
       
-      const bizKey = Object.keys(businessMetrics)[0];
-      const bizObj = businessMetrics[bizKey];
+      // Handle the nested structure
+      let bizObj;
+      if (businessMetrics.businessName && businessMetrics.businessMetrics) {
+        // Use the nested businessMetrics object directly
+        bizObj = businessMetrics.businessMetrics;
+        console.log('[WebMetricsPanel] Using nested businessMetrics:', bizObj);
+      } else {
+        // Use the traditional structure where metrics are under the business name key
+        const bizKey = Object.keys(businessMetrics)[0];
+        bizObj = businessMetrics[bizKey];
+        console.log('[WebMetricsPanel] Using metrics from key:', bizKey);
+      }
       
       // Extended logging for debugging
       console.log('[WebMetricsPanel] Business metrics found:', {
-        bizKey,
         bizObjType: typeof bizObj,
         bizObjKeys: bizObj ? Object.keys(bizObj) : 'null',
         sampleData: bizObj ? JSON.stringify(bizObj).substring(0, 100) + '...' : 'null'
@@ -383,6 +408,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
       // Get role name and truncate before specific words, then add possessive form
       const roleName = roleMetrics ? (() => {
         try {
+          // For role metrics, use the traditional structure
           const fullName = Object.keys(roleMetrics)[0];
           const truncatedName = fullName.split(/\s+(Landing|Search|Product)/)[0];
           return `${truncatedName}'s`;
