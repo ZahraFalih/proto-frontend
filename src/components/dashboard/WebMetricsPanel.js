@@ -169,6 +169,22 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           const evalUrl = buildApiUrl(API_ENDPOINTS.AI.EVALUATE.WEB_METRICS(pageId));
           console.log('[WebMetricsPanel] Evaluating metrics:', evalUrl);
           
+          // Make a deep clone of the business metrics to avoid any issues
+          let metricsForEvaluation = null;
+          try {
+            metricsForEvaluation = JSON.parse(JSON.stringify({ metrics: businessMetrics }));
+            console.log('[WebMetricsPanel] Metrics prepared for evaluation:', metricsForEvaluation);
+          } catch (jsonErr) {
+            console.error('[WebMetricsPanel] Error preparing metrics JSON:', jsonErr);
+            metricsForEvaluation = { metrics: {} };
+            
+            // Manually build a simpler metrics object
+            const bizKey = Object.keys(businessMetrics)[0];
+            if (bizKey && businessMetrics[bizKey]) {
+              metricsForEvaluation.metrics[bizKey] = { ...businessMetrics[bizKey] };
+            }
+          }
+          
           const evalRes = await fetchWithRetry(
             evalUrl,
             {
@@ -177,11 +193,27 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
                 Authorization: `Bearer ${token}`, 
                 'Content-Type': 'application/json' 
               },
-              body: JSON.stringify({ metrics: businessMetrics }),
+              body: JSON.stringify(metricsForEvaluation),
             }
           );
   
-          const evalJson = await parseJsonResponse(evalRes);
+          console.log('[WebMetricsPanel] Evaluation response status:', evalRes.status);
+          const evalText = await evalRes.text();
+          
+          let evalJson;
+          try {
+            evalJson = JSON.parse(evalText);
+            console.log('[WebMetricsPanel] Evaluation response parsed successfully');
+          } catch (parseErr) {
+            console.error('[WebMetricsPanel] Failed to parse evaluation response:', parseErr, evalText);
+            throw new Error('Invalid response format from evaluation endpoint');
+          }
+          
+          console.log('[WebMetricsPanel] Evaluation response data:', {
+            hasReport: !!evalJson.web_metrics_report,
+            hasSummary: !!evalJson.web_metrics_report?.overall_summary
+          });
+  
           const report = evalJson.web_metrics_report;
           if (!report || !report.overall_summary) {
             console.error('[WebMetricsPanel] Invalid eval response:', evalJson);
@@ -199,6 +231,13 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         } catch (evalErr) {
           console.error('[WebMetricsPanel] Evaluation error after retries:', evalErr);
           setError('Metrics loaded, but AI evaluation failed.');
+          
+          // Log the error details
+          console.error('[WebMetricsPanel] Error details:', {
+            message: evalErr.message,
+            stack: evalErr.stack,
+            businessMetrics: JSON.stringify(businessMetrics).substring(0, 200) + '...' // Log a snippet
+          });
           
           // Fallback summary & recommendations
           const fallbackReport = {

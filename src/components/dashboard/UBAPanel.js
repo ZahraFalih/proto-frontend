@@ -76,10 +76,36 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
         
         // Check if it's a file not found error
         if (errorText.includes('No such file or directory')) {
-          // Clear any cached data for this page
-          sessionStorage.removeItem(cacheKey);
+          console.warn('[UBAPanel] UBA data file not found. Checking if we have cached data that might still be valid');
           
-          // Show a more user-friendly error message
+          // Don't immediately clear the cache - check if we have valid data first
+          const cached = sessionStorage.getItem(cacheKey);
+          if (cached) {
+            try {
+              const cachedData = JSON.parse(cached);
+              if (cachedData.formulation && cachedData.observationSections && cachedData.observationSections.length > 0) {
+                console.log('[UBAPanel] Using cached UBA data instead of failing');
+                
+                // Use the cached data
+                setFormulation(cachedData.formulation);
+                setObservationSections(cachedData.observationSections);
+                setSolutions(cachedData.solutions || []);
+                
+                // Notify parent of cached UBA analysis
+                if (typeof onSummaryReady === 'function') {
+                  onSummaryReady(cachedData.formulation);
+                }
+                
+                setLoading(false);
+                return; // Exit the function early to use cached data
+              }
+            } catch (cacheErr) {
+              console.error('[UBAPanel] Failed to parse cached data:', cacheErr);
+              // Continue with showing the error
+            }
+          }
+          
+          // If we get here, we don't have valid cached data to fall back on
           throw new Error('The UBA data file is no longer available. Please try re-uploading your UBA data.');
         }
         
@@ -181,8 +207,11 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       console.error('[UBAPanel] Error in data fetch:', err);
       setError(err.message);
       
-      // Clear cache if there was an error
-      if (err.message.includes('file') || err.message.includes('UBA')) {
+      // Only clear cache if it's not a file not found error (which we handle above)
+      // and it's a serious error that would make the cache invalid
+      if (!err.message.includes('file is no longer available') && 
+          (err.message.includes('formulation') || err.message.includes('format'))) {
+        console.log('[UBAPanel] Clearing cache due to serious error');
         sessionStorage.removeItem(cacheKey);
       }
     } finally {
