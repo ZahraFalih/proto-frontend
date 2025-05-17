@@ -204,8 +204,6 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
   
         /* Evaluate business metrics with AI */
         try {
-          const evalUrl = buildApiUrl(API_ENDPOINTS.AI.EVALUATE.WEB_METRICS(pageId));
-          
           let metricsPayload = null;
           if (bizResult.status === 'fulfilled' && bizResult.value) {
             const businessMetricsData = bizResult.value;
@@ -227,7 +225,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           }
           
           const evalRes = await fetchWithRetry(
-            'ask-ai/evaluate-web-metrics/',
+            'https://proto-api-kg9r.onrender.com/ask-ai/evaluate-web-metrics/',
             {
               method: 'POST',
               headers: {
