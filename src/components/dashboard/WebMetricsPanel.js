@@ -169,21 +169,27 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           const evalUrl = buildApiUrl(API_ENDPOINTS.AI.EVALUATE.WEB_METRICS(pageId));
           console.log('[WebMetricsPanel] Evaluating metrics:', evalUrl);
           
-          // Make a deep clone of the business metrics to avoid any issues
-          let metricsForEvaluation = null;
-          try {
-            metricsForEvaluation = JSON.parse(JSON.stringify({ metrics: businessMetrics }));
-            console.log('[WebMetricsPanel] Metrics prepared for evaluation:', metricsForEvaluation);
-          } catch (jsonErr) {
-            console.error('[WebMetricsPanel] Error preparing metrics JSON:', jsonErr);
-            metricsForEvaluation = { metrics: {} };
-            
-            // Manually build a simpler metrics object
-            const bizKey = Object.keys(businessMetrics)[0];
-            if (bizKey && businessMetrics[bizKey]) {
-              metricsForEvaluation.metrics[bizKey] = { ...businessMetrics[bizKey] };
-            }
+          // Format metrics exactly as the API expects: one top-level key with a metrics dict
+          let metricsPayload = null;
+          
+          // Check if we have valid business metrics first
+          if (!businessMetrics || typeof businessMetrics !== 'object' || !Object.keys(businessMetrics).length) {
+            console.error('[WebMetricsPanel] No valid business metrics available for evaluation');
+            throw new Error('No valid metrics data available');
           }
+          
+          // Get the business name (first key) from the metrics
+          const bizKey = Object.keys(businessMetrics)[0];
+          
+          // Create the payload in the exact format the API expects
+          metricsPayload = {};
+          metricsPayload[bizKey] = businessMetrics[bizKey];
+          
+          console.log('[WebMetricsPanel] Sending metrics in expected format:', {
+            hasMetrics: !!metricsPayload,
+            bizKey,
+            sample: JSON.stringify(metricsPayload).substring(0, 50) + '...'
+          });
           
           const evalRes = await fetchWithRetry(
             evalUrl,
@@ -193,7 +199,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
                 Authorization: `Bearer ${token}`, 
                 'Content-Type': 'application/json' 
               },
-              body: JSON.stringify(metricsForEvaluation),
+              body: JSON.stringify({ metrics: metricsPayload }),
             }
           );
   
@@ -236,7 +242,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           console.error('[WebMetricsPanel] Error details:', {
             message: evalErr.message,
             stack: evalErr.stack,
-            businessMetrics: JSON.stringify(businessMetrics).substring(0, 200) + '...' // Log a snippet
+            businessMetrics: businessMetrics ? JSON.stringify(businessMetrics).substring(0, 200) + '...' : 'null' // Log a snippet
           });
           
           // Fallback summary & recommendations
