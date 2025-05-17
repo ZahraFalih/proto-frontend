@@ -6,12 +6,6 @@ import '../../styles/UBAPanel.css';
 import '../../styles/Dashboard.css';
 import { getToken } from '../../utils/auth';
 import { buildApiUrl, API_ENDPOINTS } from '../../config/api';
-import { fetchWithRetry, parseJsonResponse } from '../../utils/api';
-
-// Constants for retry mechanism
-const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 2000; // 2 seconds
-const MAX_RETRY_DELAY = 10000; // 10 seconds
 
 export default function UBAPanel({ pageId, onSummaryReady }) {
   const [formulation, setFormulation] = useState('');
@@ -22,131 +16,207 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
   const [activeObservation, setActiveObservation] = useState(null);
   const [expandedSolution, setExpandedSolution] = useState(null);
   const [pinnedObservation, setPinnedObservation] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const [retryTimeout, setRetryTimeout] = useState(null);
 
   /* ─── Cache Helpers ───────────────────────────────────────────────── */
   const cacheKey = pageId ? `uba_cache_${pageId}` : null;
   
-  const isValidData = (data) => {
-    return data && 
-           typeof data === 'object' && 
-           Object.keys(data).length > 0 &&
-           !data.error;
-  };
-
   const hydrateFromCache = () => {
     if (!cacheKey) return false;
     const cached = sessionStorage.getItem(cacheKey);
     if (!cached) return false;
-
+    
     try {
-      const { data, timestamp } = JSON.parse(cached);
-      
-      // Check cache freshness (1 hour)
-      const CACHE_TTL = 60 * 60 * 1000; // 1 hour in milliseconds
-      if (Date.now() - timestamp > CACHE_TTL) {
-        console.log('[UBAPanel] Cache expired, removing');
-        sessionStorage.removeItem(cacheKey);
-        return false;
-      }
-
-      if (!isValidData(data)) {
-        console.log('[UBAPanel] Invalid data in cache, removing');
-        sessionStorage.removeItem(cacheKey);
-        return false;
-      }
-
-      setFormulation(data.formulation);
-      setObservationSections(data.observationSections);
-      setSolutions(data.solutions);
+      const { formulation, observationSections, solutions } = JSON.parse(cached);
+      setFormulation(formulation);
+      setObservationSections(observationSections);
+      setSolutions(solutions);
       // Notify parent of cached UBA analysis
       if (typeof onSummaryReady === 'function') {
-        onSummaryReady(data.formulation);
+        onSummaryReady(formulation);
       }
-      setLoading(false);
       return true;
-    } catch (error) {
-      console.error('[UBAPanel] Cache hydration error:', error);
-      sessionStorage.removeItem(cacheKey);
+    } catch {
+      sessionStorage.removeItem(cacheKey); // corrupted cache
       return false;
     }
   };
   
-  const persistToCache = (newData) => {
-    if (!cacheKey || !isValidData(newData)) return;
-    
-    console.log('[UBAPanel] Persisting valid data to cache');
-    
+  const persistToCache = (form, sections, sols) => {
+    if (!cacheKey) return;
     sessionStorage.setItem(
       cacheKey,
-      JSON.stringify({
-        data: newData,
-        timestamp: Date.now()
-      })
+      JSON.stringify({ formulation: form, observationSections: sections, solutions: sols })
     );
   };
 
-  const clearRetryTimeout = () => {
-    if (retryTimeout) {
-      clearTimeout(retryTimeout);
-      setRetryTimeout(null);
-    }
-  };
-
-  const fetchData = async (attempt = 0) => {
-    console.log(`[UBAPanel] Attempt ${attempt + 1} of ${MAX_RETRIES}`);
+  const fetchData = async (pageId) => {
+    console.log('[UBAPanel] Starting fresh data fetch for pageId:', pageId);
     setLoading(true);
     setError(null);
-    setRetryCount(attempt);
 
     try {
+      // Get auth token
       const token = getToken();
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
+      console.log('[UBAPanel] Auth token retrieved:', token ? 'Token found' : 'Token missing');
+      const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-      const url = buildApiUrl(API_ENDPOINTS.TOOLKIT.UBA.ANALYZE(pageId));
-      const response = await fetchWithRetry(url, { headers });
-      const responseData = await parseJsonResponse(response);
-
-      // Check if we got valid data or need to retry
-      if (!isValidData(responseData)) {
-        console.log('[UBAPanel] Invalid data received, will retry');
-        throw new Error('Invalid data received from server');
+      // Append a cache-busting query parameter 
+      const timestamp = Date.now();
+      
+      // ── 1) Evaluate UBA (must be called first) ─────────────────────────────────────
+      const evalUrl = buildApiUrl(API_ENDPOINTS.AI.EVALUATE.UBA(pageId, timestamp));
+      console.log('[UBAPanel] Starting UBA evaluation:', evalUrl);
+      
+      const evaluateResponse = await fetch(evalUrl, { headers });
+      console.log('[UBAPanel] UBA evaluation response status:', evaluateResponse.status);
+      
+      if (!evaluateResponse.ok) {
+        const errorText = await evaluateResponse.text();
+        console.error('[UBAPanel] UBA evaluation error response:', errorText);
+        
+        // Check if it's a file not found error
+        if (errorText.includes('No such file or directory')) {
+          console.warn('[UBAPanel] UBA data file not found. Checking if we have cached data that might still be valid');
+          
+          // Don't immediately clear the cache - check if we have valid data first
+          const cached = sessionStorage.getItem(cacheKey);
+          if (cached) {
+            try {
+              const cachedData = JSON.parse(cached);
+              if (cachedData.formulation && cachedData.observationSections && cachedData.observationSections.length > 0) {
+                console.log('[UBAPanel] Using cached UBA data instead of failing');
+                
+                // Use the cached data
+                setFormulation(cachedData.formulation);
+                setObservationSections(cachedData.observationSections);
+                setSolutions(cachedData.solutions || []);
+                
+                // Notify parent of cached UBA analysis
+                if (typeof onSummaryReady === 'function') {
+                  onSummaryReady(cachedData.formulation);
+                }
+                
+                setLoading(false);
+                return; // Exit the function early to use cached data
+              }
+            } catch (cacheErr) {
+              console.error('[UBAPanel] Failed to parse cached data:', cacheErr);
+              // Continue with showing the error
+            }
+          }
+          
+          // If we get here, we don't have valid cached data to fall back on
+          throw new Error('The UBA data file is no longer available. Please try re-uploading your UBA data.');
+        }
+        
+        throw new Error(`UBA evaluation failed: ${evaluateResponse.status} - ${errorText}`);
       }
+      
+      const evaluateData = await evaluateResponse.json();
+      console.log('[UBAPanel] UBA evaluation completed');
 
-      setFormulation(responseData.formulation);
-      setObservationSections(responseData.observationSections);
-      setSolutions(responseData.solutions);
-      persistToCache(responseData);
-      setLoading(false);
-      clearRetryTimeout();
+      // ── 2) Web Search (must be called after evaluation) ─────────────────────────────────────
+      const searchUrl = buildApiUrl(API_ENDPOINTS.AI.WEB_SEARCH(pageId, timestamp));
+      console.log('[UBAPanel] Fetching web search results:', searchUrl);
+      
+      const searchResponse = await fetch(searchUrl, { headers });
+      console.log('[UBAPanel] Web search response status:', searchResponse.status);
+      
+      if (!searchResponse.ok) {
+        const errorText = await searchResponse.text();
+        console.error('[UBAPanel] Web search error response:', errorText);
+        throw new Error(`Web search failed: ${searchResponse.status} - ${errorText}`);
+      }
+      
+      const searchData = await searchResponse.json();
+      console.log('[UBAPanel] Received web search data:', {
+        hasResults: !!searchData.results,
+        resultCount: searchData.results?.length
+      });
+
+      // Process solutions with their associated problem
+      const problemSolutions = searchData.results || [];
+      setSolutions(problemSolutions);
+
+      // ── 3) UBA formulation (must be called last) ─────────────────────────────────────────────
+      const formUrl = buildApiUrl(API_ENDPOINTS.AI.FORMULATE_UBA(pageId, timestamp));
+      console.log('[UBAPanel] Fetching UBA formulation:', formUrl);
+      
+      const formResponse = await fetch(formUrl, { headers });
+      console.log('[UBAPanel] Formulation response status:', formResponse.status);
+      
+      if (!formResponse.ok) {
+        const errorText = await formResponse.text();
+        console.error('[UBAPanel] Formulation error response:', errorText);
+        throw new Error(`UBA formulation fetch failed: ${formResponse.status} - ${errorText}`);
+      }
+      
+      const data = await formResponse.json();
+      console.log('[UBAPanel] Received formulation data:', {
+        hasFormulation: !!data.uba_formulation,
+        observationCount: data.uba_formulation ? Object.keys(data.uba_formulation).length : 0
+      });
+      
+      if (!data.uba_formulation) {
+        throw new Error('No UBA formulation data received');
+      }
+      
+      // Process observations
+      const observations = data.uba_formulation;
+      let combinedText = '';
+      let sectionData = [];
+      
+      Object.entries(observations).forEach(([key, text], index) => {
+        if (!text) {
+          console.log(`[UBAPanel] Skipping empty observation ${index + 1}`);
+          return;
+        }
+        
+        const startPos = combinedText.length;
+        combinedText += text + ' ';
+        const endPos = combinedText.length - 1;
+        
+        sectionData.push({
+          observationNumber: index + 1,
+          startPos,
+          endPos,
+          text
+        });
+      });
+      
+      const formText = combinedText.trim();
+      
+      // Update state
+      setFormulation(formText);
+      setObservationSections(sectionData);
+      
+      // Cache the results
+      persistToCache(formText, sectionData, problemSolutions);
 
       // Notify parent of UBA analysis
       if (typeof onSummaryReady === 'function') {
-        onSummaryReady(responseData.formulation);
+        onSummaryReady(formText);
       }
       
       console.log('[UBAPanel] Successfully completed all requests and updated state:', {
-        formulationLength: responseData.formulation.length,
-        sectionsCount: responseData.observationSections.length,
-        solutionsCount: responseData.solutions.length
+        formulationLength: formText.length,
+        sectionsCount: sectionData.length,
+        solutionsCount: problemSolutions.length
       });
     } catch (err) {
-      console.error('[UBAPanel] Fetch error:', err);
+      console.error('[UBAPanel] Error in data fetch:', err);
+      setError(err.message);
       
-      // Check if we should retry
-      if (attempt < MAX_RETRIES - 1) {
-        const delay = Math.min(INITIAL_RETRY_DELAY * Math.pow(2, attempt), MAX_RETRY_DELAY);
-        console.log(`[UBAPanel] Scheduling retry in ${delay}ms`);
-        const timeout = setTimeout(() => fetchData(attempt + 1), delay);
-        setRetryTimeout(timeout);
-      } else {
-        setError('Failed to load UBA data after multiple attempts. Please try again later.');
-        setLoading(false);
+      // Only clear cache if it's not a file not found error (which we handle above)
+      // and it's a serious error that would make the cache invalid
+      if (!err.message.includes('file is no longer available') && 
+          (err.message.includes('formulation') || err.message.includes('format'))) {
+        console.log('[UBAPanel] Clearing cache due to serious error');
+        sessionStorage.removeItem(cacheKey);
       }
+    } finally {
+      console.log('[UBAPanel] Request chain completed');
+      setLoading(false);
     }
   };
 
@@ -158,17 +228,18 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       return;
     }
 
+    // Try to load from cache first
     if (hydrateFromCache()) {
-      console.log('[UBAPanel] Valid data loaded from cache for pageId:', pageId);
+      console.log('[UBAPanel] Data loaded from cache');
       return;
     }
     
-    fetchData();
+    // Fetch fresh data if cache miss
+    fetchData(pageId);
     
     // Cleanup function
     return () => {
       console.log('[UBAPanel] Cleaning up component');
-      clearRetryTimeout();
     };
   }, [pageId]);
 
@@ -337,47 +408,32 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
   return (
     <div className="panel-container">
       <div className="panel-header">User Behaviour Analytics</div>
-      <div className="panel-subtitle">
-        {loading && retryCount > 0 ? 
-          `Retrying to load UBA data (Attempt ${retryCount + 1}/${MAX_RETRIES})...` :
-          'Analyzing user behavior patterns and interactions..'}
-      </div>
+      <div className="panel-subtitle">We analyzed how users interact with your website and identified key behavior patterns.</div>
 
-      {loading && (
-        <div className="uba-loading">
-          <div className="loading-spinner"></div>
-          <p>Loading user behavior analytics...</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="uba-error">
-          <p>{error}</p>
-          <button onClick={() => window.location.reload()}>
-            Retry Loading
-          </button>
-        </div>
-      )}
-
-      {!loading && !error && formulation && (
-        <div className="uba-content">
-          <div className="uba-formulation-container">
-            <div className="uba-formulation-wrapper">
-              <div className="uba-formulation-header">
-                <h4>Analysis</h4>
-                {pinnedObservation && (
-                  <button 
-                    className="uba-pin-clear-button" 
-                    onClick={() => {
-                      setPinnedObservation(null);
-                      setActiveObservation(null);
-                    }}
-                  >
-                    Clear Selection
-                  </button>
-                )}
-              </div>
-              
+      <div className="uba-content-container">
+        <div className="uba-formulation-container">
+          <div className="uba-formulation-wrapper">
+            <div className="uba-formulation-header">
+              <h4>Analysis</h4>
+              {pinnedObservation && (
+                <button 
+                  className="uba-pin-clear-button" 
+                  onClick={() => {
+                    setPinnedObservation(null);
+                    setActiveObservation(null);
+                  }}
+                >
+                  Clear Selection
+                </button>
+              )}
+            </div>
+            
+            {loading && <UBASkeleton />}
+            {error && <p className="uba-error-text">Error: {error}</p>}
+            {!loading && !error && !formulation && (
+              <p className="uba-loading-placeholder">Analyzing user behavior patterns...</p>
+            )}
+            {!loading && !error && formulation && (
               <div className="uba-formulation-content">
                 {renderFormulation()}
                 <div className="uba-interaction-hint">
@@ -385,15 +441,16 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
                   <span>Hover over text to see relevant resources. Click to pin your selection.</span>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div className="uba-links-container">
-            <h4>Related Resources</h4>
-            {renderSolutions()}
+            )}
           </div>
         </div>
-      )}
+
+        <div className="uba-links-container">
+          <h4>Related Resources</h4>
+          {loading && <UBASkeleton />}
+          {!loading && !error && renderSolutions()}
+        </div>
+      </div>
     </div>
   );
 }
