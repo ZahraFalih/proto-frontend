@@ -23,6 +23,7 @@ export default function UIPanel({ pageId, onSummaryReady }) {
         setLoading(false);
         // Notify parent of cached UI evaluation
         if (typeof onSummaryReady === 'function') {
+          console.log('[UIPanel] Sending cached UI evaluation to Dashboard:', parsed);
           onSummaryReady(parsed);
         }
         console.log(`[UIPanel] Loaded from cache for pageId=${pageId}`);
@@ -74,10 +75,9 @@ export default function UIPanel({ pageId, onSummaryReady }) {
 
         setCategories(categoriesArray);
         sessionStorage.setItem(cacheKey, JSON.stringify(categoriesArray));
-        
         // Notify parent of fresh UI evaluation
         if (typeof onSummaryReady === 'function') {
-          console.log('[UIPanel] Sending UI evaluation to parent:', categoriesArray);
+          console.log('[UIPanel] Sending UI evaluation to Dashboard:', categoriesArray);
           onSummaryReady(categoriesArray);
         }
         console.log(`[UIPanel] Cached response for pageId=${pageId}, categories:`, categoriesArray);

@@ -64,12 +64,18 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
 
       // Notify parent components of cached data
       if (typeof onBusinessMetricsReady === 'function') {
+        console.log('[WebMetricsPanel] Sending cached business metrics to Dashboard:', 
+          businessMetrics ? Object.keys(businessMetrics) : 'null');
         onBusinessMetricsReady(businessMetrics);
       }
       if (typeof onRoleMetricsReady === 'function' && roleMetrics) {
+        console.log('[WebMetricsPanel] Sending cached role metrics to Dashboard:', 
+          roleMetrics ? Object.keys(roleMetrics) : 'null');
         onRoleMetricsReady(roleMetrics);
       }
       if (evaluation?.overall_summary && typeof onSummaryReady === 'function') {
+        console.log('[WebMetricsPanel] Sending cached summary to Dashboard:', 
+          evaluation?.overall_summary ? evaluation.overall_summary.substring(0, 50) + '...' : 'null');
         onSummaryReady(evaluation.overall_summary);
       }
       return true;
@@ -195,9 +201,9 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         // Using Promise.allSettled with retry for zero values and errors
         const [roleResult, bizResult] = await retryOperation(async () => {
           const results = await Promise.allSettled([
-            fetchMetricsWithRetry(roleUrl, headers),
-            fetchMetricsWithRetry(bizUrl, headers)
-          ]);
+          fetchMetricsWithRetry(roleUrl, headers),
+          fetchMetricsWithRetry(bizUrl, headers)
+        ]);
           
           // If both promises are rejected, throw an error
           if (results[0].status === 'rejected' && results[1].status === 'rejected') {
@@ -220,7 +226,8 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           
           setBusinessMetrics(processedBusinessMetrics);
           if (typeof onBusinessMetricsReady === 'function') {
-            console.log('[WebMetricsPanel] Sending business metrics to parent:', processedBusinessMetrics);
+            console.log('[WebMetricsPanel] Sending fresh business metrics to Dashboard:', 
+              processedBusinessMetrics ? Object.keys(processedBusinessMetrics) : 'null');
             onBusinessMetricsReady(processedBusinessMetrics);
           }
         } else {
@@ -232,7 +239,8 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           const roleData = roleResult.value;
           setRoleMetrics(roleData);
           if (typeof onRoleMetricsReady === 'function') {
-            console.log('[WebMetricsPanel] Sending role metrics to parent:', roleData);
+            console.log('[WebMetricsPanel] Sending fresh role metrics to Dashboard:', 
+              roleData ? Object.keys(roleData) : 'null');
             onRoleMetricsReady(roleData);
           }
         }
@@ -287,7 +295,8 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           );
   
           if (typeof onSummaryReady === 'function') {
-            console.log('[WebMetricsPanel] Sending summary to parent:', evalJson.web_metrics_report.overall_summary);
+            console.log('[WebMetricsPanel] Sending fresh summary to Dashboard:', 
+              evalJson.web_metrics_report?.overall_summary ? evalJson.web_metrics_report.overall_summary.substring(0, 50) + '...' : 'null');
             onSummaryReady(evalJson.web_metrics_report.overall_summary);
           }
         });
@@ -313,7 +322,8 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
 
   useEffect(() => {
     if (evaluation?.overall_summary && typeof onSummaryReady === 'function') {
-      console.log('[WebMetricsPanel] Bubbling summary from evaluation state:', evaluation.overall_summary);
+      console.log('[WebMetricsPanel] Bubbling summary from evaluation state:', 
+        evaluation.overall_summary.substring(0, 50) + '...');
       onSummaryReady(evaluation.overall_summary);
     }
   }, [evaluation, onSummaryReady]);

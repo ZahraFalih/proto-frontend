@@ -32,6 +32,7 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       setSolutions(solutions);
       // Notify parent of cached UBA analysis
       if (typeof onSummaryReady === 'function') {
+        console.log('[UBAPanel] Sending cached formulation to Dashboard:', formulation.substring(0, 50) + '...');
         onSummaryReady(formulation);
       }
       return true;
@@ -93,6 +94,7 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
                 
                 // Notify parent of cached UBA analysis
                 if (typeof onSummaryReady === 'function') {
+                  console.log('[UBAPanel] Sending cached formulation to Dashboard:', cachedData.formulation.substring(0, 50) + '...');
                   onSummaryReady(cachedData.formulation);
                 }
                 
@@ -114,12 +116,6 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       
       const evaluateData = await evaluateResponse.json();
       console.log('[UBAPanel] UBA evaluation completed');
-
-      // Notify parent of UBA evaluation
-      if (typeof onSummaryReady === 'function') {
-        console.log('[UBAPanel] Sending UBA summary to parent:', evaluateData.uba_report);
-        onSummaryReady(evaluateData.uba_report);
-      }
 
       // ── 2) Web Search (must be called after evaluation) ─────────────────────────────────────
       const searchUrl = buildApiUrl(API_ENDPOINTS.AI.WEB_SEARCH(pageId, timestamp));
@@ -201,6 +197,7 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
 
       // Notify parent of UBA analysis
       if (typeof onSummaryReady === 'function') {
+        console.log('[UBAPanel] Sending fresh formulation to Dashboard:', formText.substring(0, 50) + '...');
         onSummaryReady(formText);
       }
       

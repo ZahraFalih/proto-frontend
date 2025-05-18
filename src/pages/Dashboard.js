@@ -34,6 +34,17 @@ export default function Dashboard() {
   const [ubaSummary,       setUbaSummary]       = useState('');
   const [uiEvalSummary,    setUiEvalSummary]    = useState('');
   
+  // Add debugging for context data updates
+  useEffect(() => {
+    console.log('[Dashboard] AI Chat Context Updated:', {
+      webMetricsSummary: webMetricsSummary ? 'Present' : 'Missing',
+      webRoleMetrics: webRoleMetrics ? 'Present' : 'Missing',
+      webBusinessMetrics: webBusinessMetrics ? 'Present' : 'Missing',
+      ubaSummary: ubaSummary ? 'Present' : 'Missing',
+      uiEvalSummary: uiEvalSummary ? Array.isArray(uiEvalSummary) ? `${uiEvalSummary.length} items` : 'Invalid format' : 'Missing'
+    });
+  }, [webMetricsSummary, webRoleMetrics, webBusinessMetrics, ubaSummary, uiEvalSummary]);
+  
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -194,7 +205,15 @@ export default function Dashboard() {
 
   // Cache tab content when it changes
   useEffect(() => {
-    if (activeTabSlug) {
+    if (activeTabSlug && webMetricsSummary) {
+      console.log('[Dashboard] Caching tab content for:', activeTabSlug, {
+        webMetricsSummary: webMetricsSummary ? 'Present' : 'Missing',
+        webRoleMetrics: webRoleMetrics ? 'Present' : 'Missing', 
+        webBusinessMetrics: webBusinessMetrics ? 'Present' : 'Missing',
+        ubaSummary: ubaSummary ? 'Present' : 'Missing',
+        uiEvalSummary: uiEvalSummary ? 'Present' : 'Missing'
+      });
+      
       setTabCache(prev => ({
         ...prev,
         [activeTabSlug]: {
@@ -318,41 +337,27 @@ export default function Dashboard() {
                 <div className="dashboard-main-panels">
                   <WebMetricsPanel
                     pageId={activePageId}
-                    onRoleMetricsReady={metrics => {
-                      console.log('[Dashboard] Received role metrics:', metrics);
-                      setWebRoleMetrics(metrics);
-                    }}
-                    onBusinessMetricsReady={metrics => {
-                      console.log('[Dashboard] Received business metrics:', metrics);
-                      setWebBusinessMetrics(metrics);
-                    }}
-                    onSummaryReady={summary => {
-                      console.log('[Dashboard] Received web metrics summary:', summary);
-                      setWebMetricsSummary(summary);
-                    }}
+                    onRoleMetricsReady    ={setWebRoleMetrics}
+                    onBusinessMetricsReady={setWebBusinessMetrics}
+                    onSummaryReady        ={setWebMetricsSummary}
                   />
                   <UBAPanel
                     pageId={activePageId}
-                    onSummaryReady={summary => {
-                      console.log('[Dashboard] Received UBA summary:', summary);
-                      setUbaSummary(summary);
-                    }}
+                    onSummaryReady={setUbaSummary}
                   />
                   <UIPanel
                     pageId={activePageId}
-                    onSummaryReady={summary => {
-                      console.log('[Dashboard] Received UI evaluation:', summary);
-                      setUiEvalSummary(summary);
-                    }}
+                    onSummaryReady={setUiEvalSummary}
                   />
                   <AIChatPanel
                     context={{
-                      roleMetrics: webRoleMetrics,
+                      roleMetrics:     webRoleMetrics,
                       businessMetrics: webBusinessMetrics,
-                      summary: webMetricsSummary,
-                      uba: ubaSummary,
-                      ui: uiEvalSummary
+                      summary:         webMetricsSummary,
+                      uba:            ubaSummary,
+                      ui:             uiEvalSummary
                     }}
+                    key={`chat-${activePageId}`}
                   />
                 </div>
               </div>

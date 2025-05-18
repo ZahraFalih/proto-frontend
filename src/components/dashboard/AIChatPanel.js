@@ -38,8 +38,21 @@ const AIChatPanel = ({ context = {} }) => {
   const { 
     summary         = 'No summary available', 
     roleMetrics     = {}, 
-    businessMetrics = {} 
+    businessMetrics = {}, 
+    uba            = '',
+    ui             = []
   } = context;
+
+  // Log context updates for debugging
+  useEffect(() => {
+    console.log('[AIChatPanel] Received context:', {
+      summary: summary ? 'Present' : 'Missing',
+      roleMetrics: roleMetrics && Object.keys(roleMetrics).length ? 'Present' : 'Missing',
+      businessMetrics: businessMetrics && Object.keys(businessMetrics).length ? 'Present' : 'Missing',
+      uba: uba ? 'Present' : 'Missing',
+      ui: Array.isArray(ui) && ui.length ? `${ui.length} items` : 'Missing'
+    });
+  }, [summary, roleMetrics, businessMetrics, uba, ui]);
 
   // Effect to handle persona changes
   useEffect(() => {
@@ -129,15 +142,22 @@ const AIChatPanel = ({ context = {} }) => {
 
   // Prepend context system message
   const formatMetrics = (metrics, label = '') => {
-    if (!metrics || Object.keys(metrics).length === 0) return `No ${label.toLowerCase()} metrics available`;
+    if (!metrics || Object.keys(metrics).length === 0) {
+      console.log(`[AIChatPanel] No ${label.toLowerCase()} metrics found`);
+      return `No ${label.toLowerCase()} metrics available`;
+    }
     
     // Get the first (and usually only) page's metrics
     const pageMetrics = Object.values(metrics)[0];
-    if (!pageMetrics) return `No ${label.toLowerCase()} metrics available`;
+    if (!pageMetrics) {
+      console.log(`[AIChatPanel] No page metrics found in ${label.toLowerCase()} metrics`);
+      return `No ${label.toLowerCase()} metrics available`;
+    }
 
     // Get role name if available (for role metrics only)
     const roleName = label === 'Role Model' ? `(${Object.keys(metrics)[0]})` : '';
     
+    console.log(`[AIChatPanel] Formatting ${label} metrics with ${Object.keys(pageMetrics).length} entries`);
     return Object.entries(pageMetrics)
       .map(([metric, value]) => `  - ${metric}: ${value}`)
       .join('\n') + (roleName ? `\n  Role: ${roleName}` : '');
@@ -145,19 +165,25 @@ const AIChatPanel = ({ context = {} }) => {
 
   const formatUIEvaluation = (uiData) => {
     if (!uiData || !Array.isArray(uiData) || uiData.length === 0) {
+      console.log('[AIChatPanel] No UI evaluation data found');
       return 'No UI evaluation data available';
     }
 
+    console.log(`[AIChatPanel] Formatting UI evaluation with ${uiData.length} categories`);
     return uiData.map(category => (
       `  ${category.name} (${category.score}/10):\n    ${category.evidence}`
     )).join('\n\n');
   };
 
   const formatUBAAnalysis = (ubaText) => {
-    if (!ubaText) return 'No UBA analysis available';
+    if (!ubaText) {
+      console.log('[AIChatPanel] No UBA analysis found');
+      return 'No UBA analysis available';
+    }
     
     // Split into paragraphs and format
     const paragraphs = ubaText.split('\n').filter(p => p.trim());
+    console.log(`[AIChatPanel] Formatting UBA analysis with ${paragraphs.length} paragraphs`);
     return paragraphs.map((p, i) => `  ${i + 1}. ${p.trim()}`).join('\n');
   };
 
@@ -181,6 +207,7 @@ const AIChatPanel = ({ context = {} }) => {
 
     setIsSending(true);
     console.log('[Chat] User says:', inputValue);
+    console.log('[Chat] Context available for AI:', ctxContent.substring(0, 100) + '...');
 
     // Add user message
     const userMessage = { id: messages.length + 1, sender: 'user', text: inputValue };
