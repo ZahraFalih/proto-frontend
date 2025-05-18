@@ -6,7 +6,9 @@ export const API_CONFIG = {
 
 // Helper function to build API URLs
 export const buildApiUrl = (endpoint) => {
-    return `${API_CONFIG.METHOD}://${API_CONFIG.URL_BASE}${endpoint}`;
+    const url = `${API_CONFIG.METHOD}://${API_CONFIG.URL_BASE}${endpoint}`;
+    console.log('[API] Building URL:', url);
+    return url;
 };
 
 // Common API endpoints
@@ -25,8 +27,10 @@ export const API_ENDPOINTS = {
         USER: '/onboard/user-onboard/',
         BUSINESS: '/onboard/business-onboard/',
         PAGE: '/onboard/page-onboard/',
+        PAGE_ONBOARD: '/onboard/page-onboard/',
         UPLOAD_SCREENSHOT: '/onboard/upload-screenshot/',
         PAGES: (id, type) => `/onboard/pages/${id}/${encodeURIComponent(type)}/`,
+        DELETE_PAGE: (id, type) => `/onboard/delete-page/${id}/${encodeURIComponent(type)}/`,
     },
     
     // Upload endpoints

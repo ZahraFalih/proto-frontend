@@ -58,10 +58,17 @@ export default function AddPageModal({
     const payload = { page_type: selectedType, url: pageURL, token };
 
     try {
+      // Build the API URL directly for testing
+      const apiUrl = `https://proto-api-kg9r.onrender.com/onboard/page-onboard/`;
+      console.log('[AddPageModal] Using direct URL:', apiUrl);
+      
       // Use the correct API endpoint
-      const res = await fetch(buildApiUrl(API_ENDPOINTS.ONBOARD.PAGE), {
+      const res = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         credentials: 'include',
         body: JSON.stringify(payload)
       });
@@ -116,7 +123,7 @@ export default function AddPageModal({
       }
     } catch (err) {
       console.error('[AddPageModal] Page onboarding error:', err);
-      setError('Network error.');
+      setError('Network error: ' + (err.message || 'Failed to connect to server'));
     } finally {
       setLoading(false);
     }
@@ -287,98 +294,111 @@ export default function AddPageModal({
         throw new Error('Authentication token not found');
       }
 
-      console.log('[AddPageModal] Making request to page-onboard endpoint');
+      // Build API URL and log it
+      const apiUrl = buildApiUrl(API_ENDPOINTS.ONBOARD.PAGE);
+      console.log('[AddPageModal] Making request to:', apiUrl);
       
-      // Using the correct API endpoint (PAGE instead of PAGE_ONBOARD)
-      const pageResponse = await fetch(buildApiUrl(API_ENDPOINTS.ONBOARD.PAGE), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          token: token,
-          page_type: selectedType,
-          url: pageURL
-        })
-      });
-
-      // Log the response details for debugging
-      console.log('[AddPageModal] Response status:', pageResponse.status);
+      const requestBody = {
+        token: token,
+        page_type: selectedType,
+        url: pageURL
+      };
+      console.log('[AddPageModal] Request body:', requestBody);
       
-      let data;
       try {
-        const textResponse = await pageResponse.text();
-        console.log('[AddPageModal] Raw response:', textResponse);
-        
-        try {
-          data = JSON.parse(textResponse);
-          console.log('[AddPageModal] Parsed response:', data);
-        } catch (parseError) {
-          console.error('[AddPageModal] Error parsing JSON response:', parseError);
-          throw new Error('Server returned invalid data');
-        }
-      } catch (textError) {
-        console.error('[AddPageModal] Error reading response text:', textError);
-        throw new Error('Could not read server response');
-      }
-
-      if (!pageResponse.ok) {
-        if (pageResponse.status === 401) {
-          throw new Error('Session expired. Please log in again.');
-        } else {
-          throw new Error(`Failed to add page: ${data.error || pageResponse.statusText}`);
-        }
-      }
-
-      // Check URL validity
-      if (data.url === null) {
-        throw new Error('Invalid URL provided. Please check your URL and try again.');
-      }
-
-      // Check if page ID is present
-      if (!data.id && data.id !== 0) {
-        throw new Error('Server error: Missing page ID.');
-      }
-
-      // Set page ID for further processing
-      setPageId(data.id);
-
-      // Check if screenshot is needed
-      if (!data.screenshot_path) {
-        setShowScreenshotModal(true);
-        setLoading(false);
-        return;
-      }
-
-      // If we have a UBA file, upload it
-      if (selectedUbaFile && data.id) {
-        console.log('[AddPageModal] Uploading UBA file');
-        const formData = new FormData();
-        formData.append('token', token);
-        formData.append('file', selectedUbaFile);
-        formData.append('page_id', String(data.id));
-        formData.append('name', selectedType);
-
-        const ubaResponse = await fetch(buildApiUrl(API_ENDPOINTS.UPLOAD.CREATE), {
+        // Using the correct API endpoint with better error handling
+        const pageResponse = await fetch(apiUrl, {
           method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
           credentials: 'include',
-          body: formData
+          body: JSON.stringify(requestBody)
         });
 
-        // Log UBA upload response
-        console.log('[AddPageModal] UBA upload status:', ubaResponse.status);
+        // Log the response details for debugging
+        console.log('[AddPageModal] Response status:', pageResponse.status);
         
-        // Even if UBA upload fails, we still want to add the page
-        if (!ubaResponse.ok) {
-          console.error('[AddPageModal] UBA upload failed:', await ubaResponse.text());
-          console.log('[AddPageModal] Continuing despite UBA upload failure');
-        } else {
-          console.log('[AddPageModal] UBA file uploaded successfully');
+        let data;
+        try {
+          const textResponse = await pageResponse.text();
+          console.log('[AddPageModal] Raw response:', textResponse);
+          
+          try {
+            data = JSON.parse(textResponse);
+            console.log('[AddPageModal] Parsed response:', data);
+          } catch (parseError) {
+            console.error('[AddPageModal] Error parsing JSON response:', parseError);
+            throw new Error('Server returned invalid data');
+          }
+        } catch (textError) {
+          console.error('[AddPageModal] Error reading response text:', textError);
+          throw new Error('Could not read server response');
         }
+
+        if (!pageResponse.ok) {
+          if (pageResponse.status === 401) {
+            throw new Error('Session expired. Please log in again.');
+          } else {
+            throw new Error(`Failed to add page: ${data.error || pageResponse.statusText}`);
+          }
+        }
+
+        // Check URL validity
+        if (data.url === null) {
+          throw new Error('Invalid URL provided. Please check your URL and try again.');
+        }
+
+        // Check if page ID is present
+        if (!data.id && data.id !== 0) {
+          throw new Error('Server error: Missing page ID.');
+        }
+
+        // Set page ID for further processing
+        setPageId(data.id);
+
+        // Check if screenshot is needed
+        if (!data.screenshot_path) {
+          setShowScreenshotModal(true);
+          setLoading(false);
+          return;
+        }
+
+        // If we have a UBA file, upload it
+        if (selectedUbaFile && data.id) {
+          console.log('[AddPageModal] Uploading UBA file');
+          const formData = new FormData();
+          formData.append('token', token);
+          formData.append('file', selectedUbaFile);
+          formData.append('page_id', String(data.id));
+          formData.append('name', selectedType);
+
+          const ubaResponse = await fetch(buildApiUrl(API_ENDPOINTS.UPLOAD.CREATE), {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+          });
+
+          // Log UBA upload response
+          console.log('[AddPageModal] UBA upload status:', ubaResponse.status);
+          
+          // Even if UBA upload fails, we still want to add the page
+          if (!ubaResponse.ok) {
+            console.error('[AddPageModal] UBA upload failed:', await ubaResponse.text());
+            console.log('[AddPageModal] Continuing despite UBA upload failure');
+          } else {
+            console.log('[AddPageModal] UBA file uploaded successfully');
+          }
+        }
+        
+        // Only show progress loader after screenshot validation and UBA upload
+        setShowProgressLoader(true);
+        onPageAdded(data);
+      } catch (fetchError) {
+        console.error('[AddPageModal] Fetch error details:', fetchError);
+        throw new Error(`Network error: ${fetchError.message}`);
       }
-      
-      // Only show progress loader after screenshot validation and UBA upload
-      setShowProgressLoader(true);
-      onPageAdded(data);
     } catch (err) {
       console.error('[AddPageModal] Error in handleSubmit:', err);
       setError(err.message);
@@ -428,7 +448,7 @@ export default function AddPageModal({
                 </div>
               </form>
             ) : (
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handlePageOnboard}>
                 {error && <div className="error-message">{error}</div>}
 
                 <div className="form-group">
