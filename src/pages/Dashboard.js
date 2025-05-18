@@ -318,25 +318,40 @@ export default function Dashboard() {
                 <div className="dashboard-main-panels">
                   <WebMetricsPanel
                     pageId={activePageId}
-                    onRoleMetricsReady    ={setWebRoleMetrics}
-                    onBusinessMetricsReady={setWebBusinessMetrics}
-                    onSummaryReady        ={setWebMetricsSummary}
+                    onRoleMetricsReady={metrics => {
+                      console.log('[Dashboard] Received role metrics:', metrics);
+                      setWebRoleMetrics(metrics);
+                    }}
+                    onBusinessMetricsReady={metrics => {
+                      console.log('[Dashboard] Received business metrics:', metrics);
+                      setWebBusinessMetrics(metrics);
+                    }}
+                    onSummaryReady={summary => {
+                      console.log('[Dashboard] Received web metrics summary:', summary);
+                      setWebMetricsSummary(summary);
+                    }}
                   />
                   <UBAPanel
                     pageId={activePageId}
-                    onSummaryReady={setUbaSummary}
+                    onSummaryReady={summary => {
+                      console.log('[Dashboard] Received UBA summary:', summary);
+                      setUbaSummary(summary);
+                    }}
                   />
                   <UIPanel
                     pageId={activePageId}
-                    onSummaryReady={setUiEvalSummary}
+                    onSummaryReady={summary => {
+                      console.log('[Dashboard] Received UI evaluation:', summary);
+                      setUiEvalSummary(summary);
+                    }}
                   />
                   <AIChatPanel
                     context={{
-                      roleMetrics:     webRoleMetrics,
+                      roleMetrics: webRoleMetrics,
                       businessMetrics: webBusinessMetrics,
-                      summary:         webMetricsSummary,
-                      uba:            ubaSummary,
-                      ui:             uiEvalSummary
+                      summary: webMetricsSummary,
+                      uba: ubaSummary,
+                      ui: uiEvalSummary
                     }}
                   />
                 </div>

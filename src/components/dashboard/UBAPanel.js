@@ -115,6 +115,12 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       const evaluateData = await evaluateResponse.json();
       console.log('[UBAPanel] UBA evaluation completed');
 
+      // Notify parent of UBA evaluation
+      if (typeof onSummaryReady === 'function') {
+        console.log('[UBAPanel] Sending UBA summary to parent:', evaluateData.uba_report);
+        onSummaryReady(evaluateData.uba_report);
+      }
+
       // ── 2) Web Search (must be called after evaluation) ─────────────────────────────────────
       const searchUrl = buildApiUrl(API_ENDPOINTS.AI.WEB_SEARCH(pageId, timestamp));
       console.log('[UBAPanel] Fetching web search results:', searchUrl);

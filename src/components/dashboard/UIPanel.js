@@ -74,8 +74,10 @@ export default function UIPanel({ pageId, onSummaryReady }) {
 
         setCategories(categoriesArray);
         sessionStorage.setItem(cacheKey, JSON.stringify(categoriesArray));
+        
         // Notify parent of fresh UI evaluation
         if (typeof onSummaryReady === 'function') {
+          console.log('[UIPanel] Sending UI evaluation to parent:', categoriesArray);
           onSummaryReady(categoriesArray);
         }
         console.log(`[UIPanel] Cached response for pageId=${pageId}, categories:`, categoriesArray);

@@ -220,6 +220,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           
           setBusinessMetrics(processedBusinessMetrics);
           if (typeof onBusinessMetricsReady === 'function') {
+            console.log('[WebMetricsPanel] Sending business metrics to parent:', processedBusinessMetrics);
             onBusinessMetricsReady(processedBusinessMetrics);
           }
         } else {
@@ -231,6 +232,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           const roleData = roleResult.value;
           setRoleMetrics(roleData);
           if (typeof onRoleMetricsReady === 'function') {
+            console.log('[WebMetricsPanel] Sending role metrics to parent:', roleData);
             onRoleMetricsReady(roleData);
           }
         }
@@ -285,6 +287,7 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           );
   
           if (typeof onSummaryReady === 'function') {
+            console.log('[WebMetricsPanel] Sending summary to parent:', evalJson.web_metrics_report.overall_summary);
             onSummaryReady(evalJson.web_metrics_report.overall_summary);
           }
         });
