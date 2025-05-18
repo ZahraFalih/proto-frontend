@@ -60,6 +60,11 @@ const AIChatPanel = ({ context = {} }) => {
     setMessages(prev => prev.filter(msg => msg.sender === 'user'));
   }, [currentPersona]);
 
+  // Effect to keep track of context updates - add system message when context changes
+  useEffect(() => {
+    console.log('[AIChatPanel] Context data updated - will be included in next message');
+  }, [context]);
+
   // Pick new random persona and clear history
   const switchPersona = () => {
     const newPersona = getRandomPersona();
@@ -222,28 +227,46 @@ const AIChatPanel = ({ context = {} }) => {
       content: msg.text
     }));
 
+    // Add system message with context at the beginning
+    const systemMessage = {
+      role: 'system',
+      content: ctxContent
+    };
+
     // Construct payload
     const payload = {
       persona: currentPersona,
-      messages: chatMessages
+      messages: [systemMessage, ...chatMessages]
     };
 
     // Debug logging
     console.log('[Chat] Sending request:', {
       persona: payload.persona,
       messageCount: payload.messages.length,
+      hasSystemMessage: !!payload.messages[0]?.role === 'system',
       messages: payload.messages
     });
 
     try {
+      console.log('[Chat] Sending request to:', buildApiUrl(API_ENDPOINTS.AI.CHAT));
       const res = await fetchWithRetry(buildApiUrl(API_ENDPOINTS.AI.CHAT), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       
+      if (!res.ok) {
+        console.error('[Chat] API responded with error status:', res.status);
+        throw new Error(`API responded with status ${res.status}`);
+      }
+      
       const data = await parseJsonResponse(res);
       console.log('[Chat] AI replies:', data);
+
+      if (!data.reply) {
+        console.error('[Chat] API response missing reply field:', data);
+        throw new Error('Unexpected API response format');
+      }
 
       await simulateTypingDelay();
       const aiMessage = { id: updated.length + 1, sender: 'ai', text: data.reply };
