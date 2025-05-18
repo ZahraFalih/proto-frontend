@@ -92,11 +92,11 @@ export default function Dashboard() {
     // Check if we have cached data for this page
     const wmCacheKey = `wm_cache_${pageId}`;
     const uiCacheKey = `ui_eval_page_${pageId}`;
-    const ubaCacheKey = `uba_page_${pageId}`;
+    const ubaCacheKey = `uba_cache_${pageId}`;
     
     const hasWebMetricsCache = sessionStorage.getItem(wmCacheKey);
     const hasUiCache = sessionStorage.getItem(uiCacheKey);
-    const hasUbaCache = sessionStorage.getItem(ubaCacheKey);
+    const hasUbaCache = localStorage.getItem(ubaCacheKey);
     
     // Also check our React state cache
     const hasStateCache = tabCache[pageId] && (

@@ -22,7 +22,8 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
   
   const hydrateFromCache = () => {
     if (!cacheKey) return false;
-    const cached = sessionStorage.getItem(cacheKey);
+    // Use localStorage instead of sessionStorage to persist across sessions
+    const cached = localStorage.getItem(cacheKey);
     if (!cached) return false;
     
     try {
@@ -37,14 +38,15 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       }
       return true;
     } catch {
-      sessionStorage.removeItem(cacheKey); // corrupted cache
+      localStorage.removeItem(cacheKey); // corrupted cache
       return false;
     }
   };
   
   const persistToCache = (form, sections, sols) => {
     if (!cacheKey) return;
-    sessionStorage.setItem(
+    // Use localStorage instead of sessionStorage to persist across sessions
+    localStorage.setItem(
       cacheKey,
       JSON.stringify({ formulation: form, observationSections: sections, solutions: sols })
     );
@@ -80,7 +82,7 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
           console.warn('[UBAPanel] UBA data file not found. Checking if we have cached data that might still be valid');
           
           // Don't immediately clear the cache - check if we have valid data first
-          const cached = sessionStorage.getItem(cacheKey);
+          const cached = localStorage.getItem(cacheKey);
           if (cached) {
             try {
               const cachedData = JSON.parse(cached);
@@ -215,7 +217,7 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
       if (!err.message.includes('file is no longer available') && 
           (err.message.includes('formulation') || err.message.includes('format'))) {
         console.log('[UBAPanel] Clearing cache due to serious error');
-        sessionStorage.removeItem(cacheKey);
+        localStorage.removeItem(cacheKey);
       }
     } finally {
       console.log('[UBAPanel] Request chain completed');

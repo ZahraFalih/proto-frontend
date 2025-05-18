@@ -151,7 +151,7 @@ export default function AddPageModal({
 
     try {
       // Clear any existing UBA cache for this page
-      sessionStorage.removeItem(`uba_cache_${id}`);
+      localStorage.removeItem(`uba_cache_${id}`);
       
       console.log('[AddPageModal] Sending UBA file upload request');
       const res = await fetch(buildApiUrl(API_ENDPOINTS.UPLOAD.CREATE), {
