@@ -174,7 +174,7 @@ export default function AddPageModal({
       // Parse the response if possible
       let errorMessage = '';
       let responseData = null;
-      try {
+        try {
         if (textResponse) {
           responseData = JSON.parse(textResponse);
           console.log('[AddPageModal] Parsed UBA upload response:', responseData);
@@ -299,9 +299,9 @@ export default function AddPageModal({
       console.log('[AddPageModal] Making request to:', apiUrl);
       
       const requestBody = {
-        token: token,
-        page_type: selectedType,
-        url: pageURL
+          token: token,
+          page_type: selectedType,
+          url: pageURL
       };
       console.log('[AddPageModal] Request body:', requestBody);
       
@@ -342,7 +342,7 @@ export default function AddPageModal({
             throw new Error('Session expired. Please log in again.');
           } else {
             throw new Error(`Failed to add page: ${data.error || pageResponse.statusText}`);
-          }
+      }
         }
 
         // Check URL validity
@@ -358,42 +358,42 @@ export default function AddPageModal({
         // Set page ID for further processing
         setPageId(data.id);
 
-        // Check if screenshot is needed
+      // Check if screenshot is needed
         if (!data.screenshot_path) {
-          setShowScreenshotModal(true);
-          setLoading(false);
-          return;
-        }
+        setShowScreenshotModal(true);
+        setLoading(false);
+        return;
+      }
 
-        // If we have a UBA file, upload it
+      // If we have a UBA file, upload it
         if (selectedUbaFile && data.id) {
-          console.log('[AddPageModal] Uploading UBA file');
-          const formData = new FormData();
-          formData.append('token', token);
-          formData.append('file', selectedUbaFile);
+        console.log('[AddPageModal] Uploading UBA file');
+        const formData = new FormData();
+        formData.append('token', token);
+        formData.append('file', selectedUbaFile);
           formData.append('page_id', String(data.id));
-          formData.append('name', selectedType);
+        formData.append('name', selectedType);
 
-          const ubaResponse = await fetch(buildApiUrl(API_ENDPOINTS.UPLOAD.CREATE), {
-            method: 'POST',
-            credentials: 'include',
-            body: formData
-          });
+        const ubaResponse = await fetch(buildApiUrl(API_ENDPOINTS.UPLOAD.CREATE), {
+          method: 'POST',
+          credentials: 'include',
+          body: formData
+        });
 
           // Log UBA upload response
           console.log('[AddPageModal] UBA upload status:', ubaResponse.status);
           
           // Even if UBA upload fails, we still want to add the page
-          if (!ubaResponse.ok) {
-            console.error('[AddPageModal] UBA upload failed:', await ubaResponse.text());
+        if (!ubaResponse.ok) {
+          console.error('[AddPageModal] UBA upload failed:', await ubaResponse.text());
             console.log('[AddPageModal] Continuing despite UBA upload failure');
           } else {
             console.log('[AddPageModal] UBA file uploaded successfully');
           }
-        }
-        
-        // Only show progress loader after screenshot validation and UBA upload
-        setShowProgressLoader(true);
+      }
+      
+      // Only show progress loader after screenshot validation and UBA upload
+      setShowProgressLoader(true);
         onPageAdded(data);
       } catch (fetchError) {
         console.error('[AddPageModal] Fetch error details:', fetchError);

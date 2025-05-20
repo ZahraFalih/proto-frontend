@@ -7,6 +7,10 @@ import '../../styles/Dashboard.css';
 import { getToken } from '../../utils/auth';
 import { buildApiUrl, API_ENDPOINTS } from '../../config/api';
 
+// Constants for retry logic
+const MAX_RETRIES = 10;
+const RETRY_DELAY = 2000; // 2 seconds between retries
+
 export default function UBAPanel({ pageId, onSummaryReady }) {
   const [formulation, setFormulation] = useState('');
   const [observationSections, setObservationSections] = useState([]);
@@ -16,6 +20,7 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
   const [activeObservation, setActiveObservation] = useState(null);
   const [expandedSolution, setExpandedSolution] = useState(null);
   const [pinnedObservation, setPinnedObservation] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   /* ─── Cache Helpers ───────────────────────────────────────────────── */
   const cacheKey = pageId ? `uba_cache_${pageId}` : null;
@@ -53,7 +58,7 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
   };
 
   const fetchData = async (pageId) => {
-    console.log('[UBAPanel] Starting fresh data fetch for pageId:', pageId);
+    console.log('[UBAPanel] Starting fresh data fetch for pageId:', pageId, `(Attempt ${retryCount + 1}/${MAX_RETRIES})`);
     setLoading(true);
     setError(null);
 
@@ -105,11 +110,15 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
               }
             } catch (cacheErr) {
               console.error('[UBAPanel] Failed to parse cached data:', cacheErr);
-              // Continue with showing the error
             }
           }
           
-          // If we get here, we don't have valid cached data to fall back on
+          // If we get here and we're under max retries, retry
+          if (retryCount < MAX_RETRIES) {
+            throw new Error('UBA data file not found, retrying...');
+          }
+          
+          // If we've exceeded retries, show the error
           throw new Error('The UBA data file is no longer available. Please try re-uploading your UBA data.');
         }
         
@@ -208,6 +217,9 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
         sectionsCount: sectionData.length,
         solutionsCount: problemSolutions.length
       });
+
+      // Reset retry count on success
+      setRetryCount(0);
     } catch (err) {
       console.error('[UBAPanel] Error in data fetch:', err);
       setError(err.message);
@@ -218,6 +230,16 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
           (err.message.includes('formulation') || err.message.includes('format'))) {
         console.log('[UBAPanel] Clearing cache due to serious error');
         localStorage.removeItem(cacheKey);
+      }
+
+      // Implement automatic retry if under max retries
+      if (retryCount < MAX_RETRIES) {
+        console.log(`[UBAPanel] Retrying in ${RETRY_DELAY}ms... (${retryCount + 1}/${MAX_RETRIES})`);
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+        }, RETRY_DELAY);
+      } else {
+        console.error('[UBAPanel] Max retries reached');
       }
     } finally {
       console.log('[UBAPanel] Request chain completed');
@@ -246,7 +268,7 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
     return () => {
       console.log('[UBAPanel] Cleaning up component');
     };
-  }, [pageId]);
+  }, [pageId, retryCount]); // Add retryCount to dependencies
 
   const handleObservationHover = (observationNumber) => {
     console.log('[UBAPanel] Observation hover:', observationNumber);

@@ -7,11 +7,11 @@ import { getToken } from '../../utils/auth';
 import { buildApiUrl, API_ENDPOINTS } from '../../config/api';
 import { fetchWithRetry, parseJsonResponse } from '../../utils/api';
 
-// Maximum retries for zero values
+// Constants for retry logic
+const MAX_RETRIES = 10;
+const RETRY_DELAY = 2000; // 2 seconds between retries
 const MAX_ZERO_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 second
-const MAX_ERROR_RETRIES = 10; // Maximum number of retries for errors
-const ERROR_RETRY_DELAY = 2000; // 2 seconds between error retries
+const ZERO_RETRY_DELAY = 1000; // 1 second
 
 export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetricsReady, onRoleMetricsReady }) {
   /* ─────────── state ─────────── */
@@ -22,13 +22,14 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [retryCount, setRetryCount] = useState(0);
+  const [zeroRetryCount, setZeroRetryCount] = useState(0);
 
   /* ─────────── cache helpers ─────────── */
   const cacheKey = pageId ? `wm_cache_${pageId}` : null;
 
   const hydrateFromCache = () => {
     if (!cacheKey) return false;
-    const cached = localStorage.getItem(cacheKey); // Changed from sessionStorage to localStorage
+    const cached = localStorage.getItem(cacheKey);
     if (!cached) return false;
 
     try {
@@ -130,41 +131,25 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
   };
 
   // Helper function to fetch metrics with retry for zero values
-  const fetchMetricsWithRetry = async (url, headers, retryCount = 0) => {
+  const fetchMetricsWithRetry = async (url, headers) => {
+    console.log(`[WebMetricsPanel] Fetching metrics (Zero retry ${zeroRetryCount + 1}/${MAX_ZERO_RETRIES})`);
+    
     const response = await fetchWithRetry(url, { headers });
     const data = await parseJsonResponse(response);
     
-    if (!hasValidMetrics(data) && retryCount < MAX_ZERO_RETRIES) {
-      console.log(`[WebMetricsPanel] Received zero values, retrying... (${retryCount + 1}/${MAX_ZERO_RETRIES})`);
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-      return fetchMetricsWithRetry(url, headers, retryCount + 1);
+    if (!hasValidMetrics(data)) {
+      if (zeroRetryCount < MAX_ZERO_RETRIES) {
+        console.log(`[WebMetricsPanel] Received zero values, retrying in ${ZERO_RETRY_DELAY}ms...`);
+        await new Promise(resolve => setTimeout(resolve, ZERO_RETRY_DELAY));
+        setZeroRetryCount(prev => prev + 1);
+        return fetchMetricsWithRetry(url, headers);
+      }
+      console.warn('[WebMetricsPanel] Max zero retries reached, proceeding with zero values');
     }
     
     return data;
   };
 
-  /* ─────────── retry helper ─────────── */
-  const retryOperation = async (operation, maxRetries = MAX_ERROR_RETRIES) => {
-    let lastError;
-    
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        const result = await operation();
-        setRetryCount(0); // Reset retry count on success
-        return result;
-      } catch (err) {
-        lastError = err;
-        console.warn(`Operation failed (attempt ${attempt + 1}/${maxRetries}):`, err);
-        if (attempt < maxRetries - 1) {
-          await new Promise(resolve => setTimeout(resolve, ERROR_RETRY_DELAY));
-        }
-      }
-    }
-    
-    throw lastError;
-  };
-
-  /* ─────────── fetch block ─────────── */
   useEffect(() => {
     console.log('[WebMetricsPanel] Component mounted or pageId changed:', pageId);
     if (!pageId) {
@@ -177,8 +162,8 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
       return;
     }
   
-    const run = async () => {
-      console.log('[WebMetricsPanel] Starting data fetch for pageId:', pageId);
+    const fetchData = async () => {
+      console.log(`[WebMetricsPanel] Starting data fetch for pageId: ${pageId} (Attempt ${retryCount + 1}/${MAX_RETRIES})`);
       setLoading(true);
       setError('');
       setRoleMetrics(null);
@@ -198,20 +183,16 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
         
         console.log('[WebMetricsPanel] Fetching:', roleUrl, bizUrl);
         
-        // Using Promise.allSettled with retry for zero values and errors
-        const [roleResult, bizResult] = await retryOperation(async () => {
-          const results = await Promise.allSettled([
+        // Fetch role and business metrics
+        const [roleResult, bizResult] = await Promise.allSettled([
           fetchMetricsWithRetry(roleUrl, headers),
           fetchMetricsWithRetry(bizUrl, headers)
         ]);
-          
-          // If both promises are rejected, throw an error
-          if (results[0].status === 'rejected' && results[1].status === 'rejected') {
-            throw new Error('Both role and business metrics fetches failed');
-          }
-          
-          return results;
-        });
+        
+        // If both promises are rejected, throw an error
+        if (roleResult.status === 'rejected' && bizResult.status === 'rejected') {
+          throw new Error('Both role and business metrics fetches failed');
+        }
         
         // Handle business metrics
         if (bizResult.status === 'fulfilled' && hasValidMetrics(bizResult.value)) {
@@ -245,80 +226,83 @@ export default function WebMetricsPanel({ pageId, onSummaryReady, onBusinessMetr
           }
         }
   
-        /* Evaluate business metrics with AI */
-        await retryOperation(async () => {
-          let metricsPayload = null;
-          if (bizResult.status === 'fulfilled' && bizResult.value) {
-            const businessMetricsData = bizResult.value;
-            
-            if (businessMetricsData.businessName && businessMetricsData.businessMetrics) {
-              metricsPayload = {
-                [businessMetricsData.businessName]: businessMetricsData.businessMetrics
-              };
-            } else {
-              const bizKey = Object.keys(businessMetricsData)[0];
-              metricsPayload = {
-                [bizKey]: businessMetricsData[bizKey]
-              };
-            }
-          }
+        // Evaluate metrics with AI
+        let metricsPayload = null;
+        if (bizResult.status === 'fulfilled' && bizResult.value) {
+          const businessMetricsData = bizResult.value;
           
-          if (!metricsPayload) {
-            throw new Error('No valid metrics data for evaluation');
+          if (businessMetricsData.businessName && businessMetricsData.businessMetrics) {
+            metricsPayload = {
+              [businessMetricsData.businessName]: businessMetricsData.businessMetrics
+            };
+          } else {
+            const bizKey = Object.keys(businessMetricsData)[0];
+            metricsPayload = {
+              [bizKey]: businessMetricsData[bizKey]
+            };
           }
-          
-          const evalRes = await fetchWithRetry(
-            'https://proto-api-kg9r.onrender.com/ask-ai/evaluate-web-metrics/',
-            {
-              method: 'POST',
-              headers: {
-                ...headers,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(metricsPayload),
-            }
-          );
-  
-          const evalJson = await parseJsonResponse(evalRes);
-          
-          if (!evalJson.web_metrics_report?.overall_summary) {
-            throw new Error('Invalid evaluation response format');
+        }
+        
+        if (!metricsPayload) {
+          throw new Error('No valid metrics data for evaluation');
+        }
+        
+        const evalRes = await fetchWithRetry(
+          'https://proto-api-kg9r.onrender.com/ask-ai/evaluate-web-metrics/',
+          {
+            method: 'POST',
+            headers: {
+              ...headers,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(metricsPayload),
           }
-  
-          setEvaluation(evalJson.web_metrics_report);
-          
-          // Cache the successful results
-          persistToCache(
-            roleResult.status === 'fulfilled' ? roleResult.value : null,
-            bizResult.status === 'fulfilled' ? bizResult.value : null,
-            evalJson.web_metrics_report
-          );
-  
-          if (typeof onSummaryReady === 'function') {
-            console.log('[WebMetricsPanel] Sending fresh summary to Dashboard:', 
-              evalJson.web_metrics_report?.overall_summary ? evalJson.web_metrics_report.overall_summary.substring(0, 50) + '...' : 'null');
-            onSummaryReady(evalJson.web_metrics_report.overall_summary);
-          }
-        });
-  
+        );
+
+        const evalJson = await parseJsonResponse(evalRes);
+        
+        if (!evalJson.web_metrics_report?.overall_summary) {
+          throw new Error('Invalid evaluation response format');
+        }
+
+        setEvaluation(evalJson.web_metrics_report);
+        
+        // Cache the successful results
+        persistToCache(
+          roleResult.status === 'fulfilled' ? roleResult.value : null,
+          bizResult.status === 'fulfilled' ? bizResult.value : null,
+          evalJson.web_metrics_report
+        );
+
+        if (typeof onSummaryReady === 'function') {
+          console.log('[WebMetricsPanel] Sending fresh summary to Dashboard:', 
+            evalJson.web_metrics_report?.overall_summary ? evalJson.web_metrics_report.overall_summary.substring(0, 50) + '...' : 'null');
+          onSummaryReady(evalJson.web_metrics_report.overall_summary);
+        }
+
+        // Reset retry counts on success
+        setRetryCount(0);
+        setZeroRetryCount(0);
       } catch (err) {
         console.error('[WebMetricsPanel] metrics fetch error →', err);
         setError('Failed to load metrics data. Please try again.');
-        setRetryCount(prev => prev + 1);
         
-        // If we haven't exceeded max retries, try again
-        if (retryCount < MAX_ERROR_RETRIES) {
-          console.log(`[WebMetricsPanel] Retrying... (${retryCount + 1}/${MAX_ERROR_RETRIES})`);
-          setTimeout(run, ERROR_RETRY_DELAY);
-          return;
+        // Implement automatic retry if under max retries
+        if (retryCount < MAX_RETRIES) {
+          console.log(`[WebMetricsPanel] Retrying in ${RETRY_DELAY}ms... (${retryCount + 1}/${MAX_RETRIES})`);
+          setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+          }, RETRY_DELAY);
+        } else {
+          console.error('[WebMetricsPanel] Max retries reached');
         }
       } finally {
         setLoading(false);
       }
     };
   
-    run();
-  }, [pageId, onSummaryReady, onBusinessMetricsReady, onRoleMetricsReady, retryCount]);
+    fetchData();
+  }, [pageId, onSummaryReady, onBusinessMetricsReady, onRoleMetricsReady, retryCount, zeroRetryCount]);
 
   useEffect(() => {
     if (evaluation?.overall_summary && typeof onSummaryReady === 'function') {
