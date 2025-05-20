@@ -182,8 +182,29 @@ export default function Dashboard() {
       setWebBusinessMetrics(cachedData.webBusinessMetrics || null);
       setUbaSummary(cachedData.ubaSummary || '');
       setUiEvalSummary(cachedData.uiEvalSummary || '');
-      return; // Don't show loader if we have cache
     }
+
+    // Reset scroll positions
+    const dashboardBody = document.querySelector('.dashboard-body');
+    if (dashboardBody) {
+      dashboardBody.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'instant'
+      });
+    }
+
+    // Reset any scrollable panels
+    const scrollablePanels = document.querySelectorAll('.chat-messages, .wm-details-panel > div, .uba-formulation-text');
+    scrollablePanels.forEach(panel => {
+      if (panel) {
+        panel.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: 'instant'
+        });
+      }
+    });
 
     // Check if we need fresh data
     const needsFreshData = checkNeedsFreshData(id);

@@ -38,6 +38,7 @@ html, body, #root {
   position: relative;
   min-height: 0; /* Important for proper flex behavior */
   height: calc(100vh - 122px); /* Subtract header height + padding */
+  scroll-behavior: instant; /* Ensure instant scroll */
 }
 
 /* Restore scrollbar styling */
@@ -64,6 +65,14 @@ html, body, #root {
   max-width: 1280px;
   margin: 0 auto;
   width: 100%;
+  scroll-margin-top: 122px; /* Match header height */
+}
+
+/* Ensure all scrollable panels have instant scroll behavior */
+.chat-messages,
+.wm-details-panel > div,
+.uba-formulation-text {
+  scroll-behavior: instant;
 }
 
 /* Header Panel */
