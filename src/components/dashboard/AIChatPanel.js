@@ -32,7 +32,6 @@ const AIChatPanel = ({ context = {} }) => {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const chatMessagesRef = useRef(null);
   const { 
@@ -114,9 +113,11 @@ const AIChatPanel = ({ context = {} }) => {
 
   const { primary: primaryAvatar, secondary: secondaryAvatar, name: assistantName } = getAvatars();
 
-  // Scroll to bottom
+  // Scroll to bottom of chat container only
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatMessagesRef.current) {
+      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+    }
   };
 
   // Auto-scroll when messages change
@@ -342,7 +343,6 @@ const AIChatPanel = ({ context = {} }) => {
               )}
             </>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         <form className="chat-input" onSubmit={handleSendMessage} autoComplete="off">

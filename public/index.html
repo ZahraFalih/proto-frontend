@@ -62,12 +62,6 @@
         window.scrollTo(0, 0);
         document.body.scrollTop = 0;
         document.documentElement.scrollTop = 0;
-        
-        // Also ensure dashboard body is at top if it exists
-        setTimeout(function() {
-          const dashboardBody = document.querySelector('.dashboard-body');
-          if (dashboardBody) dashboardBody.scrollTop = 0;
-        }, 50);
       };
     </script>
   </head>
