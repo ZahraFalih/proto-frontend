@@ -139,6 +139,7 @@
 .form-group {
     position: relative;
     width: 100%;
+    margin: 0;
 }
 
 .form-group:hover .onboarding-label {
@@ -205,10 +206,14 @@
     transition: color 0.2s ease;
 }
 
+/* Form inputs and selects base styles */
 .form-input,
-.form-select {
+.form-select,
+.onboarding-input,
+.onboarding-select {
     width: 100%;
-    padding: 14px 20px;
+    height: 48px; /* Explicit height for consistency */
+    padding: 0 20px;
     border: 1px solid #E5E7EB;
     border-radius: 8px;
     background: #fff;
@@ -217,26 +222,78 @@
     color: #374151;
     outline: none;
     transition: all 0.2s ease;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
 .form-input:hover,
-.form-select:hover {
+.form-select:hover,
+.onboarding-input:hover,
+.onboarding-select:hover {
     border-color: var(--onboarding-primary);
 }
 
 .form-input:focus,
-.form-select:focus {
+.form-select:focus,
+.onboarding-input:focus,
+.onboarding-select:focus {
     border-color: var(--onboarding-primary);
     box-shadow: 0 0 0 3px rgba(0, 85, 255, 0.1);
 }
 
-.form-select {
+/* Select specific styles */
+.form-select,
+.onboarding-select {
     cursor: pointer;
-    appearance: none;
     padding-right: 40px;
     background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%237F7F7F' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 16px center;
+}
+
+/* Ensure proper vertical alignment for select elements */
+select.form-select,
+select.onboarding-select {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+/* Floating label */
+.floating-label {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: #6B7280;
+    background: #fff;
+    padding: 0 4px;
+    pointer-events: none;
+    transition: all 0.2s ease;
+    margin: 0;
+    line-height: 1;
+}
+
+.form-input:focus + .floating-label,
+.form-input:not(:placeholder-shown) + .floating-label,
+.form-select:focus + .floating-label,
+.form-select:not([value=""]):valid + .floating-label,
+.onboarding-input:focus + .floating-label,
+.onboarding-input:not(:placeholder-shown) + .floating-label,
+.onboarding-select:focus + .floating-label,
+.onboarding-select:not([value=""]):valid + .floating-label {
+    top: 0;
+    transform: translateY(-50%) scale(0.85);
+    color: var(--onboarding-primary);
+}
+
+/* Remove any conflicting styles */
+.onboarding-input,
+.onboarding-select {
+    border-radius: 8px !important;
+    height: 48px !important;
+    padding: 0 20px !important;
 }
 
 .form-footer {
