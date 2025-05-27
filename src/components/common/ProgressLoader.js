@@ -10,16 +10,18 @@ export default function ProgressLoader({ onComplete }) {
   const animationFrameRef = useRef(null);
 
   const steps = [
-    "Getting things ready for you...",
-    "Brewing some analytics magic ✨",
-    "Crunching those numbers 🔢",
-    "Almost there, hang tight!",
-    "Adding the finishing touches 🎨",
-    "Just a moment of patience...",
-    "Making everything perfect ✨",
-    "Final preparations...",
-    "Sabır Acıdır Ama Meyvesi Tatlıdır 🍎",
-    "الصبر مفتاح الفرج.. ⌛"
+    "Digesting your UBA 🐾",
+    "Peaking at your UI 👀",
+    "Taking a walk in your website 🚶🏻‍♂️‍➡️",
+    "Looking good ✨😎",
+    "Getting the AI Chat ready for you ⚙️",
+    "Half way there.. 🤺",
+    "Measure your page perforemence ⏱️",
+    "One last round 🏁",
+    "Almost there 🤌🏻",
+    "Damlaya Damlaya Göl Olur 💧",
+    "الصبر مفتاح الفرج 🗝️",
+    "Final touches.. ✨"
   ];
 
   useEffect(() => {
@@ -47,11 +49,11 @@ export default function ProgressLoader({ onComplete }) {
     // Start the animation
     animationFrameRef.current = requestAnimationFrame(updateProgress);
 
-    // Change message every 4 seconds
+    // Change message every 5 seconds
     const stepTimer = setInterval(() => {
       setCurrentStep(prev => (prev + 1) % steps.length);
       setKey(prev => prev + 1);
-    }, 4000);
+    }, 5000);
 
     // Handle tab visibility changes
     const handleVisibilityChange = () => {
