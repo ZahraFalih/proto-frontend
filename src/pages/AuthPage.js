@@ -97,7 +97,13 @@ function AuthPage() {
           setToken(data.access);
           toast.success('Login successful! Redirecting…');
           setTimeout(() => {
-            navigate(data.first_login ? '/onboarding' : '/dashboard');
+            if (data.first_login) {
+              navigate('/onboarding', { 
+                state: { fromAuth: true, firstLogin: true }
+              });
+            } else {
+              navigate('/dashboard');
+            }
           }, 800);
         } else {
           toast.success('Account created! Redirecting to login…');
