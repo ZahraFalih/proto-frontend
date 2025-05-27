@@ -4,8 +4,13 @@ import { Link } from 'react-router-dom';
 import '../styles/WelcomePage.css';
 import logo from '../assets/icons/logo.png';
 import '../styles/global.css';
+import { setPageTitle, PAGE_TITLES } from '../utils/pageTitle';
 
 const WelcomePage = () => {
+  useEffect(() => {
+    setPageTitle(PAGE_TITLES.welcome);
+  }, []);
+
   const phrases = [
     'Design with confidence',
     'Prototype with precision',

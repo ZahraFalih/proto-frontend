@@ -14,6 +14,7 @@ import '../styles/Dashboard.css';
 import { getToken } from '../utils/auth';
 import { buildApiUrl, API_ENDPOINTS } from '../config/api';
 import { fetchWithRetry, parseJsonResponse } from '../utils/api';
+import { setPageTitle, PAGE_TITLES } from '../utils/pageTitle';
 
 export default function Dashboard() {
   const [pages, setPages] = useState([]);
@@ -323,6 +324,15 @@ export default function Dashboard() {
   // Determine active page
   const activePage = pages.find(p => slugify(p.type) === activeTabSlug);
   const activePageId = activePage?.id || null;
+
+  // Update title when active page changes
+  useEffect(() => {
+    if (activePage) {
+      setPageTitle(`${activePage.type} - ${PAGE_TITLES.dashboard}`);
+    } else {
+      setPageTitle(PAGE_TITLES.dashboard);
+    }
+  }, [activeTabSlug, pages]);
 
   return (
     <>

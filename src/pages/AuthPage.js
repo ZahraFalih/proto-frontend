@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { setToken } from '../utils/auth';
 import { buildApiUrl, API_ENDPOINTS } from '../config/api';
+import { setPageTitle, PAGE_TITLES } from '../utils/pageTitle';
 
 import logo from '../assets/icons/logo.png';
 import '../styles/AuthPage.css';
@@ -20,6 +21,10 @@ function AuthPage() {
   const initialMode                 = params.get('mode') === 'signup' ? 'signup' : 'login';
   const [mode, setMode]             = useState(initialMode);
   const navigate                    = useNavigate();
+
+  useEffect(() => {
+    setPageTitle(PAGE_TITLES.auth[mode]);
+  }, [mode]);
 
   const toggleMode = () => {
     setMode(prev => prev === 'login' ? 'signup' : 'login');

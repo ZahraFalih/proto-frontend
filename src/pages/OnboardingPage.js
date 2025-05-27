@@ -6,6 +6,7 @@ import "../styles/global.css";
 import LoadingText from '../components/common/LoadingText';
 import { getToken } from '../utils/auth';
 import { buildApiUrl, API_ENDPOINTS } from '../config/api';
+import { setPageTitle, PAGE_TITLES } from '../utils/pageTitle';
 
 const companiesData = [
   { id: 1, name: "Amazon", category: "Online Retail & Marketplace" },
@@ -66,6 +67,10 @@ const OnboardingPage = () => {
   const [selectedUbaFile, setSelectedUbaFile] = useState(null);
   const [pageType, setPageType] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setPageTitle(PAGE_TITLES.onboarding);
+  }, []);
 
   useEffect(() => {
     const token = getToken();
