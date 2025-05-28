@@ -435,7 +435,7 @@ export default function UBAPanel({ pageId, onSummaryReady }) {
   return (
     <div className="panel-container">
       <div className="panel-header">User Behaviour Analytics</div>
-      <div className="panel-subtitle">We analyzed how users interact with your website and identified key behavior patterns.</div>
+      <div className="panel-subtitle">We passed your analytics to AI, and the machine has made its judgement..</div>
 
       <div className="uba-content-container">
         <div className="uba-formulation-container">

@@ -128,6 +128,7 @@ export default function UIPanel({ pageId, onSummaryReady }) {
   return (
     <div className="panel-container">
       <div className="panel-header">User Interface Evaluation</div>
+            <div className="panel-subtitle">On a scale of 1 to 10, here is how we would score your UI..</div>
 
       {loading && <UISkeleton />}
       {error && <div className="ui-error">⚠ {error}</div>}

@@ -292,7 +292,7 @@ const AIChatPanel = ({ context = {} }) => {
     <div className="chat-section">
       <div className="chat-section-header">
         <h2>Still Have Some Questions?</h2>
-        <p>You can ask one of our UX experts (or their AI clone)</p>
+        <p>You can ask one of our UX experts (or their AI clones..)</p>
       </div>
 
       <div className="chat-panel">
