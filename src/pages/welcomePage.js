@@ -73,7 +73,7 @@ const WelcomePage = () => {
 
             <h2 className="welcome-title">Enahnce Your User Experience!</h2>
             <p className="welcome-subtitle">
-              Discover trends in your analytics, get an evaluation of the UI, and compare perforemence to competitors and industry standards.
+              Discover trends in your analytics, get evaluation of the UI, and compare perforemence to competitors!
             </p>
 
             <div className="button-container">
