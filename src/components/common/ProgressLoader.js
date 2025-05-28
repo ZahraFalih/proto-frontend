@@ -38,15 +38,16 @@ export default function ProgressLoader({ onComplete }) {
       
       setProgress(newProgress);
       
-      // Update step based on progress
-      const currentStepIndex = Math.min(
-        Math.floor((elapsedTime / stepDuration)),
+      // Calculate current step index
+      const stepIndex = Math.min(
+        Math.floor(elapsedTime / stepDuration),
         steps.length - 1
       );
-      
-      if (currentStepIndex !== currentStep) {
-        setCurrentStep(currentStepIndex);
-        setKey(prev => prev + 1);
+
+      // Only update if the step has changed
+      if (stepIndex !== currentStep) {
+        setCurrentStep(stepIndex);
+        setKey(stepIndex); // Use stepIndex as key to force re-render
       }
 
       if (newProgress >= 100) {
@@ -55,6 +56,12 @@ export default function ProgressLoader({ onComplete }) {
         animationFrameRef.current = requestAnimationFrame(updateProgress);
       }
     };
+
+    // Reset state when effect starts
+    setCurrentStep(0);
+    setKey(0);
+    startTimeRef.current = Date.now();
+    lastUpdateTimeRef.current = Date.now();
 
     animationFrameRef.current = requestAnimationFrame(updateProgress);
 
@@ -75,7 +82,7 @@ export default function ProgressLoader({ onComplete }) {
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [onComplete, steps.length, currentStep]);
+  }, [onComplete, steps.length]);
 
   return (
     <div className="progress-loader-overlay">
