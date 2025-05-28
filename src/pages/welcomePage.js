@@ -12,7 +12,7 @@ const WelcomePage = () => {
   }, []);
 
   const phrases = [
-    'Understand your Analytics',
+    'Make sense of your Analytics',
     'Enhance Your UI',
     'Understand & Take Action',
     'Consult the AI',
