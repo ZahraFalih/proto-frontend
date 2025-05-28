@@ -12,10 +12,11 @@ const WelcomePage = () => {
   }, []);
 
   const phrases = [
-    'Design with confidence',
-    'Prototype with precision',
-    'Iterate with insights',
-    'Launch with impact'
+    'Understand your Analytics',
+    'Enhance Your UI',
+    'Understand & Take Action',
+    'Consult the AI',
+    'Embrace The journey!'
   ];
 
   const [displayText, setDisplayText] = useState('');
