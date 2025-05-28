@@ -25,19 +25,29 @@ export default function ProgressLoader({ onComplete }) {
   ];
 
   useEffect(() => {
-    const duration = 90000; // 90 seconds
+    const duration = 60000; // 60 seconds
+    const stepDuration = duration / steps.length; // 5 seconds per step
     let lastTimestamp = performance.now();
 
     const updateProgress = (timestamp) => {
-      // Calculate the time elapsed since last update, considering tab visibility
       const deltaTime = document.hidden ? 0 : timestamp - lastTimestamp;
       lastTimestamp = timestamp;
 
-      // Update progress based on actual time elapsed
       const elapsedTime = Date.now() - startTimeRef.current;
       const newProgress = Math.min((elapsedTime / duration) * 100, 100);
       
       setProgress(newProgress);
+      
+      // Update step based on progress
+      const currentStepIndex = Math.min(
+        Math.floor((elapsedTime / stepDuration)),
+        steps.length - 1
+      );
+      
+      if (currentStepIndex !== currentStep) {
+        setCurrentStep(currentStepIndex);
+        setKey(prev => prev + 1);
+      }
 
       if (newProgress >= 100) {
         setTimeout(onComplete, 500);
@@ -46,19 +56,10 @@ export default function ProgressLoader({ onComplete }) {
       }
     };
 
-    // Start the animation
     animationFrameRef.current = requestAnimationFrame(updateProgress);
 
-    // Change message every 5 seconds
-    const stepTimer = setInterval(() => {
-      setCurrentStep(prev => (prev + 1) % steps.length);
-      setKey(prev => prev + 1);
-    }, 5000);
-
-    // Handle tab visibility changes
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // When tab becomes visible again, update the start time to account for hidden duration
         const hiddenDuration = Date.now() - lastUpdateTimeRef.current;
         startTimeRef.current += hiddenDuration;
         lastTimestamp = performance.now();
@@ -72,10 +73,9 @@ export default function ProgressLoader({ onComplete }) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      clearInterval(stepTimer);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [onComplete, steps.length]);
+  }, [onComplete, steps.length, currentStep]);
 
   return (
     <div className="progress-loader-overlay">
