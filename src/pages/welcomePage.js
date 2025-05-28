@@ -71,9 +71,9 @@ const WelcomePage = () => {
               <img src={logo} alt="Proto logo" className="welcome-logo" />
             </header>
 
-            <h2 className="welcome-title">Transform Your Design Process</h2>
+            <h2 className="welcome-title">Enahnce Your User Experience!</h2>
             <p className="welcome-subtitle">
-              Create, test, and iterate on your designs with powerful AI-driven insights
+              Discover trends in your analytics, get an evaluation of the UI, and compare perforemence to competitors and industry standards.
             </p>
 
             <div className="button-container">
