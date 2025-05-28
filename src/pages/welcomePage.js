@@ -16,7 +16,7 @@ const WelcomePage = () => {
     'Enhance Your UI',
     'Understand & Take Action',
     'Consult the AI',
-    'Embrace The journey!'
+    'Level Up Your Game!',
   ];
 
   const [displayText, setDisplayText] = useState('');
