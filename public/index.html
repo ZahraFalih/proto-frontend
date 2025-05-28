@@ -4,11 +4,18 @@
     <meta charset="utf-8" />
     <!-- For responsiveness on mobile devices -->
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="A prototype for an AI Tool App" />
-    <title>AI Tool Prototype</title>
+    <meta name="theme-color" content="#0055FF" />
+    <meta
+      name="description"
+      content="Proto - Transform Your Design Process"
+    />
+    <title>Proto</title>
 
-    <!-- Favicon and Manifest (optional, auto-generated in CRA) -->
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <!-- Favicon -->
+    <link rel="icon" href="%PUBLIC_URL%/favicon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/favicon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/favicon.png" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/favicon.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
     <!-- Dyslexia-friendly font:
@@ -20,6 +27,7 @@
       href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap"
       rel="stylesheet"
     />
+    
     <!--
     If you prefer OpenDyslexic and have it hosted, you could use:
     <link
@@ -50,6 +58,14 @@
         font-weight: bold;
       }
     </style>
+    <script>
+      // Force scroll position to top on page load
+      window.onload = function() {
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+      };
+    </script>
   </head>
   <body>
     <!-- Notice for users with JavaScript disabled -->

@@ -1,212 +1,408 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import ReactMarkdown from "react-markdown";
-import '../styles/DashboardPage.css';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import DashboardHeaderPanel from '../components/dashboard/DashboardHeaderPanel';
+import NavBar from '../components/dashboard/NavBar';
+import AddPageModal from '../components/dashboard/AddPageModal';
+import WebMetricsPanel from '../components/dashboard/WebMetricsPanel';
+import UBAPanel from '../components/dashboard/UBAPanel';
+import UIPanel from '../components/dashboard/UIPanel';
+import AIChatPanel from '../components/dashboard/AIChatPanel';
+import ProgressLoader from '../components/common/ProgressLoader';
+import LoadingText from '../components/common/LoadingText';
+import ScrollToTop from '../components/common/ScrollToTop';
+import '../styles/Dashboard.css';
+import { getToken } from '../utils/auth';
+import { buildApiUrl, API_ENDPOINTS } from '../config/api';
+import { fetchWithRetry, parseJsonResponse } from '../utils/api';
+import { setPageTitle, PAGE_TITLES } from '../utils/pageTitle';
 
-function DashboardPage() {
-  // State for metrics and summary
-  const [businessMetrics, setBusinessMetrics] = useState({});
-  const [roleModelMetrics, setRoleModelMetrics] = useState({});
-  const [loadingBusiness, setLoadingBusiness] = useState(true);
-  const [loadingRole, setLoadingRole] = useState(true);
-  const [loadingSummary, setLoadingSummary] = useState(false);
-  const [summary, setSummary] = useState("");
-  const [fileSummary, setFileSummary] = useState("");
-  const [error, setError] = useState(null);
+export default function Dashboard() {
+  const [pages, setPages] = useState([]);
+  const [activeTabSlug, setActiveTabSlug] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [showProgressLoader, setShowProgressLoader] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // Cache object to store tab content
+  const [tabCache, setTabCache] = useState({});
+
+  // ─── Chat context summaries ─────────────────────────────
+  const [webMetricsSummary, setWebMetricsSummary] = useState(null);
+  const [webRoleMetrics,     setWebRoleMetrics    ] = useState(null);
+  const [webBusinessMetrics, setWebBusinessMetrics] = useState(null);
+
+  const [ubaSummary,       setUbaSummary]       = useState('');
+  const [uiEvalSummary,    setUiEvalSummary]    = useState('');
+  
+  // Add debugging for context data updates
+  useEffect(() => {
+    console.log('[Dashboard] AI Chat Context Updated:', {
+      webMetricsSummary: webMetricsSummary ? 'Present' : 'Missing',
+      webRoleMetrics: webRoleMetrics ? 'Present' : 'Missing',
+      webBusinessMetrics: webBusinessMetrics ? 'Present' : 'Missing',
+      ubaSummary: ubaSummary ? 'Present' : 'Missing',
+      uiEvalSummary: uiEvalSummary ? Array.isArray(uiEvalSummary) ? `${uiEvalSummary.length} items` : 'Invalid format' : 'Missing'
+    });
+  }, [webMetricsSummary, webRoleMetrics, webBusinessMetrics, ubaSummary, uiEvalSummary]);
+  
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // API Endpoints
-  const API_URL_BUSINESS = "http://127.0.0.1:8000/toolkit/web-metrics/business/";
-  const API_URL_ROLE = "http://127.0.0.1:8000/toolkit/web-metrics/role-model/";
-  const API_URL_SUMMARY = "http://127.0.0.1:8000/ask-ai/web-agent";
-
-  // Ideal standards for display
-  const idealStandards = {
-    "First Contentful Paint": "≤ 1.8 s",
-    "Speed Index": "≤ 4.3 s",
-    "Largest Contentful Paint (LCP)": "≤ 2.5 s",
-    "Time to Interactive": "≤ 3.8 s",
-    "Total Blocking Time (TBT)": "≤ 200 ms",
-    "Cumulative Layout Shift (CLS)": "≤ 0.1"
-  };
-
-  const getAccessToken = () => sessionStorage.getItem("access_token");
-
-  // Helper: if value is an object, convert it to a string.
-  const renderValue = (value) => {
-    return typeof value === "object" ? JSON.stringify(value) : value;
-  };
-
-  // Fetch metrics from both endpoints in parallel
+  // Update document title
   useEffect(() => {
-    async function fetchMetrics() {
-      const token = getAccessToken();
-      if (!token) {
-      toast.error("Authentication required. Redirecting to login...");
-      navigate("/login")
-      }
-
-      try {
-        const [businessRes, roleRes] = await Promise.allSettled([
-          fetch(API_URL_BUSINESS, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json"
-            }
-          }),
-          fetch(API_URL_ROLE, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json"
-            }
-          })
-        ]);
-
-        // Process Business Metrics
-        if (businessRes.status === "fulfilled" && businessRes.value.ok) {
-          const data = await businessRes.value.json();
-          // Unwrap if nested under "url_metrics"
-          const bm = data.url_metrics ? data.url_metrics : data;
-          setBusinessMetrics(bm);
-        } else {
-          setError("Failed to load business metrics.");
-        }
-        setLoadingBusiness(false);
-
-        // Process Role Model Metrics
-        if (roleRes.status === "fulfilled" && roleRes.value.ok) {
-          const data = await roleRes.value.json();
-          // Unwrap if nested under "role_model_metrics"
-          const rm = data.role_model_metrics ? data.role_model_metrics : data;
-          setRoleModelMetrics(rm);
-        } else {
-          setError("Failed to load role model metrics.");
-        }
-        setLoadingRole(false);
-      } catch (err) {
-        setError("Failed to fetch metrics.");
-        setLoadingBusiness(false);
-        setLoadingRole(false);
-      }
-    }
-
-    fetchMetrics();
-  }, [navigate]);
-
-  useEffect(() => {
-    const stored = sessionStorage.getItem("file_summary");
-    if (stored) {
-      setFileSummary(stored);
-      sessionStorage.removeItem("file_summary"); 
-    }
+    document.title = 'Dashboard';
   }, []);
 
-  // When both metrics are loaded, send them to the AI summary endpoint
+  // Safe slugify
+  const slugify = str =>
+    (str || '')
+      .toString()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]/g, '');
+
+  // Check if this is a new page load or coming from onboarding
   useEffect(() => {
-    if (
-      !loadingBusiness &&
-      !loadingRole &&
-      Object.keys(businessMetrics).length > 0 &&
-      Object.keys(roleModelMetrics).length > 0
-    ) {
-      generateSummary(businessMetrics, roleModelMetrics);
+    const isNewPage = sessionStorage.getItem('dashboard_initialized') !== 'true';
+    const isFromOnboarding = location.state?.fromOnboarding;
+    const currentPageId = new URLSearchParams(location.search).get('page_id');
+
+    // Show progress loader in these cases:
+    // 1. Coming from onboarding
+    // 2. New tab creation (isNewPage true) AND no cache exists
+    if (isFromOnboarding || (isNewPage && checkNeedsFreshData(currentPageId))) {
+      setShowProgressLoader(true);
+      // Mark as initialized
+      sessionStorage.setItem('dashboard_initialized', 'true');
     }
-  }, [loadingBusiness, loadingRole, businessMetrics, roleModelMetrics]);
 
-  const generateSummary = async (urlMetrics, sharkMetrics) => {
-    const token = getAccessToken();
-    setLoadingSummary(true);
+    // Clean up the location state
+    if (isFromOnboarding) {
+      window.history.replaceState({}, document.title, location.pathname + location.search);
+    }
 
-    try {
-      const res = await fetch(API_URL_SUMMARY, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ url_metrics: urlMetrics, shark_metrics: sharkMetrics })
+    // Mark initial load as complete
+    setIsInitialLoad(false);
+  }, [location]);
+
+  // Improved cache checking function
+  const checkNeedsFreshData = (pageId) => {
+    if (!pageId) return false;
+    
+    // Check if we have cached data for this page
+    const wmCacheKey = `wm_cache_${pageId}`;
+    const uiCacheKey = `ui_eval_page_${pageId}`;
+    const ubaCacheKey = `uba_cache_${pageId}`;
+    
+    const hasWebMetricsCache = sessionStorage.getItem(wmCacheKey);
+    const hasUiCache = sessionStorage.getItem(uiCacheKey);
+    const hasUbaCache = localStorage.getItem(ubaCacheKey);
+    
+    // Also check our React state cache
+    const hasStateCache = tabCache[pageId] && (
+      tabCache[pageId].webMetricsSummary || 
+      tabCache[pageId].ubaSummary || 
+      tabCache[pageId].uiEvalSummary
+    );
+    
+    // Show loader only if we have no cache at all
+    return !(hasWebMetricsCache || hasUiCache || hasUbaCache || hasStateCache);
+  };
+
+  // Load pages on mount
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+
+    setLoading(true);
+    
+    const loadPages = async () => {
+      try {
+        const response = await fetchWithRetry(
+          buildApiUrl(API_ENDPOINTS.TOOLKIT.USER_PAGES), 
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token }),
+            credentials: 'include',
+          }
+        );
+        
+        const data = await parseJsonResponse(response);
+        
+        // Filter out duplicate page types, keeping only the most recent one
+        const uniquePages = data.reduce((acc, page) => {
+          const existingIndex = acc.findIndex(p => p.type === page.type);
+          if (existingIndex === -1) {
+            acc.push(page);
+          } else {
+            // Replace existing page with newer one
+            acc[existingIndex] = page;
+          }
+          return acc;
+        }, []);
+
+        setPages(uniquePages || []);
+        
+        if (uniquePages && uniquePages.length) {
+          const firstSlug = slugify(uniquePages[0].type);
+          setActiveTabSlug(firstSlug);
+          const params = new URLSearchParams();
+          params.set('page_id', uniquePages[0].id);
+          window.history.replaceState({}, '', `?${params}`);
+        }
+      } catch (error) {
+        console.error('Failed to load pages after retries:', error);
+        // Show error message to user here if needed
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadPages();
+  }, []);
+
+  // Handle progress loader completion
+  const handleProgressComplete = () => {
+    setShowProgressLoader(false);
+  };
+
+  // Tab clicks
+  const handleTabClick = (slug, id) => {
+    setActiveTabSlug(slug);
+    const params = new URLSearchParams(window.location.search);
+    params.set('page_id', id);
+    window.history.pushState({}, '', `?${params}`);
+
+    // First check if we have cached content in our React state
+    if (tabCache[slug]) {
+      const cachedData = tabCache[slug];
+      setWebMetricsSummary(cachedData.webMetricsSummary || '');
+      setWebRoleMetrics(cachedData.webRoleMetrics || null);
+      setWebBusinessMetrics(cachedData.webBusinessMetrics || null);
+      setUbaSummary(cachedData.ubaSummary || '');
+      setUiEvalSummary(cachedData.uiEvalSummary || '');
+    }
+
+    // Reset scroll positions
+    const dashboardBody = document.querySelector('.dashboard-body');
+    if (dashboardBody) {
+      dashboardBody.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'instant'
       });
+    }
 
-      const data = await res.json();
-      setSummary(data.web_evaluation || "No summary returned.");
-    } catch (err) {
-      setSummary("Failed to get AI summary.");
-    } finally {
-      setLoadingSummary(false);
+    // Reset any scrollable panels
+    const scrollablePanels = document.querySelectorAll('.chat-messages, .wm-details-panel > div, .uba-formulation-text');
+    scrollablePanels.forEach(panel => {
+      if (panel) {
+        panel.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: 'instant'
+        });
+      }
+    });
+
+    // Check if we need fresh data
+    const needsFreshData = checkNeedsFreshData(id);
+    
+    // Only show progress loader if we need fresh data AND have no cache
+    if (needsFreshData) {
+      setShowProgressLoader(true);
+    }
+
+    // Clear summaries only if we don't have cache
+    if (!tabCache[slug]) {
+      setWebMetricsSummary('');
+      setWebRoleMetrics(null);
+      setWebBusinessMetrics(null);
+      setUbaSummary('');
+      setUiEvalSummary('');
     }
   };
 
-  // Compute union of keys from ideal standards and metrics
-  const metricKeys = Array.from(
-    new Set([
-      ...Object.keys(idealStandards),
-      ...Object.keys(businessMetrics || {}),
-      ...Object.keys(roleModelMetrics || {})
-    ])
-  );
+  // Cache tab content when it changes
+  useEffect(() => {
+    if (activeTabSlug && webMetricsSummary) {
+      console.log('[Dashboard] Caching tab content for:', activeTabSlug, {
+        webMetricsSummary: webMetricsSummary ? 'Present' : 'Missing',
+        webRoleMetrics: webRoleMetrics ? 'Present' : 'Missing', 
+        webBusinessMetrics: webBusinessMetrics ? 'Present' : 'Missing',
+        ubaSummary: ubaSummary ? 'Present' : 'Missing',
+        uiEvalSummary: uiEvalSummary ? 'Present' : 'Missing'
+      });
+      
+      setTabCache(prev => ({
+        ...prev,
+        [activeTabSlug]: {
+          webMetricsSummary,
+          webRoleMetrics,
+          webBusinessMetrics,
+          ubaSummary,
+          uiEvalSummary
+        }
+      }));
+    }
+  }, [activeTabSlug, webMetricsSummary, webRoleMetrics, webBusinessMetrics, ubaSummary, uiEvalSummary]);
+
+  // Add modal open/close
+  const handleAddClick = () => setShowAddModal(true);
+  const handleCloseModal = () => setShowAddModal(false);
+
+  // After adding a page
+  const handlePageAdded = newPage => {
+    // Check if page already exists to prevent duplication
+    const pageExists = pages.some(p => p.id === newPage.id);
+    if (pageExists) {
+      // If page exists, just switch to it
+      const newSlug = slugify(newPage.type);
+      setActiveTabSlug(newSlug);
+      window.history.pushState({}, '', `?page_id=${newPage.id}`);
+      setShowAddModal(false);
+      return;
+    }
+
+    // Add new page only if it doesn't exist
+    setPages(prev => [...prev, newPage]);
+    const newSlug = slugify(newPage.type);
+    setActiveTabSlug(newSlug);
+    window.history.pushState({}, '', `?page_id=${newPage.id}`);
+    setShowAddModal(false);
+    
+    // Show progress loader for new page since it needs fresh data
+    setShowProgressLoader(true);
+
+    // Clear old context for new page
+    setWebMetricsSummary('');
+    setWebRoleMetrics(null);
+    setWebBusinessMetrics(null);
+    setUbaSummary('');
+    setUiEvalSummary('');
+  };
+
+  // Delete a page
+  const handlePageDeleted = id => {
+    setPages(prev => {
+      const filtered = prev.filter(p => p.id !== id);
+      const deletedPage = prev.find(p => p.id === id);
+      const deletedSlug = slugify(deletedPage?.type);
+      
+      // Remove deleted page from cache
+      setTabCache(prev => {
+        const newCache = { ...prev };
+        delete newCache[deletedSlug];
+        return newCache;
+      });
+
+      if (slugify(deletedPage?.type) === activeTabSlug) {
+        if (filtered.length) {
+          const next = filtered[0];
+          const nextSlug = slugify(next.type);
+          setActiveTabSlug(nextSlug);
+          window.history.pushState({}, '', `?page_id=${next.id}`);
+        } else {
+          setActiveTabSlug('');
+          window.history.pushState({}, '', window.location.pathname);
+        }
+      }
+
+      // Clear old context for deleted page
+      setWebMetricsSummary('');
+      setWebRoleMetrics(null);
+      setWebBusinessMetrics(null);
+      setUbaSummary('');
+      setUiEvalSummary('');
+
+      return filtered;
+    });
+  };
+
+  // Determine active page
+  const activePage = pages.find(p => slugify(p.type) === activeTabSlug);
+  const activePageId = activePage?.id || null;
+
+  // Update title when active page changes
+  useEffect(() => {
+    if (activePage) {
+      setPageTitle(`${activePage.type} - ${PAGE_TITLES.dashboard}`);
+    } else {
+      setPageTitle(PAGE_TITLES.dashboard);
+    }
+  }, [activeTabSlug, pages]);
 
   return (
-    <div className="dashboard-container">
-      <h1 className="title">Web Metrics Dashboard</h1>
-      {error && <p className="error-text">{error}</p>}
+    <>
+      <ScrollToTop />
+      {showProgressLoader && <ProgressLoader onComplete={handleProgressComplete} />}
 
-      <div className="dashboard-content">
-        <div className="metrics-container">
-          <table className="metrics-table">
-            <thead>
-              <tr>
-                <th>Metric</th>
-                <th>Business Performance</th>
-                <th>Role Model Performance</th>
-                <th>Ideal Standard</th>
-              </tr>
-            </thead>
-            <tbody>
-              {metricKeys.map((metric) => (
-                <tr key={metric}>
-                  <td>{metric}</td>
-                  <td>
-                    {loadingBusiness
-                      ? "Loading..."
-                      : renderValue(businessMetrics[metric] || "N/A")}
-                  </td>
-                  <td>
-                    {loadingRole
-                      ? "Loading..."
-                      : renderValue(roleModelMetrics[metric] || "N/A")}
-                  </td>
-                  <td>{idealStandards[metric] || "N/A"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* AI Summary rendered with Markdown */}
-          <div className="answer-section">
-            {loadingSummary ? (
-              <p>Generating summary...</p>
-            ) : (
-              <ReactMarkdown>{summary}</ReactMarkdown>
-            )}
+      <div className="dashboard-container">
+        <div className="dashboard-header-section">
+          <div className="dashboard-content-wrapper">
+            <DashboardHeaderPanel 
+              pages={pages}
+              onPageDeleted={handlePageDeleted}
+            />            
+            <NavBar
+              pages={pages}
+              activeTabSlug={activeTabSlug}
+              onTabClick={handleTabClick}
+              onDeletePage={handlePageDeleted}
+              onAddClick={handleAddClick}
+              loading={loading}
+            />
           </div>
         </div>
 
-        <div className="widgets-container">
-          <h2>File Summary</h2>
-          {fileSummary ? (
-             <ReactMarkdown>{fileSummary}</ReactMarkdown>
+        <main className="dashboard-body">
+          <div className="dashboard-content-wrapper">
+            {loading ? (
+              <div className="dashboard-loading">
+                <LoadingText color="#0055FF" />
+              </div>
             ) : (
-          <p>Loading, please wait</p>
-           )}
-        </div>
-      </div>
-      <div className="glowing-button-container">
+              <div className="dashboard-panels">
+                <div className="dashboard-main-panels">
+                  <WebMetricsPanel
+                    pageId={activePageId}
+                    onRoleMetricsReady    ={setWebRoleMetrics}
+                    onBusinessMetricsReady={setWebBusinessMetrics}
+                    onSummaryReady        ={setWebMetricsSummary}
+                  />
+                  <UBAPanel
+                    pageId={activePageId}
+                    onSummaryReady={setUbaSummary}
+                  />
+                  <UIPanel
+                    pageId={activePageId}
+                    onSummaryReady={setUiEvalSummary}
+                  />
+                  <AIChatPanel
+                    context={{
+                      roleMetrics:     webRoleMetrics,
+                      businessMetrics: webBusinessMetrics,
+                      summary:         webMetricsSummary,
+                      uba:            ubaSummary,
+                      ui:             uiEvalSummary
+                    }}
+                    key={`chat-${activePageId}`}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
 
+        <AddPageModal
+          visible={showAddModal}
+          onClose={handleCloseModal}
+          onPageAdded={handlePageAdded}
+          existingPageTypes={pages.map(p => p.type)}
+        />
       </div>
-    </div>
+    </>
   );
 }
-
-export default DashboardPage;

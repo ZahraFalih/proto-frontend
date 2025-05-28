@@ -1,0 +1,96 @@
+/* Skeleton.css */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(190, 190, 190, 0.2) 25%,
+    rgba(129, 129, 129, 0.24) 37%,
+    rgba(190, 190, 190, 0.2) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+/* Skeleton layouts for different panels */
+.skeleton-metrics-card {
+  height: 160px;
+  padding: 1.25rem;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.skeleton-metrics-header {
+  height: 20px;
+  width: 70%;
+  margin-bottom: 1rem;
+}
+
+.skeleton-metrics-gauge {
+  height: 4px;
+  margin: 1rem 0;
+}
+
+.skeleton-metrics-values {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.skeleton-metrics-value {
+  height: 30px;
+}
+
+/* UBA Panel Skeletons */
+.skeleton-uba-formulation {
+  height: 200px;
+  margin-bottom: 1rem;
+}
+
+.skeleton-uba-resources {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skeleton-uba-resource {
+  height: 24px;
+}
+
+/* UI Panel Skeletons */
+.skeleton-ui-category {
+  height: 48px;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* NavBar Skeletons */
+.skeleton-tab {
+  height: 40px;
+  width: 120px;
+  margin-right: 0.5rem;
+  border-radius: 6px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .skeleton-metrics-values {
+    grid-template-columns: 1fr;
+  }
+  
+  .skeleton-metrics-card {
+    height: 180px;
+  }
+} 

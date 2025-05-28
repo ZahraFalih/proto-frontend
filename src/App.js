@@ -1,13 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import WelcomePage from './pages/welcomePage';
-import LoginPage from './pages/LoginPage'; 
-import SignUpPage from './pages/SignUpPage'; 
+import AuthPage from './pages/AuthPage'; // <-- new import
 import OnboardingPage from './pages/OnboardingPage'; 
-import DataCollectionPage from './pages/DataCollectionPage';
-import ManageMyData from './pages/ManageMyData';  
+import DataCollectionPage from './pages/DataCollectionPage';  
 import ShowFile from './pages/ShowFile';
 import Dashboard from './pages/Dashboard';
+import OnboardingProtectedRoute from './components/OnboardingProtectedRoute';
 import { ToastContainer } from 'react-toastify';             
 import 'react-toastify/dist/ReactToastify.css'; 
 
@@ -16,14 +15,20 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<WelcomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/auth" element={<AuthPage />} /> {/* merged route */}
+        <Route 
+          path="/onboarding" 
+          element={
+            <OnboardingProtectedRoute>
+              <OnboardingPage />
+            </OnboardingProtectedRoute>
+          } 
+        />
         <Route path="/datacollection" element={<DataCollectionPage />} />
-        <Route path="/manage-data" element={<ManageMyData />} /> 
-        <Route path="/dashboard" element={<Dashboard />} /> 
+        <Route path="/dashboard/:pageId?" element={<Dashboard />} /> 
         <Route path="/show/:fileId" element={<ShowFile />} />
       </Routes>
+
       <ToastContainer 
         position="top-right"
         autoClose={3000}

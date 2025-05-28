@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { getToken, clearToken } from '../utils/auth';
+import logo from "../assets/icons/logo.png";
+import '../styles/global.css'; 
+import { buildApiUrl, API_ENDPOINTS } from '../config/api';
 
 const ShowFile = () => {
   const { fileId } = useParams();
@@ -11,11 +15,9 @@ const ShowFile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const getAccessToken = () => sessionStorage.getItem("access_token");
-
   useEffect(() => {
     const fetchFile = async () => {
-      const token = getAccessToken();
+      const token = getToken();
       if (!token) {
         setError("Authentication required. Please log in.");
         setLoading(false);
@@ -23,7 +25,7 @@ const ShowFile = () => {
       }
 
       try {
-        const response = await fetch(`http://127.0.0.1:8000/upload/show/${fileId}/`, {
+        const response = await fetch(buildApiUrl(API_ENDPOINTS.UPLOAD.SHOW(fileId)), {
           method: "GET",
           headers: {
             "Authorization": token,
@@ -33,8 +35,8 @@ const ShowFile = () => {
         if (!response.ok) {
           if (response.status === 401) {
             setError("Session expired. Please log in again.");
-            sessionStorage.removeItem("access_token");
-            navigate("/login");
+            clearToken();
+            navigate("/auth?mode=login");
           }
           throw new Error(`Failed to fetch file. Status: ${response.status}`);
         }
@@ -67,6 +69,14 @@ const ShowFile = () => {
   };
 
   return (
+    <div className='page-container'>
+    <div className="header">
+      <img src={logo} alt="logo" className="header-logo" />    
+      <div className="header-links">  
+      <a href="#">INFO</a>
+      <a href="#">ABOUT</a>
+      </div>
+    </div>
     <div
       style={{
         minHeight: "100vh",
@@ -194,6 +204,7 @@ const ShowFile = () => {
         </div>
       )}
     </div>
+  </div>
   );
 };
 

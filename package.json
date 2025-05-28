@@ -3,13 +3,22 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "axios": "^1.9.0",
     "bootstrap": "^5.0.0",
+    "crypto-js": "^4.2.0",
+    "plotly.js": "^3.0.1",
+    "plotly.js-basic-dist": "^3.0.1",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
+    "react-loading-skeleton": "^3.5.0",
     "react-markdown": "^10.1.0",
+    "react-plotly.js": "^2.6.0",
     "react-router-dom": "^6.0.0",
     "react-scripts": "latest",
-    "react-toastify": "^11.0.5"
+    "react-toastify": "^11.0.5",
+    "react-transition-group": "^4.4.5",
+    "remark-gfm": "^4.0.1",
+    "scroll-to-top": "^1.1.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.0.0",
