@@ -9,7 +9,6 @@ import { buildApiUrl, API_ENDPOINTS } from '../config/api';
 import { setPageTitle, PAGE_TITLES } from '../utils/pageTitle';
 
 const companiesData = [
-  { id: 1, name: "Amazon", category: "Online Retail & Marketplace" },
   { id: 2, name: "eBey", category: "Online Retail & Marketplace" },
   { id: 3, name: "Walmart", category: "Online Retail & Marketplace" },
   { id: 4, name: "Trendyol", category: "Online Retail & Marketplace" },
