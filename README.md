@@ -1,12 +1,11 @@
 # Proto — Frontend
 
-Proto is the frontend for a university capstone project that uses agentic AI to provide UX improvement suggestions for e-commerce websites. This React-based UI communicates with a Django backend to collect user data, process webpage content, and visualize UX analysis results.
+Proto is the frontend for a university capstone project that uses agentic AI to provide UX improvement suggestions for e-commerce websites. This React-based UI communicates with a API based Django backend to collect user data, process webpage content, and visualize UX analysis results.
+
+#### You can view the live demo [here.](https://proto-ux.netlify.app/)
 
 ---
 > Note: This repository includes the frontend logic to build the user interface. You can find the code and instructions for building the backend API server in [this repo.](https://github.com/hussein-hh/proto-api)
-
-> You can view the live demo [here.](https://proto-ux.netlify.app/)
-
 ---
 
 ## Setup Instructions
