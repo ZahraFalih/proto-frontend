@@ -16,7 +16,7 @@ export default function ProgressLoader({ onComplete }) {
     "Looking good ✨😎",
     "Getting the AI Chat ready for you ⚙️",
     "Half way there.. 🤺",
-    "Measure your page perforemence ⏱️",
+    "Measure your page performance ⏱️",
     "One last round 🏁",
     "Almost there 🤌🏻",
     "Damlaya Damlaya Göl Olur 💧",
