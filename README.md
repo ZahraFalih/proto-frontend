@@ -5,7 +5,7 @@ Proto is the frontend for a university capstone project that uses agentic AI to 
 ---
 > Note: this repo only include the backend logic to build an API server. You can find the code and instructions for building the frontend in [this repo.](https://github.com/ZahraFalih/proto-frontend)
 
-#### [Live Demo](https://proto-ux.netlify.app/)
+> You can view the live demo [here.](https://proto-ux.netlify.app/)
 
 ---
 
@@ -46,6 +46,6 @@ User info → 2. Business info → 3. Page details (screenshot + metadata).
 Combines UI feedback, user-behaviour insights and web-vitals charts.
 
 ### AI Chat
-Talk with an agent to dig deeper into your UX findings once analysis finishes.
+AI-Agent based Insights Chat interface for discussing UX results further.
 
 ---
