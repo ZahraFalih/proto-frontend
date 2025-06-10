@@ -23,14 +23,20 @@ Proto is the frontend for a university capstone project that uses agentic AI to 
    Open http://localhost:3000 to view it in your browser.
 
 4. Connect to backend
-The frontend is already configured to use the live backend deployed on Render. No changes are required unless you're running a local backend.
+   The frontend is already configured to use the live backend deployed on Render. No changes are required unless you're running a local backend.
+   If needed, you can update the base API URL in src/config/api.js:
+    ```bash
+   export const API_CONFIG = {
+    METHOD: 'https',
+    URL_BASE: 'proto-api-kg9r.onrender.com',
+   }; ```
 
-If needed, you can update the base API URL in src/config/api.js:
-
-<pre> ```js export const API_CONFIG = { METHOD: 'https', URL_BASE: 'proto-api-kg9r.onrender.com', }; ``` </pre>
-To point to a local server instead:
-
-<pre> ```js export const API_CONFIG = { METHOD: 'http', URL_BASE: 'localhost:8000', }; ``` </pre>
+   ## To point to a local server instead:
+    ```bash
+    export const API_CONFIG = {
+    METHOD: 'http',
+    URL_BASE: 'localhost:8000',
+   };
 
 
 ## Key Features
