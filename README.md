@@ -34,17 +34,18 @@ Proto is the frontend for a university capstone project that uses agentic AI to 
 ---
 
 ## Key Features
+  Users can upload webpages, walk through a guided onboarding process, and receive AI-generated UX insights. The interface presents actionable feedback in a visual dashboard and includes a conversational AI agent for deeper analysis.
 
-### Auth
-Sign-up / login / logout with token-based session context.
+ ### Auth
+  Sign-up / login / logout with token-based session context.
 
-### 3-Step Onboarding
-User info → 2. Business info → 3. Page details (screenshot + metadata).
+ ### 3-Step Onboarding
+  User info → 2. Business info → 3. Page details (screenshot + metadata).
 
-### UX Dashboard
-Combines UI feedback, user-behaviour insights and web-vitals charts.
+ ### UX Dashboard
+  Combines UI feedback, user-behaviour insights and web-vitals charts.
 
-### AI Chat
-AI-Agent based Insights Chat interface for discussing UX results further.
+ ### AI Chat
+  AI-Agent based Insights Chat interface for discussing UX results further.
 
 ---
