@@ -48,4 +48,3 @@ Proto is the frontend for a university capstone project that uses agentic AI to 
  ### AI Chat
   AI-Agent based Insights Chat interface for discussing UX results further.
 
----
